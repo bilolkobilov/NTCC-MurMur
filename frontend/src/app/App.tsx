@@ -1,17 +1,25 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { lazy, useState } from "react";
 import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router";
 
 import { ApiError } from "../api/client";
 import { AppShell } from "../components/layout/AppShell";
-import { DoctorHome } from "../features/doctor/DoctorHome";
-import { PatientFormPage } from "../features/doctor/patients/PatientFormPage";
-import { PatientPage } from "../features/doctor/patients/PatientPage";
-import { PatientsPage } from "../features/doctor/patients/PatientsPage";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotBuiltPage, NotFoundPage } from "../pages/StatusPages";
 import { HomeRedirect, RequireRole, RequireSession } from "./guards";
+
+// Each role's pages load only when that role opens them (a patient's phone never downloads doctor code).
+const DoctorHome = lazy(() => import("../features/doctor/DoctorHome").then((m) => ({ default: m.DoctorHome })));
+const PatientsPage = lazy(() =>
+  import("../features/doctor/patients/PatientsPage").then((m) => ({ default: m.PatientsPage })),
+);
+const PatientFormPage = lazy(() =>
+  import("../features/doctor/patients/PatientFormPage").then((m) => ({ default: m.PatientFormPage })),
+);
+const PatientPage = lazy(() =>
+  import("../features/doctor/patients/PatientPage").then((m) => ({ default: m.PatientPage })),
+);
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({

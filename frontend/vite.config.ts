@@ -10,6 +10,21 @@ export default defineConfig({
     // During development the API runs separately on :8000; in the demo FastAPI serves the built site itself.
     proxy: { "/api": "http://localhost:8000" },
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // Libraries change rarely: their own chunk stays cached when only app code changes.
+        advancedChunks: {
+          groups: [
+            {
+              name: "vendor",
+              test: /node_modules[\\/](react|react-dom|react-router|scheduler|@tanstack|i18next|react-i18next|@radix-ui)[\\/]/,
+            },
+          ],
+        },
+      },
+    },
+  },
   test: {
     environment: "jsdom",
     globals: true,

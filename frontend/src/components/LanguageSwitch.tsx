@@ -1,5 +1,7 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
-import { GB, RU, UZ } from "country-flag-icons/react/3x2";
+import GB from "country-flag-icons/string/3x2/GB";
+import RU from "country-flag-icons/string/3x2/RU";
+import UZ from "country-flag-icons/string/3x2/UZ";
 import { useTranslation } from "react-i18next";
 
 import { changeLanguage } from "../i18n";
@@ -9,14 +11,18 @@ import { type Language, LANGUAGES } from "../i18n/detect";
  * Language menu: flag + the language's own name ("Oʻzbekcha", "Русский", "English"), never a flag alone — a flag
  * names a country, not a language. Bundled SVG flags (Windows cannot draw flag emoji; the demo has no internet).
  */
-const FLAGS: Record<Language, typeof UZ> = { uz: UZ, ru: RU, en: GB };
+// Only these three SVG strings are bundled (importing the package index pulled in every country's flag).
+const FLAGS: Record<Language, string> = { uz: UZ, ru: RU, en: GB };
 
 function Flag({ lang }: { lang: Language }) {
-  const Icon = FLAGS[lang];
   return (
-    <span aria-hidden="true" className="inline-flex h-3.5 w-5 shrink-0 overflow-hidden rounded-[2px] outline outline-1 -outline-offset-1 outline-black/10">
-      <Icon className="h-full w-full" />
-    </span>
+    <img
+      src={`data:image/svg+xml;utf8,${encodeURIComponent(FLAGS[lang])}`}
+      alt=""
+      width={20}
+      height={14}
+      className="h-3.5 w-5 shrink-0 rounded-[2px] object-cover outline outline-1 -outline-offset-1 outline-black/10"
+    />
   );
 }
 

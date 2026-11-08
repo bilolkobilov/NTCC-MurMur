@@ -72,12 +72,12 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Frontend
 
 - `frontend/package.json` — React 19 + Vite 8 + TypeScript 5.9; scripts: dev, build, test (Vitest), lint (ESLint)
-- `frontend/vite.config.ts` — Tailwind plugin, `/api` proxy to :8000 in dev, Vitest (jsdom) config
+- `frontend/vite.config.ts` — Tailwind plugin, `/api` proxy, vendor chunk, Vitest (jsdom) config
 - `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
 - `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
 - `frontend/scripts/check-offline.mjs` — `npm run check:offline`: fails if the build would load anything from the internet
 - `frontend/src/main.tsx` — entry: CSS, i18n, `<App/>`
-- `frontend/src/app/App.tsx` — routes per role, QueryClient (retries only network/5xx)
+- `frontend/src/app/App.tsx` — data router, role pages lazy-loaded, QueryClient (retries only network/5xx)
 - `frontend/src/app/session.ts` — token + role in sessionStorage; `useSession()`; why the session ended
 - `frontend/src/app/guards.tsx` — `RequireRole`, `RequireSession`, `HomeRedirect`, safe `?next=`
 - `frontend/src/api/client.ts` — `api()`: Bearer token, 401 → session expired, 403 → change password; `errorMessage()`

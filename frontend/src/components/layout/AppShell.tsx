@@ -1,6 +1,7 @@
 import * as Menu from "@radix-ui/react-dropdown-menu";
 import { useQuery } from "@tanstack/react-query";
 import { clsx } from "clsx";
+import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, NavLink, Outlet, useNavigate } from "react-router";
 
@@ -8,6 +9,7 @@ import { me } from "../../api/auth";
 import { type Role, session, useSession } from "../../app/session";
 import { Logo } from "../brand/Logo";
 import { LanguageSwitch } from "../LanguageSwitch";
+import { SkeletonRows } from "../ui/States";
 
 const NAV: Record<Role, { to: string; key: string; end?: boolean }[]> = {
   doctor: [
@@ -111,7 +113,9 @@ export function AppShell() {
         </div>
       </header>
       <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none sm:px-6 sm:py-8">
-        <Outlet />
+        <Suspense fallback={<SkeletonRows rows={4} label={t("common.loading")} />}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
