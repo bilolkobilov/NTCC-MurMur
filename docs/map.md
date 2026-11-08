@@ -5,6 +5,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Root
 
+- `README.md` — what MurMur is, first run, tests, roles, API overview
 - `AGENTS.md` — all project rules (Claude reads it through `CLAUDE.md`)
 - `CLAUDE.md` — only imports `AGENTS.md`
 - `.gitignore` — ignores `.env`, Python caches, `storage/`, `samples/`
