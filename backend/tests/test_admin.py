@@ -207,6 +207,21 @@ def test_audit_log_lists_newest_first_with_ids_only(client, admin, db):
     assert len(client.get("/api/admin/audit?limit=1", headers=admin).json()) == 1
 
 
+def test_audit_log_filters_by_action_prefix(client, admin, db):
+    doctor = make_user(db, "dr.aziz", Role.DOCTOR)
+    for action in ("patient.read", "patient.exams.list", "exam.read", "examination.x", "me.read"):
+        db.add(AuditLog(user_id=doctor.id, action=action, object_type="x", object_id=1))
+    db.commit()
+
+    def actions(query):
+        return sorted(e["action"] for e in client.get(f"/api/admin/audit?{query}", headers=admin).json())
+
+    assert actions("action=patient") == ["patient.exams.list", "patient.read"]
+    assert actions("action=exam") == ["exam.read"]  # a prefix stops at the dot: not "examination.x"
+    assert actions("action=patient.read") == ["patient.read"]
+    assert client.get("/api/admin/audit?action=%25", headers=admin).status_code == 422  # no LIKE wildcards
+
+
 # --- access ---
 
 ADMIN_ENDPOINTS = [

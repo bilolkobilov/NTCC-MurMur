@@ -95,6 +95,7 @@ def list_audit(
     _: CurrentAdmin,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
     offset: Annotated[int, Query(ge=0)] = 0,
+    action: Annotated[str | None, Query(pattern=r"^[a-z_]+(\.[a-z_]+)*$", max_length=64)] = None,
 ) -> list[AuditEntryOut]:
     return [
         AuditEntryOut(
@@ -107,5 +108,5 @@ def list_audit(
             object_id=entry.object_id,
             created_at=entry.created_at,
         )
-        for entry, user in audit.list_entries(db, limit=limit, offset=offset)
+        for entry, user in audit.list_entries(db, limit=limit, offset=offset, action=action)
     ]
