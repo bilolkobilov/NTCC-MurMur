@@ -37,7 +37,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
 - `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*`, `/api/devices` (own devices) for the doctor
 - `backend/app/services/patients.py` — doctor's own patients, consent, patient login (temp password); audits reads
-- `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review; audits reads
+- `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review, cancel; audits reads
 - `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
 - `backend/app/api/device.py` — `/api/device/*`: heartbeat, command poll (204 = nothing), WAV upload (202)

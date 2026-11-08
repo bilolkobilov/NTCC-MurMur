@@ -89,6 +89,12 @@ def get_exam_audio(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> Fil
     return FileResponse(exams.exam_audio_path(db, doctor, exam_id), media_type="audio/wav")
 
 
+@router.post("/exams/{exam_id}/cancel")
+def cancel_exam(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> ExamDetail:
+    """Stop a waiting/recording exam that will not get its recording (e.g. device offline)."""
+    return ExamDetail.model_validate(exams.cancel_exam(db, doctor, exam_id))
+
+
 @router.patch("/exams/{exam_id}/review")
 def review_exam(exam_id: PathId, body: ExamReview, db: DbSession, doctor: CurrentDoctor) -> ExamDetail:
     exam = exams.review_exam(db, doctor, exam_id, body.note, body.agrees_with_ai)

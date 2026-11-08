@@ -260,6 +260,7 @@ DOCTOR_ENDPOINTS = [
     ("patch", "/api/exams/1/review"),
     ("get", "/api/devices"),
     ("post", "/api/patients/1/reset-password"),
+    ("post", "/api/exams/1/cancel"),
 ]
 
 

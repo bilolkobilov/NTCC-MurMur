@@ -17,9 +17,12 @@ def _own_device(db: Session, doctor: User, device_id: int) -> Device:
     return device
 
 
-def _own_exam(db: Session, doctor: User, exam_id: int) -> Exam:
-    # Recording and AI result come in the same query: the exam page polls this every ~2 s.
-    exam = db.get(Exam, exam_id, options=[joinedload(Exam.recording), joinedload(Exam.ai_result)])
+def _own_exam(db: Session, doctor: User, exam_id: int, *, for_update: bool = False) -> Exam:
+    if for_update:  # lock: an upload for the same exam waits until we commit
+        exam = db.get(Exam, exam_id, with_for_update=True, populate_existing=True)
+    else:
+        # Recording and AI result come in the same query: the exam page polls this every ~2 s.
+        exam = db.get(Exam, exam_id, options=[joinedload(Exam.recording), joinedload(Exam.ai_result)])
     if exam is None or exam.doctor_id != doctor.id:
         raise NotFound("exam not found")
     return exam
@@ -51,3 +54,8 @@ def exam_audio_path(db: Session, doctor: User, exam_id: int) -> Path:
 def review_exam(db: Session, doctor: User, exam_id: int, note: str, agrees_with_ai: bool) -> Exam:
     exam = _own_exam(db, doctor, exam_id)
     return exam_flow.review(db, exam, note, agrees_with_ai)
+
+
+def cancel_exam(db: Session, doctor: User, exam_id: int) -> Exam:
+    exam = _own_exam(db, doctor, exam_id, for_update=True)
+    return exam_flow.cancel(db, exam)

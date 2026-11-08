@@ -350,3 +350,41 @@ def test_stale_command_is_skipped_and_does_not_block_newer_ones(client, db, doct
     db.refresh(exam)
     assert exam.status == ExamStatus.FAILED, "a stale exam is left as it was"
     assert client.get("/api/device/command", headers=key).status_code == 204
+
+
+# --- doctor cancels an exam ---
+
+
+def test_cancel_waiting_exam_closes_its_command(client, db, key, exam):
+    response = client.post(f"/api/exams/{exam.id}/cancel", headers=login(client, "dr.aziz"))
+
+    assert response.status_code == 200
+    assert response.json()["status"] == "failed"
+    assert response.json()["failure_reason"] == "cancelled by doctor"
+    command = db.scalar(select(DeviceCommand).where(DeviceCommand.exam_id == exam.id))
+    db.refresh(command)
+    assert command.status == CommandStatus.DONE
+    assert client.get("/api/device/command", headers=key).status_code == 204
+
+
+def test_cancel_recording_exam_then_late_upload_gets_409(client, db, key, exam):
+    client.get("/api/device/command", headers=key)  # device took it, then e.g. lost Wi-Fi
+
+    assert client.post(f"/api/exams/{exam.id}/cancel", headers=login(client, "dr.aziz")).status_code == 200
+
+    assert upload(client, key, exam.id).status_code == 409
+    assert db.scalar(select(Recording)) is None
+
+
+@pytest.mark.parametrize("status", [ExamStatus.UPLOADED, ExamStatus.ANALYZED, ExamStatus.REVIEWED, ExamStatus.FAILED])
+def test_only_waiting_or_recording_exams_can_be_cancelled(client, db, exam, status):
+    exam.status = status
+    db.commit()
+
+    assert client.post(f"/api/exams/{exam.id}/cancel", headers=login(client, "dr.aziz")).status_code == 409
+
+
+def test_cannot_cancel_another_doctors_exam(client, db, exam):
+    make_user(db, "dr.other", Role.DOCTOR)
+
+    assert client.post(f"/api/exams/{exam.id}/cancel", headers=login(client, "dr.other")).status_code == 404

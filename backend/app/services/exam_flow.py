@@ -8,14 +8,15 @@ recording: the device picked up the command
 uploaded:  the WAV arrived; analysis runs in the background
 analyzed:  the analyzer stored an AI result
 reviewed:  the doctor added a note and agreed/disagreed with the AI (final; the patient can see it now)
-failed:    something went wrong; `failure_reason` says what
+failed:    something went wrong, or the doctor cancelled a waiting/recording exam; `failure_reason` says what
 """
 
 from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import AuscultationPoint, Device, Exam, ExamStatus, Patient, User
+from app.models import AuscultationPoint, CommandStatus, Device, Exam, ExamStatus, Patient, User
 from app.models.device_command import DeviceCommand
 from app.services.errors import BadRequest, Conflict
 
@@ -64,6 +65,29 @@ def mark_analyzed(exam: Exam) -> None:
 def mark_failed(exam: Exam, reason: str) -> None:
     _move(exam, ExamStatus.FAILED)
     exam.failure_reason = reason[:500]
+
+
+CANCELLABLE = {ExamStatus.WAITING, ExamStatus.RECORDING}
+
+
+def cancel(db: Session, exam: Exam) -> Exam:
+    """Doctor stops an exam that never got its recording (e.g. the device went offline). Caller holds a row lock.
+
+    Its device command is closed; a late upload for it gets 409, which the device treats as "done".
+    """
+    if exam.status not in CANCELLABLE:
+        raise Conflict(f"exam is '{exam.status.value}', only waiting or recording exams can be cancelled")
+    mark_failed(exam, "cancelled by doctor")
+    now = datetime.now(UTC)
+    for command in db.scalars(
+        select(DeviceCommand).where(
+            DeviceCommand.exam_id == exam.id, DeviceCommand.status.in_([CommandStatus.PENDING, CommandStatus.TAKEN])
+        )
+    ):
+        command.status = CommandStatus.DONE
+        command.done_at = now
+    db.commit()
+    return exam
 
 
 def review(db: Session, exam: Exam, note: str, agrees_with_ai: bool) -> Exam:
