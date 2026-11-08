@@ -40,6 +40,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/api/device.py` — `/api/device/*`: heartbeat, command poll (204 = nothing), WAV upload (202)
 - `backend/app/services/device_flow.py` — heartbeat, take next command (row lock), WAV check + save
 - `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here)
+- `backend/app/api/patient.py` — `/api/me`, `/api/me/exams` (reviewed only, no AI fields)
+- `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
 - `backend/app/models/` — one file per table (8 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
@@ -47,6 +49,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
 - `backend/tests/test_migrations.py` — tables exist, models match migrations, downgrade/upgrade round trip
 - `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient`, `make_wav` builders shared by tests
+- `backend/tests/test_full_flow.py` — the whole story through the API: admin → doctor → device → analysis → review → patient
+- `backend/tests/test_access_rules.py` — whose data / which data each role may see (patients, admin, AI fields)
 
 ## Docs
 
@@ -55,7 +59,6 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
 
-## Not built yet (Stage 1 adds these; move a line up when it exists)
+## Not built yet (move a line up when it exists)
 
-- patient router (`/api/me`)
-- scripts/fake_device.py — simulated device
+- scripts/fake_device.py — simulated device for a manual end-to-end run with sample WAVs
