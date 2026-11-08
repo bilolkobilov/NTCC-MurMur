@@ -97,7 +97,7 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 
 Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. Not yet flashed on real hardware.
 
-1. Tools (once): arduino-cli 1.5.1 in `%LOCALAPPDATA%\Programsrduino-cli` (from GitHub releases, SHA-256 checked),
+1. Tools (once): arduino-cli 1.5.1 in `%LOCALAPPDATA%\Programs\arduino-cli` (from GitHub releases, SHA-256 checked),
    then `arduino-cli config init --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`,
    `arduino-cli core update-index`, `arduino-cli core install esp32:esp32` (3.3.12, ~1 GB). Arduino IDE works too.
 2. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h` and fill Wi-Fi, server address
