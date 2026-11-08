@@ -6,8 +6,10 @@ the migrations. After each test all tables are emptied.
 """
 
 import os
+import tempfile
 
 os.environ["POSTGRES_DB"] = "murmur_test"
+os.environ["RECORDINGS_DIR"] = tempfile.mkdtemp(prefix="murmur-test-recordings-")
 os.environ["BCRYPT_ROUNDS"] = "4"  # fast hashing in tests; production uses the default 12
 
 from pathlib import Path  # noqa: E402

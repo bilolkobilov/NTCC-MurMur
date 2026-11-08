@@ -32,12 +32,17 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/devices.py` — register device + key, assign to doctor, `is_online` (30 s window)
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
+- `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*` for the doctor
+- `backend/app/services/patients.py` — doctor's own patients, consent, patient login (temp password); audits reads
+- `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review; audits reads
+- `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table
+- `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
 - `backend/app/models/` — one file per table (8 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
 - `backend/alembic/versions/` — migrations, numbered `0001_…`
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
 - `backend/tests/test_migrations.py` — tables exist, models match migrations, downgrade/upgrade round trip
-- `backend/tests/helpers.py` — `make_user`, `login` builders shared by tests
+- `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient` builders shared by tests
 
 ## Docs
 
@@ -48,5 +53,5 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Not built yet (Stage 1 adds these; move a line up when it exists)
 
-- doctor, patient, device routers and their services
+- patient and device routers, analyzer
 - scripts/fake_device.py — simulated device

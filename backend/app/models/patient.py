@@ -25,3 +25,7 @@ class Patient(CreatedAtMixin, Base):
 
     doctor: Mapped[User] = relationship(foreign_keys=[doctor_id])
     user: Mapped[User | None] = relationship(foreign_keys=[user_id])
+
+    @property
+    def has_login(self) -> bool:
+        return self.user_id is not None
