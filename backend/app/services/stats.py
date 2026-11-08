@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.models import Device, Exam, ExamStatus, Patient, Role, User
+from app.services.analyzer import get_analyzer
 from app.services.devices import ONLINE_WINDOW
 
 
@@ -19,6 +20,7 @@ def system_stats(db: Session) -> dict:
     def count(statement) -> int:
         return db.scalar(statement) or 0
 
+    analyzer = get_analyzer()
     by_status = dict(db.execute(select(Exam.status, func.count()).group_by(Exam.status)).all())
     return {
         "doctors_total": count(select(func.count()).select_from(User).where(User.role == Role.DOCTOR)),
@@ -32,4 +34,5 @@ def system_stats(db: Session) -> dict:
         ),
         "exams_today": count(select(func.count()).select_from(Exam).where(Exam.created_at >= start_of_day)),
         "exams_by_status": {status.value: by_status.get(status, 0) for status in ExamStatus},
+        "analyzer": {"name": analyzer.name, "version": analyzer.version},
     }

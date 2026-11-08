@@ -37,12 +37,16 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review; audits reads
 - `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
+- `backend/app/api/device.py` — `/api/device/*`: heartbeat, command poll (204 = nothing), WAV upload (202)
+- `backend/app/services/device_flow.py` — heartbeat, take next command (row lock), WAV check + save
+- `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here)
+- `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
 - `backend/app/models/` — one file per table (8 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
 - `backend/alembic/versions/` — migrations, numbered `0001_…`
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
 - `backend/tests/test_migrations.py` — tables exist, models match migrations, downgrade/upgrade round trip
-- `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient` builders shared by tests
+- `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient`, `make_wav` builders shared by tests
 
 ## Docs
 
@@ -53,5 +57,5 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Not built yet (Stage 1 adds these; move a line up when it exists)
 
-- patient and device routers, analyzer
+- patient router (`/api/me`)
 - scripts/fake_device.py — simulated device

@@ -1,5 +1,9 @@
 """Small builders shared by tests. They write straight to the database, so each test sets up only what it needs."""
 
+import io
+import math
+import struct
+import wave
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
@@ -62,3 +66,16 @@ def make_patient(db: Session, doctor: User, full_name: str = "Ali Valiyev", *, c
     db.add(patient)
     db.commit()
     return patient
+
+
+def make_wav(seconds: float = 2.0, sample_rate: int = 4000) -> bytes:
+    """A small mono 16-bit PCM WAV with a 60 Hz tone (heart sounds are low-frequency)."""
+    frames = int(seconds * sample_rate)
+    samples = (int(8000 * math.sin(2 * math.pi * 60 * i / sample_rate)) for i in range(frames))
+    buffer = io.BytesIO()
+    with wave.open(buffer, "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sample_rate)
+        wav.writeframes(b"".join(struct.pack("<h", s) for s in samples))
+    return buffer.getvalue()

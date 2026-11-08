@@ -6,7 +6,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from app.api import admin, auth, doctor
+from app.api import admin, auth, device, doctor
 from app.config import get_settings
 from app.db import get_db
 from app.services.errors import ServiceError
@@ -35,6 +35,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)
     app.include_router(admin.router)
     app.include_router(doctor.router)
+    app.include_router(device.router)
     return app
 
 

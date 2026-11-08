@@ -185,6 +185,7 @@ def test_stats_are_counts(client, admin, db):
     assert stats["exams_by_status"]["waiting"] == 1
     assert stats["exams_by_status"]["failed"] == 1
     assert stats["exams_by_status"]["reviewed"] == 0
+    assert stats["analyzer"] == {"name": "dummy", "version": "0.1.0"}
 
 
 def test_audit_log_lists_newest_first_with_ids_only(client, admin, db):

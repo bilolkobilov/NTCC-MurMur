@@ -58,6 +58,7 @@ class StatsOut(BaseModel):
     devices_online: int
     exams_today: int
     exams_by_status: dict[str, int]
+    analyzer: dict[str, str] = Field(description="AI model currently used for new exams: name and version")
 
 
 class AuditEntryOut(BaseModel):
