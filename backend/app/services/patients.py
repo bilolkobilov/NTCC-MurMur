@@ -37,9 +37,12 @@ def create_patient(
     return patient
 
 
-def _own_patient(db: Session, doctor: User, patient_id: int) -> Patient:
-    """Another doctor's patient looks exactly like a missing one (404), so ids of others are not revealed."""
-    patient = db.get(Patient, patient_id)
+def _own_patient(db: Session, doctor: User, patient_id: int, *, for_update: bool = False) -> Patient:
+    """Another doctor's patient looks exactly like a missing one (404), so ids of others are not revealed.
+
+    `for_update` locks the row until commit, so parallel requests changing the same patient run one after another.
+    """
+    patient = db.get(Patient, patient_id, with_for_update=for_update, populate_existing=for_update)
     if patient is None or patient.doctor_id != doctor.id:
         raise NotFound("patient not found")
     return patient
@@ -72,7 +75,7 @@ def record_consent(db: Session, doctor: User, patient_id: int) -> Patient:
 
 def create_patient_login(db: Session, doctor: User, patient_id: int, username: str) -> tuple[User, str]:
     """Returns the new login and its temporary password (shown once; the patient must change it)."""
-    patient = _own_patient(db, doctor, patient_id)
+    patient = _own_patient(db, doctor, patient_id, for_update=True)
     if patient.user_id is not None:
         raise Conflict("patient already has a login")
     temp_password = generate_temp_password()

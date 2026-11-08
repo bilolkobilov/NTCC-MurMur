@@ -262,3 +262,75 @@ def test_only_doctors_can_use_doctor_endpoints(client, db, method, path, role):
 
     assert client.request(method, path, headers=headers, json={}).status_code == 403
     assert client.request(method, path, json={}).status_code == 401
+
+
+def _run_in_parallel(*jobs):
+    """Start every job at the same moment in its own thread and DB session; return their results/exceptions."""
+    import threading
+
+    from app.db import SessionLocal
+
+    barrier = threading.Barrier(len(jobs))
+    results: list = [None] * len(jobs)
+
+    def run(index, job):
+        with SessionLocal() as session:
+            barrier.wait()
+            try:
+                results[index] = job(session)
+            except Exception as exc:  # collected and asserted by the test
+                results[index] = exc
+
+    threads = [threading.Thread(target=run, args=(i, job)) for i, job in enumerate(jobs)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+    return results
+
+
+def test_parallel_logins_for_one_patient_give_one_login_and_one_409(db, doctor):
+    from app.models import Patient
+    from app.services import patients
+    from app.services.errors import Conflict
+
+    patient = make_patient(db, doctor)
+
+    def create_login(username):
+        return lambda session: patients.create_patient_login(session, session.get(type(doctor), doctor.id), patient.id, username)
+
+    results = _run_in_parallel(create_login("ali.one"), create_login("ali.two"))
+
+    assert sum(isinstance(r, tuple) for r in results) == 1
+    assert sum(isinstance(r, Conflict) for r in results) == 1
+    db.expire_all()
+    assert db.get(Patient, patient.id).user_id is not None
+
+
+def test_parallel_same_username_gives_409_not_500(db, doctor):
+    from app.services import patients
+    from app.services.errors import Conflict
+
+    first = make_patient(db, doctor, "First")
+    second = make_patient(db, doctor, "Second")
+
+    def create_login(patient_id):
+        return lambda session: patients.create_patient_login(session, session.get(type(doctor), doctor.id), patient_id, "same.name")
+
+    results = _run_in_parallel(create_login(first.id), create_login(second.id))
+
+    assert sum(isinstance(r, tuple) for r in results) == 1
+    assert sum(isinstance(r, Conflict) for r in results) == 1, results
+
+
+def test_parallel_same_serial_gives_409_not_500(db):
+    from app.services import devices
+    from app.services.errors import Conflict
+
+    def register(session):
+        return devices.create_device(session, name="A", serial="MM-RACE", doctor_id=None)
+
+    results = _run_in_parallel(register, register)
+
+    assert sum(isinstance(r, tuple) for r in results) == 1
+    assert sum(isinstance(r, Conflict) for r in results) == 1, results

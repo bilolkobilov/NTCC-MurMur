@@ -3,6 +3,7 @@
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Device
@@ -38,7 +39,11 @@ def create_device(db: Session, *, name: str, serial: str, doctor_id: int | None)
     api_key = generate_api_key()
     device = Device(name=name, serial=serial, doctor_id=doctor_id, api_key_hash=hash_api_key(api_key))
     db.add(device)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:  # a parallel request registered the same serial after our check
+        db.rollback()
+        raise Conflict("serial already exists") from None
     return device, api_key
 
 

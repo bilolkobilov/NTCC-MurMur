@@ -1,6 +1,7 @@
 """Creating accounts and changing passwords."""
 
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Role, User
@@ -31,8 +32,13 @@ def create_user(
         full_name=full_name,
         must_change_password=must_change_password,
     )
-    db.add(user)
-    db.flush()
+    # The check above can race with a parallel request; the unique index is the real guard.
+    # A savepoint keeps the caller's other pending changes if the insert is rejected.
+    try:
+        with db.begin_nested():
+            db.add(user)
+    except IntegrityError:
+        raise Conflict("username already exists") from None
     return user
 
 
