@@ -61,8 +61,12 @@ Hierarchy comes from weight + ink tier first, size second. Numbers that change: 
   closes only with "I saved it". Never in URL, logs or toasts.
 - Destructive + irreversible → dialog naming the thing and the consequence; type the patient's name to enable.
 - Brand, codes (AV/PV/TV/MV), usernames, serials: `translate="no"`.
+- Numbers through `Intl.NumberFormat` (70,5 кг in ru/uz); plural text through i18next plural keys (ru needs one/few/many/other).
+- A background refetch error never hides data already on screen; show the error only when there is no data.
+- Language menu: flag + the language's own name, never a flag alone (a flag names a country).
 - Motion: press `scale(.97)`; popovers 150–200 ms ease-out `cubic-bezier(.23,1,.32,1)`; the only orchestrated motion
   is the 20 s recording sweep. All movement off under `prefers-reduced-motion`.
+- `rem` stays 16 px: body text size is set on `<body>`, never on `:root` (a 15 px root shrank every token by 6 %).
 - Hit areas ≥ 44 px on touch; focus ring 2 px `ink-900`, offset 2; skip link to main content.
 - Copy: sentence case; verbs on buttons ("Add patient", not "Submit"); errors = what happened + what to do; no
   "please", no "successfully". Medical words follow `docs/glossary.md`.

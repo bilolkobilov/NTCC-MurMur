@@ -1,39 +1,12 @@
-import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
 
-import { App, AppRoutes, createQueryClient } from "./App";
+import { backend, type Handler, renderAt } from "../test/utils";
+import { App } from "./App";
 import { safeNext } from "./guards";
 import { session } from "./session";
 
-type Handler = (init: RequestInit | undefined) => { status: number; body?: unknown; headers?: Record<string, string> };
-
-/** Fake backend: maps "METHOD /api/path" to a handler. */
-function backend(routes: Record<string, Handler>) {
-  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input, init) => {
-    const key = `${init?.method ?? "GET"} ${String(input).split("?")[0]}`;
-    const handler = routes[key];
-    if (!handler) return new Response(JSON.stringify({ detail: "Not Found" }), { status: 404 });
-    const { status, body, headers } = handler(init);
-    return new Response(body === undefined ? null : JSON.stringify(body), {
-      status,
-      headers: { "Content-Type": "application/json", ...headers },
-    });
-  });
-}
-
 const doctorMe: Handler = () => ({ status: 200, body: { id: 1, username: "dr", role: "doctor", full_name: "Dr Aziz" } });
-
-function renderAt(path: string) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>
-      <MemoryRouter initialEntries={[path]}>
-        <AppRoutes />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
-}
 
 async function fillLogin(username: string, password: string) {
   const user = userEvent.setup();
@@ -55,6 +28,7 @@ test("a protected page sends you to login, and back to that page afterwards", as
       body: { access_token: "t1", token_type: "bearer", role: "doctor", must_change_password: false },
     }),
     "GET /api/auth/me": doctorMe,
+    "GET /api/patients": () => ({ status: 200, body: [] }),
   });
   renderAt("/doctor/patients");
 
@@ -62,7 +36,7 @@ test("a protected page sends you to login, and back to that page afterwards", as
   const user = await fillLogin("dr", "secret-pass");
   await user.click(screen.getByRole("button", { name: "Log in" }));
 
-  expect(await screen.findByRole("heading", { name: "This page is not built yet" })).toBeInTheDocument();
+  expect(await screen.findByRole("heading", { level: 1, name: "Patients" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Patients" })).toHaveAttribute("aria-current", "page");
   expect(session.get()).toEqual({ token: "t1", role: "doctor", mustChangePassword: false });
 });
@@ -207,4 +181,21 @@ test("the skip link jumps to the main content", async () => {
   expect(skip).toHaveAttribute("href", "#main");
   expect(document.getElementById("main")).toBeInTheDocument();
   expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+});
+
+test("language menu: flag + own name, choice applies at once and is remembered", async () => {
+  const i18n = (await import("../i18n")).default;
+  renderAt("/login");
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("button", { name: "Language: English" }));
+  const russian = await screen.findByRole("menuitemradio", { name: "Русский" });
+  expect(screen.getByRole("menuitemradio", { name: "English" })).toHaveAttribute("aria-checked", "true");
+  await user.click(russian);
+
+  expect(await screen.findByRole("heading", { name: "Вход" })).toBeInTheDocument();
+  expect(document.documentElement.lang).toBe("ru");
+  expect(localStorage.getItem("murmur.lang")).toBe("ru");
+  await i18n.changeLanguage("en"); // leave other tests in English
+  localStorage.removeItem("murmur.lang");
 });

@@ -13,20 +13,36 @@ function flatten(tree: Tree, prefix = ""): Record<string, string> {
 }
 
 const locales = { uz: flatten(uz), ru: flatten(ru), en: flatten(en) };
-const placeholders = (text: string) => (text.match(/{{\s*\w+\s*}}/g) ?? []).sort().join(",");
+const placeholders = (text: string) => [...new Set(text.match(/{{\s*\w+\s*}}/g) ?? [])].sort().join(",");
+const PLURAL = /_(zero|one|two|few|many|other)$/;
+const baseKeys = (lang: keyof typeof locales) => [...new Set(Object.keys(locales[lang]).map((k) => k.replace(PLURAL, "")))].sort();
+/** The text a base key has in a language: the plain key, or its "_other" plural form. */
+const textFor = (lang: keyof typeof locales, base: string) => locales[lang][base] ?? locales[lang][`${base}_other`];
 
 describe("translations", () => {
-  test("every language has exactly the same keys", () => {
-    const keys = Object.keys(locales.en).sort();
-    expect(Object.keys(locales.uz).sort()).toEqual(keys);
-    expect(Object.keys(locales.ru).sort()).toEqual(keys);
+  test("every language has the same keys (plural forms aside)", () => {
+    expect(baseKeys("uz")).toEqual(baseKeys("en"));
+    expect(baseKeys("ru")).toEqual(baseKeys("en"));
+  });
+
+  test("every plural key has exactly the forms its language needs (ru: one/few/many/other)", () => {
+    for (const lang of ["uz", "ru", "en"] as const) {
+      const needed = new Intl.PluralRules(lang).resolvedOptions().pluralCategories.sort();
+      const plural = new Set(Object.keys(locales[lang]).filter((k) => PLURAL.test(k)).map((k) => k.replace(PLURAL, "")));
+      for (const base of plural) {
+        const forms = Object.keys(locales[lang]).filter((k) => k.replace(PLURAL, "") === base && PLURAL.test(k));
+        expect(forms.map((k) => k.match(PLURAL)![1]).sort(), `${lang}:${base}`).toEqual(needed);
+      }
+    }
   });
 
   test("no empty text and the same {{placeholders}} in every language", () => {
-    for (const [key, english] of Object.entries(locales.en)) {
+    for (const lang of ["uz", "ru", "en"] as const) {
+      for (const [key, text] of Object.entries(locales[lang])) expect(text.trim(), `${lang}:${key}`).not.toBe("");
+    }
+    for (const base of baseKeys("en")) {
       for (const lang of ["uz", "ru"] as const) {
-        expect(locales[lang][key].trim(), `${lang}:${key}`).not.toBe("");
-        expect(placeholders(locales[lang][key]), `${lang}:${key}`).toBe(placeholders(english));
+        expect(placeholders(textFor(lang, base)), `${lang}:${base}`).toBe(placeholders(textFor("en", base)));
       }
     }
   });

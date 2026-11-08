@@ -46,7 +46,7 @@ export function AppShell() {
       </a>
       <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
-          <Link to="/" className="rounded focus-visible:outline-2 focus-visible:outline-ink-900">
+          <Link to="/" className="flex min-h-11 items-center rounded-control focus-visible:outline-2 focus-visible:outline-ink-900">
             <Logo />
           </Link>
           <nav aria-label={t("nav.main")} className="order-last -mx-1 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
@@ -57,7 +57,7 @@ export function AppShell() {
                 end={item.end}
                 className={({ isActive }) =>
                   clsx(
-                    "flex min-h-10 shrink-0 items-center rounded-control px-3 text-label whitespace-nowrap",
+                    "flex min-h-11 shrink-0 items-center rounded-control px-3 text-label whitespace-nowrap",
                     "focus-visible:outline-2 focus-visible:outline-ink-900",
                     isActive ? "bg-canvas font-semibold text-ink-900" : "text-ink-500 hover:text-ink-900",
                   )
@@ -71,7 +71,7 @@ export function AppShell() {
             <LanguageSwitch />
             <Menu.Root>
               <Menu.Trigger
-                className="flex min-h-10 items-center gap-2 rounded-control px-2 text-left text-label hover:bg-canvas focus-visible:outline-2 focus-visible:outline-ink-900"
+                className="flex min-h-11 items-center gap-2 rounded-control px-2 text-left text-label hover:bg-canvas focus-visible:outline-2 focus-visible:outline-ink-900"
                 aria-label={t("nav.account")}
               >
                 <span

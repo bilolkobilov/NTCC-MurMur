@@ -87,6 +87,12 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
 - `frontend/src/components/layout/` — AppShell (header, role nav, account menu), AuthLayout (login frame)
 - `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found / not built yet)
+- `frontend/src/api/doctor.ts` — doctor endpoints + types (patients, exams list, devices, logins)
+- `frontend/src/lib/format.ts` — dates (Asia/Tashkent), relative time, numbers per language, age
+- `frontend/src/components/ui/` — also Dialog (Radix), SecretDialog (one-time secrets), States (empty/error/skeleton/panel)
+- `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
+- `frontend/src/features/doctor/` — DoctorHome (review queue), `patients/` list, form, patient page; `shared.tsx`
+- `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests
 
 ## Scripts
 

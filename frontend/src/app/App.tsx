@@ -1,8 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { useState } from "react";
+import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router";
 
 import { ApiError } from "../api/client";
 import { AppShell } from "../components/layout/AppShell";
+import { DoctorHome } from "../features/doctor/DoctorHome";
+import { PatientFormPage } from "../features/doctor/patients/PatientFormPage";
+import { PatientPage } from "../features/doctor/patients/PatientPage";
+import { PatientsPage } from "../features/doctor/patients/PatientsPage";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotBuiltPage, NotFoundPage } from "../pages/StatusPages";
@@ -21,60 +26,61 @@ export function createQueryClient(): QueryClient {
   });
 }
 
-export function AppRoutes() {
-  return (
-    <Routes>
-      <Route path="/" element={<HomeRedirect />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route
-        path="/change-password"
-        element={
-          <RequireSession>
-            <ChangePasswordPage />
-          </RequireSession>
-        }
-      />
-      <Route
-        path="/doctor/*"
-        element={
-          <RequireRole role="doctor">
-            <AppShell />
-          </RequireRole>
-        }
-      >
-        <Route path="*" element={<NotBuiltPage />} />
-      </Route>
-      <Route
-        path="/admin/*"
-        element={
-          <RequireRole role="admin">
-            <AppShell />
-          </RequireRole>
-        }
-      >
-        <Route path="*" element={<NotBuiltPage />} />
-      </Route>
-      <Route
-        path="/patient/*"
-        element={
-          <RequireRole role="patient">
-            <AppShell />
-          </RequireRole>
-        }
-      >
-        <Route path="*" element={<NotBuiltPage />} />
-      </Route>
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
-  );
-}
+/** A data router (needed for "unsaved changes" blocking). Pages that later tasks build show NotBuiltPage. */
+export const routes: RouteObject[] = [
+  { path: "/", element: <HomeRedirect /> },
+  { path: "/login", element: <LoginPage /> },
+  {
+    path: "/change-password",
+    element: (
+      <RequireSession>
+        <ChangePasswordPage />
+      </RequireSession>
+    ),
+  },
+  {
+    path: "/doctor",
+    element: (
+      <RequireRole role="doctor">
+        <AppShell />
+      </RequireRole>
+    ),
+    children: [
+      { index: true, element: <DoctorHome /> },
+      { path: "patients", element: <PatientsPage /> },
+      { path: "patients/new", element: <PatientFormPage /> },
+      { path: "patients/:patientId", element: <PatientPage /> },
+      { path: "patients/:patientId/edit", element: <PatientFormPage /> },
+      { path: "*", element: <NotBuiltPage /> },
+    ],
+  },
+  {
+    path: "/admin",
+    element: (
+      <RequireRole role="admin">
+        <AppShell />
+      </RequireRole>
+    ),
+    children: [{ path: "*", element: <NotBuiltPage /> }, { index: true, element: <NotBuiltPage /> }],
+  },
+  {
+    path: "/patient",
+    element: (
+      <RequireRole role="patient">
+        <AppShell />
+      </RequireRole>
+    ),
+    children: [{ path: "*", element: <NotBuiltPage /> }, { index: true, element: <NotBuiltPage /> }],
+  },
+  { path: "*", element: <NotFoundPage /> },
+];
 
-export function App({ queryClient = createQueryClient() }: { queryClient?: QueryClient }) {
+export function App({ queryClient }: { queryClient?: QueryClient }) {
+  const [client] = useState(() => queryClient ?? createQueryClient());
+  const [router] = useState(() => createBrowserRouter(routes));
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+    <QueryClientProvider client={client}>
+      <RouterProvider router={router} />
     </QueryClientProvider>
   );
 }

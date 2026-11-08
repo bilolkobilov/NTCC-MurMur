@@ -81,5 +81,142 @@
     "notFoundTitle": "Page not found",
     "notBuiltTitle": "This page is not built yet",
     "notBuiltBody": "It arrives in a later step of the plan."
+  },
+  "common": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "retry": "Try again",
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "deleting": "Deleting…"
+  },
+  "exam": {
+    "status": {
+      "waiting": "Waiting for device",
+      "recording": "Recording",
+      "uploaded": "Analysing",
+      "analyzed": "Needs your review",
+      "reviewed": "Reviewed",
+      "failed": "Failed"
+    },
+    "point": {
+      "AV": "aortic valve",
+      "PV": "pulmonary valve",
+      "TV": "tricuspid valve",
+      "MV": "mitral valve"
+    }
+  },
+  "device": {
+    "online": "Online",
+    "offline": "Offline"
+  },
+  "doctorHome": {
+    "queueLabel": "Review queue",
+    "queueLoading": "Checking your queue…",
+    "queueNone": "No exams wait for your review",
+    "queueCount_one": "{{count}} exam waits for your review",
+    "queueCount_other": "{{count}} exams wait for your review",
+    "queueEmptyTitle": "All caught up",
+    "queueEmptyBody": "Finished exams appear here until you write your conclusion.",
+    "openPatients": "Open patients",
+    "devices": "Your devices",
+    "noDevices": "No device is assigned to you yet. Ask the administrator to assign one.",
+    "recent": "Recent exams",
+    "noRecent": "No exams yet."
+  },
+  "patients": {
+    "title": "Patients",
+    "add": "Add patient",
+    "searchLabel": "Search patients by name",
+    "searchPlaceholder": "Search by name…",
+    "emptyTitle": "Add your first patient",
+    "emptyBody": "Patients you add appear here. Each patient needs signed consent before an exam.",
+    "noMatchTitle": "No patient matches “{{query}}”",
+    "noMatchBody": "Check the spelling or search by another part of the name.",
+    "clearSearch": "Clear search",
+    "showMore": "Show more",
+    "age_one": "{{count}} year",
+    "age_other": "{{count}} years",
+    "bornIn_one": "born {{year}} ({{count}} year)",
+    "bornIn_other": "born {{year}} ({{count}} years)",
+    "noConsent": "No consent",
+    "hasLogin": "Has login",
+    "deleted": "{{name}} was deleted with all their exams and recordings."
+  },
+  "sex": {
+    "male": "Male",
+    "female": "Female"
+  },
+  "units": {
+    "cm": "{{value}} cm",
+    "kg": "{{value}} kg"
+  },
+  "patientForm": {
+    "newTitle": "Add patient",
+    "editTitle": "Edit {{name}}",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "Ali Valiyev…",
+    "birthYear": "Year of birth",
+    "sex": "Sex",
+    "height": "Height, cm",
+    "weight": "Weight, kg",
+    "optional": "Optional. The AI model uses it if given.",
+    "consent": "Signed consent form received",
+    "consentHint": "An exam cannot start without it. You can also record it later.",
+    "saveChanges": "Save changes",
+    "leaveTitle": "Leave without saving?",
+    "leaveBody": "Your changes to this patient will be lost.",
+    "keepEditing": "Keep editing",
+    "leave": "Leave without saving",
+    "errors": {
+      "fullName": "Enter the patient's full name.",
+      "birthYear": "Enter a 4-digit year, not in the future.",
+      "sex": "Choose the sex.",
+      "height": "Enter height in centimetres, e.g. 172.",
+      "weight": "Enter weight in kilograms, e.g. 70.5."
+    }
+  },
+  "patient": {
+    "startExam": "Start exam",
+    "saved": "Patient saved.",
+    "exams": "Exams",
+    "noExamsTitle": "No exams yet",
+    "noExamsBody": "Start the first exam: pick a device and a listening point.",
+    "noExamsNeedConsent": "Record the patient's consent first, then start an exam.",
+    "consent": "Consent",
+    "consentRecorded": "Signed consent recorded on {{date}}.",
+    "consentMissingTitle": "Consent is not recorded",
+    "consentMissingBody": "An exam can only start after the patient has signed the consent form.",
+    "consentConfirm": "I have the consent form signed by the patient.",
+    "consentTickFirst": "Tick the box to confirm you have the signed form.",
+    "recordConsent": "Record consent",
+    "login": "Patient login",
+    "loginExists": "The patient can log in and see results after your review.",
+    "loginMissing": "Create a login so the patient can see results you have reviewed.",
+    "usernameRule": "3–64 Latin letters, digits, dot, dash or underscore.",
+    "usernameTaken": "This username is already taken. Choose another.",
+    "createLogin": "Create login",
+    "resetPassword": "Give a new one-time password",
+    "resetTitle": "New one-time password for {{name}}?",
+    "resetBody": "Their current password stops working at once and they are logged out everywhere.",
+    "resetConfirm": "Give new password",
+    "secretCreatedTitle": "Login created",
+    "secretResetTitle": "New one-time password",
+    "secretBody": "Give these to {{name}} now. The password is shown only once; at first login they choose their own.",
+    "oneTimePassword": "One-time password",
+    "secretDone": "I gave it to the patient",
+    "details": "Details",
+    "edit": "Edit",
+    "addedOn": "Added",
+    "deleteSection": "Delete patient",
+    "deleteHint": "For a data-deletion request. Removes everything about this patient.",
+    "delete": "Delete patient",
+    "deleteTitle": "Delete {{name}}?",
+    "deleteBody_one": "This removes the profile, the login, {{count}} exam with its recording and AI result. This can't be undone.",
+    "deleteBody_other": "This removes the profile, the login, {{count}} exams with their recordings and AI results. This can't be undone.",
+    "keep": "Keep patient",
+    "deleteTypeName": "Type “{{name}}” to confirm",
+    "deleteTypeHint": "The delete button unlocks when the name matches."
   }
 }

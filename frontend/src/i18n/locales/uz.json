@@ -81,5 +81,142 @@
     "notFoundTitle": "Sahifa topilmadi",
     "notBuiltTitle": "Bu sahifa hali tayyor emas",
     "notBuiltBody": "U rejaning keyingi bosqichlaridan birida qoʻshiladi."
+  },
+  "common": {
+    "copy": "Nusxalash",
+    "copied": "Nusxalandi",
+    "retry": "Qayta urinish",
+    "loading": "Yuklanmoqda…",
+    "cancel": "Bekor qilish",
+    "saving": "Saqlanmoqda…",
+    "deleting": "Oʻchirilmoqda…"
+  },
+  "exam": {
+    "status": {
+      "waiting": "Qurilma kutilmoqda",
+      "recording": "Yozilmoqda",
+      "uploaded": "Tahlil qilinmoqda",
+      "analyzed": "Xulosangiz kutilmoqda",
+      "reviewed": "Xulosa yozilgan",
+      "failed": "Bajarilmadi"
+    },
+    "point": {
+      "AV": "aortal qopqoq",
+      "PV": "oʻpka arteriyasi qopqogʻi",
+      "TV": "uch tavaqali qopqoq",
+      "MV": "mitral qopqoq"
+    }
+  },
+  "device": {
+    "online": "Ulangan",
+    "offline": "Ulanmagan"
+  },
+  "doctorHome": {
+    "queueLabel": "Xulosa navbati",
+    "queueLoading": "Navbat tekshirilmoqda…",
+    "queueNone": "Xulosangizni kutayotgan tekshiruv yoʻq",
+    "queueCount_one": "{{count}} ta tekshiruv xulosangizni kutmoqda",
+    "queueCount_other": "{{count}} ta tekshiruv xulosangizni kutmoqda",
+    "queueEmptyTitle": "Hamma xulosalar yozilgan",
+    "queueEmptyBody": "Tugagan tekshiruvlar siz xulosa yozguningizcha shu yerda turadi.",
+    "openPatients": "Bemorlarni ochish",
+    "devices": "Qurilmalaringiz",
+    "noDevices": "Sizga hali qurilma biriktirilmagan. Administratordan soʻrang.",
+    "recent": "Soʻnggi tekshiruvlar",
+    "noRecent": "Hali tekshiruv yoʻq."
+  },
+  "patients": {
+    "title": "Bemorlar",
+    "add": "Bemor qoʻshish",
+    "searchLabel": "Bemorni ismi boʻyicha qidirish",
+    "searchPlaceholder": "Ism boʻyicha qidirish…",
+    "emptyTitle": "Birinchi bemorni qoʻshing",
+    "emptyBody": "Qoʻshgan bemorlaringiz shu yerda chiqadi. Tekshiruvdan oldin yozma rozilik kerak.",
+    "noMatchTitle": "“{{query}}” boʻyicha bemor topilmadi",
+    "noMatchBody": "Imloni tekshiring yoki ismning boshqa qismi boʻyicha qidiring.",
+    "clearSearch": "Qidiruvni tozalash",
+    "showMore": "Yana koʻrsatish",
+    "age_one": "{{count}} yosh",
+    "age_other": "{{count}} yosh",
+    "bornIn_one": "{{year}}-yilda tugʻilgan ({{count}} yosh)",
+    "bornIn_other": "{{year}}-yilda tugʻilgan ({{count}} yosh)",
+    "noConsent": "Rozilik yoʻq",
+    "hasLogin": "Logini bor",
+    "deleted": "{{name}} barcha tekshiruv va yozuvlari bilan oʻchirildi."
+  },
+  "sex": {
+    "male": "Erkak",
+    "female": "Ayol"
+  },
+  "units": {
+    "cm": "{{value}} sm",
+    "kg": "{{value}} kg"
+  },
+  "patientForm": {
+    "newTitle": "Yangi bemor",
+    "editTitle": "Tahrirlash: {{name}}",
+    "fullName": "Ism-familiya",
+    "fullNamePlaceholder": "Ali Valiyev…",
+    "birthYear": "Tugʻilgan yili",
+    "sex": "Jinsi",
+    "height": "Boʻyi, sm",
+    "weight": "Vazni, kg",
+    "optional": "Ixtiyoriy. Kiritilsa, AI model hisobga oladi.",
+    "consent": "Imzolangan rozilik varaqasi olindi",
+    "consentHint": "Usiz tekshiruv boshlanmaydi. Keyinroq ham belgilash mumkin.",
+    "saveChanges": "Oʻzgarishlarni saqlash",
+    "leaveTitle": "Saqlamasdan chiqasizmi?",
+    "leaveBody": "Bemor maʼlumotlaridagi oʻzgarishlar yoʻqoladi.",
+    "keepEditing": "Tahrirlashda davom etish",
+    "leave": "Saqlamasdan chiqish",
+    "errors": {
+      "fullName": "Bemorning ism-familiyasini kiriting.",
+      "birthYear": "4 xonali yil kiriting, kelajakdagi emas.",
+      "sex": "Jinsini tanlang.",
+      "height": "Boʻyini santimetrda kiriting, masalan 172.",
+      "weight": "Vaznini kilogrammda kiriting, masalan 70,5."
+    }
+  },
+  "patient": {
+    "startExam": "Tekshiruvni boshlash",
+    "saved": "Bemor maʼlumotlari saqlandi.",
+    "exams": "Tekshiruvlar",
+    "noExamsTitle": "Hali tekshiruv yoʻq",
+    "noExamsBody": "Birinchi tekshiruvni boshlang: qurilma va eshitish nuqtasini tanlang.",
+    "noExamsNeedConsent": "Avval bemor roziligini belgilang, keyin tekshiruvni boshlang.",
+    "consent": "Rozilik",
+    "consentRecorded": "Imzolangan rozilik {{date}} da belgilangan.",
+    "consentMissingTitle": "Rozilik belgilanmagan",
+    "consentMissingBody": "Tekshiruv faqat bemor rozilik varaqasini imzolagandan keyin boshlanadi.",
+    "consentConfirm": "Menda bemor imzolagan rozilik varaqasi bor.",
+    "consentTickFirst": "Imzolangan varaqa borligini tasdiqlash uchun belgini qoʻying.",
+    "recordConsent": "Rozilikni belgilash",
+    "login": "Bemor logini",
+    "loginExists": "Bemor tizimga kirib, siz xulosa yozgandan keyin natijalarni koʻra oladi.",
+    "loginMissing": "Bemor siz koʻrib chiqqan natijalarni koʻrishi uchun login yarating.",
+    "usernameRule": "3–64 ta lotin harfi, raqam, nuqta, chiziqcha yoki pastki chiziq.",
+    "usernameTaken": "Bu foydalanuvchi nomi band. Boshqasini tanlang.",
+    "createLogin": "Login yaratish",
+    "resetPassword": "Yangi bir martalik parol berish",
+    "resetTitle": "{{name}} uchun yangi bir martalik parol?",
+    "resetBody": "Joriy parol darhol ishlamay qoladi va bemor barcha qurilmalardan chiqariladi.",
+    "resetConfirm": "Yangi parol berish",
+    "secretCreatedTitle": "Login yaratildi",
+    "secretResetTitle": "Yangi bir martalik parol",
+    "secretBody": "Bularni hozir {{name}}ga bering. Parol faqat bir marta koʻrsatiladi; birinchi kirishda bemor oʻz parolini qoʻyadi.",
+    "oneTimePassword": "Bir martalik parol",
+    "secretDone": "Bemorga berdim",
+    "details": "Maʼlumotlar",
+    "edit": "Tahrirlash",
+    "addedOn": "Qoʻshilgan",
+    "deleteSection": "Bemorni oʻchirish",
+    "deleteHint": "Maʼlumotni oʻchirish soʻrovi uchun. Bemorga oid hamma narsani oʻchiradi.",
+    "delete": "Bemorni oʻchirish",
+    "deleteTitle": "{{name}} oʻchirilsinmi?",
+    "deleteBody_one": "Profil, login va {{count}} ta tekshiruv yozuvi hamda AI natijasi bilan oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "deleteBody_other": "Profil, login va {{count}} ta tekshiruv yozuvlari hamda AI natijalari bilan oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "keep": "Bemorni qoldirish",
+    "deleteTypeName": "Tasdiqlash uchun “{{name}}” deb yozing",
+    "deleteTypeHint": "Ism mos kelganda oʻchirish tugmasi yoqiladi."
   }
 }

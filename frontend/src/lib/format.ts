@@ -39,3 +39,8 @@ export function formatRelative(iso: string, language: string, now: Date = new Da
 export function ageFromBirthYear(birthYear: number, now: Date = new Date()): number {
   return now.getFullYear() - birthYear;
 }
+
+/** 70.5 → "70.5" (en) / "70,5" (ru, uz). Height/weight: at most one decimal. */
+export function formatNumber(value: number, language: string): string {
+  return new Intl.NumberFormat(locale(language), { maximumFractionDigits: 1 }).format(value);
+}
