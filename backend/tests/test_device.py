@@ -307,3 +307,26 @@ def test_size_limit_applies_only_to_uploads(client, key, monkeypatch):
     monkeypatch.setattr(get_settings(), "max_upload_mb", 0)
 
     assert client.post("/api/device/heartbeat", headers=key, json={"wifi_rssi": -50}).status_code == 200
+
+
+def test_result_that_cannot_be_stored_marks_exam_failed(client, db, key, exam, monkeypatch):
+    """A model answer that does not fit the table must not leave the exam stuck in 'uploaded'."""
+    from app.services.analyzer import AnalysisResult
+
+    class TooChattyAnalyzer:
+        name, version = "chatty", "1"
+
+        def analyze(self, data):
+            return AnalysisResult(quality="good", label="x" * 200, score=0.9)  # label column is 50 chars
+
+    monkeypatch.setattr(analysis.analyzer_module, "get_analyzer", lambda: TooChattyAnalyzer())
+    client.get("/api/device/command", headers=key)
+
+    assert upload(client, key, exam.id).status_code == 202
+
+    db.expire_all()
+    failed = db.get(Exam, exam.id)
+    assert failed.status == ExamStatus.FAILED
+    assert failed.failure_reason == "could not store analysis result: DataError"
+    assert db.scalar(select(AIResult)) is None
+    assert db.scalar(select(Recording).where(Recording.exam_id == exam.id)) is not None, "the recording is kept"
