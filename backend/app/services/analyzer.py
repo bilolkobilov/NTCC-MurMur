@@ -20,8 +20,18 @@ class AnalysisInput:
 @dataclass(frozen=True)
 class AnalysisResult:
     quality: str  # "good" / "bad" / "unknown"
-    label: str  # e.g. "murmur" / "absent" / "not_analyzed"
+    label: str  # "murmur" / "absent" = an answer; anything else (e.g. "not_analyzed") = no answer
     score: float | None  # model confidence 0..1, if the model gives one
+
+
+# The answer vocabulary the website understands (frontend `aiOutcome()` mirrors it). A real model maps its output
+# to these labels. Quality "bad" means the recording was too poor to judge, whatever the label says.
+ANSWER_LABELS = frozenset({"murmur", "absent"})
+
+
+def gave_answer(quality: str, label: str) -> bool:
+    """Did the AI say murmur / no murmur? Only then is the doctor asked whether they agree with it."""
+    return quality != "bad" and label in ANSWER_LABELS
 
 
 class Analyzer(Protocol):

@@ -7,7 +7,7 @@ waiting:   doctor created the exam; a `record` command waits for the device
 recording: the device picked up the command
 uploaded:  the WAV arrived; analysis runs in the background
 analyzed:  the analyzer stored an AI result
-reviewed:  the doctor added a note and agreed/disagreed with the AI (final; the patient can see it now)
+reviewed:  the doctor added a note (+ agree/disagree, if the AI gave an answer); final, the patient sees it
 failed:    something went wrong, or the doctor cancelled a waiting/recording exam; `failure_reason` says what
 """
 
@@ -18,6 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.models import AuscultationPoint, CommandStatus, Device, Exam, ExamStatus, Patient, User
 from app.models.device_command import DeviceCommand
+from app.services.analyzer import gave_answer
 from app.services.errors import BadRequest, Conflict
 
 RECORD_SECONDS = 20
@@ -90,7 +91,15 @@ def cancel(db: Session, exam: Exam) -> Exam:
     return exam
 
 
-def review(db: Session, exam: Exam, note: str, agrees_with_ai: bool) -> Exam:
+def review(db: Session, exam: Exam, note: str, agrees_with_ai: bool | None) -> Exam:
+    """`agrees_with_ai` is required when the AI gave an answer, and must be empty when it gave none (owner)."""
+    if exam.status == ExamStatus.ANALYZED:  # other statuses get their 409 from _move below
+        ai = exam.ai_result
+        answered = ai is not None and gave_answer(ai.quality, ai.label)
+        if answered and agrees_with_ai is None:
+            raise BadRequest("say whether you agree with the AI")
+        if not answered and agrees_with_ai is not None:
+            raise BadRequest("the AI gave no answer to agree with")
     _move(exam, ExamStatus.REVIEWED)
     exam.doctor_note = note
     exam.doctor_agrees_with_ai = agrees_with_ai

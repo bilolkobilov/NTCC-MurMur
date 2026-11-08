@@ -63,6 +63,8 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 
 Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`: cancelled, analysis error, or
 a "re-record" quality problem — too short, almost silent, clipped, or movement).
+Review body: `{"note": "...", "agrees_with_ai": true|false}` when the AI answered (label `murmur` / `absent`);
+without `agrees_with_ai` when it gave no answer (`not_analyzed`, or quality `bad`).
 
 ## Project docs
 

@@ -197,8 +197,16 @@ def test_doctor_reads_own_exam_only_and_reads_are_audited(client, db, headers, d
     assert audit_actions(db) == [("exam.read", mine.id)]
 
 
+def add_ai_result(db, exam, label="murmur", quality="good"):
+    from app.models import AIResult
+
+    db.add(AIResult(exam_id=exam.id, model_name="m", model_version="1", quality=quality, label=label, score=0.9))
+    db.commit()
+
+
 def test_review_only_after_analysis(client, db, headers, doctor):
     exam = make_exam(db, doctor, ExamStatus.UPLOADED)
+    add_ai_result(db, exam)
     body = {"note": "Systolic murmur, refer to cardiology", "agrees_with_ai": True}
 
     early = client.patch(f"/api/exams/{exam.id}/review", headers=headers, json=body)
@@ -227,6 +235,33 @@ def test_review_needs_a_note_and_own_exam(client, db, headers, doctor, other_doc
 
     assert empty_note.status_code == 422
     assert other.status_code == 404
+
+
+@pytest.mark.parametrize(
+    ("label", "quality", "agrees", "expected"),
+    [
+        ("murmur", "good", None, 400),  # the AI answered: the doctor must say whether they agree
+        ("absent", "good", False, 200),
+        ("not_analyzed", "unknown", True, 400),  # no answer: nothing to agree with
+        ("not_analyzed", "unknown", None, 200),
+        ("murmur", "bad", None, 200),  # too poor to judge = no answer
+        (None, None, None, 200),  # analyzed without an AI row (e.g. stored result lost): no answer
+    ],
+)
+def test_review_asks_for_agreement_only_if_ai_answered(client, db, headers, doctor, label, quality, agrees, expected):
+    exam = make_exam(db, doctor, ExamStatus.ANALYZED)
+    if label:
+        add_ai_result(db, exam, label, quality)
+    body = {"note": "ok"} if agrees is None else {"note": "ok", "agrees_with_ai": agrees}
+
+    response = client.patch(f"/api/exams/{exam.id}/review", headers=headers, json=body)
+
+    assert response.status_code == expected
+    if expected == 200:
+        assert response.json()["doctor_agrees_with_ai"] is agrees
+    else:
+        db.refresh(exam)
+        assert exam.status == ExamStatus.ANALYZED
 
 
 def test_exam_audio(client, db, headers, doctor):
@@ -554,7 +589,7 @@ def test_every_doctor_action_that_returns_patient_data_is_audited(client, db, he
     client.post(f"/api/exams/{first['id']}/cancel", headers=headers)
     db.get(Exam, second["id"]).status = ExamStatus.ANALYZED
     db.commit()
-    client.patch(f"/api/exams/{second['id']}/review", headers=headers, json={"note": "ok", "agrees_with_ai": True})
+    client.patch(f"/api/exams/{second['id']}/review", headers=headers, json={"note": "ok"})
 
     assert audit_actions(db) == [
         ("patient.create", created["id"]),

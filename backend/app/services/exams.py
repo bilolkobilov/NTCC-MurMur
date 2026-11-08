@@ -54,7 +54,7 @@ def exam_audio_path(db: Session, doctor: User, exam_id: int) -> Path:
     return path
 
 
-def review_exam(db: Session, doctor: User, exam_id: int, note: str, agrees_with_ai: bool) -> Exam:
+def review_exam(db: Session, doctor: User, exam_id: int, note: str, agrees_with_ai: bool | None) -> Exam:
     exam = _own_exam(db, doctor, exam_id, for_update=True)  # a second, parallel review gets 409
     exam_flow.review(db, exam, note, agrees_with_ai)
     audit.record(db, doctor, "exam.review", "exam", exam.id)

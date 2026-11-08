@@ -63,7 +63,7 @@ class ExamCreate(BaseModel):
 
 class ExamReview(BaseModel):
     note: str = Field(min_length=1, max_length=5000)
-    agrees_with_ai: bool
+    agrees_with_ai: bool | None = None  # empty when the AI gave no answer (services/exam_flow.review)
 
 
 class RecordingOut(BaseModel):

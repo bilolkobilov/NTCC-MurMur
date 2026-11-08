@@ -89,7 +89,7 @@ def test_full_exam_flow(client, db):
     reviewed = client.patch(
         f"/api/exams/{exam['id']}/review",
         headers=doctor,
-        json={"note": "Normal heart sounds. No follow-up needed.", "agrees_with_ai": False},
+        json={"note": "Normal heart sounds. No follow-up needed."},  # dummy AI gave no answer: nothing to agree with
     ).json()
     assert reviewed["status"] == "reviewed"
 
