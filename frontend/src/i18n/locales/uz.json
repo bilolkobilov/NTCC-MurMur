@@ -255,6 +255,12 @@
       "PV": "toʻsh suyagidan chapda, 2-qovurgʻalararo oraliq",
       "TV": "toʻsh suyagining pastki chap chekkasi, 4-oraliq",
       "MV": "choʻqqi: chap oʻrta-oʻmrov chizigʻi, 5-oraliq"
+    },
+    "patientWhere": {
+      "AV": "koʻkrakning yuqori qismi, toʻsh suyagining oʻng tomoni",
+      "PV": "koʻkrakning yuqori qismi, toʻsh suyagining chap tomoni",
+      "TV": "toʻsh suyagining pastki uchi, chap cheti",
+      "MV": "koʻkrakning chap tomoni, koʻkrak soʻrgʻichidan pastroq"
     }
   },
   "live": {
@@ -345,5 +351,25 @@
     "youAgreed": "Siz AI bilan rozi boʻldingiz",
     "youDisagreed": "Siz AI bilan rozi boʻlmadingiz",
     "patientSees": "Bemor bu xulosani oʻz sahifasida koʻradi."
+  },
+  "patientHome": {
+    "title": "Natijalaringiz",
+    "intro": "Shifokoringiz {{doctor}} har bir natijani koʻrib chiqqach, shu yerda eʼlon qiladi.",
+    "emptyTitle": "Hozircha natija yoʻq",
+    "emptyBody": "Shifokoringiz tekshiruvni koʻrib chiqqach, xulosa shu yerda paydo boʻladi.",
+    "point": "Tinglangan nuqta: {{point}}",
+    "disclaimer": "MurMur — tadqiqot prototipi, tibbiy buyum emas. Natija boʻyicha savollaringizni shifokoringizga bering."
+  },
+  "myResult": {
+    "back": "Natijalaringiz",
+    "title": "{{date}} natijasi",
+    "reviewedBy": "Koʻrib chiqdi: {{doctor}}, {{date}}",
+    "conclusion": "Shifokor xulosasi",
+    "where": "Shifokor qayerni tingladi",
+    "mapLabel": "Koʻkrak qafasi rasmi: shifokor {{point}} nuqtasini tingladi",
+    "orientation": "Rasm shifokor sizni koʻrgandek chizilgan: oʻng tomoningiz {{right}} bilan belgilangan.",
+    "notFoundTitle": "Bu natija mavjud emas",
+    "notFoundBody": "Ehtimol, u oʻchirilgan. Natijalar roʻyxatida shifokoringiz eʼlon qilgan hamma narsa bor.",
+    "questions": "Natija boʻyicha savolingiz bormi? Shifokoringizdan soʻrang."
   }
 }

@@ -255,6 +255,12 @@
       "PV": "2nd intercostal space, left of the sternum",
       "TV": "lower left edge of the sternum, 4th space",
       "MV": "apex: 5th space, left mid-clavicular line"
+    },
+    "patientWhere": {
+      "AV": "upper chest, just right of the breastbone",
+      "PV": "upper chest, just left of the breastbone",
+      "TV": "lower end of the breastbone, on its left edge",
+      "MV": "left side of the chest, below the nipple"
     }
   },
   "live": {
@@ -345,5 +351,25 @@
     "youAgreed": "You agreed with the AI",
     "youDisagreed": "You disagreed with the AI",
     "patientSees": "The patient can see this conclusion in their account."
+  },
+  "patientHome": {
+    "title": "Your results",
+    "intro": "Your doctor, {{doctor}}, publishes each result here after reviewing it.",
+    "emptyTitle": "No results yet",
+    "emptyBody": "When your doctor has reviewed an exam, the conclusion appears here.",
+    "point": "Listening point: {{point}}",
+    "disclaimer": "MurMur is a research prototype, not a medical device. If you have questions about a result, ask your doctor."
+  },
+  "myResult": {
+    "back": "Your results",
+    "title": "Result of {{date}}",
+    "reviewedBy": "Reviewed by {{doctor}}, {{date}}",
+    "conclusion": "Your doctor's conclusion",
+    "where": "Where the doctor listened",
+    "mapLabel": "Chest diagram: the doctor listened at the {{point}} point",
+    "orientation": "Drawn as your doctor sees you: your right side is marked {{right}}.",
+    "notFoundTitle": "This result is not available",
+    "notFoundBody": "It may have been removed. Your results list shows everything your doctor has published.",
+    "questions": "Questions about this result? Ask your doctor."
   }
 }

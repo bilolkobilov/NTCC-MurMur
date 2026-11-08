@@ -24,6 +24,8 @@ const NewExamPage = lazy(() =>
   import("../features/doctor/exam/NewExamPage").then((m) => ({ default: m.NewExamPage })),
 );
 const ExamPage = lazy(() => import("../features/doctor/exam/ExamPage").then((m) => ({ default: m.ExamPage })));
+const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
+const ResultPage = lazy(() => import("../features/patient/ResultPage").then((m) => ({ default: m.ResultPage })));
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -84,7 +86,11 @@ export const routes: RouteObject[] = [
         <AppShell />
       </RequireRole>
     ),
-    children: [{ path: "*", element: <NotBuiltPage /> }, { index: true, element: <NotBuiltPage /> }],
+    children: [
+      { index: true, element: <PatientHome /> },
+      { path: "results/:examId", element: <ResultPage /> },
+      { path: "*", element: <NotFoundPage /> },
+    ],
   },
   { path: "*", element: <NotFoundPage /> },
 ];
