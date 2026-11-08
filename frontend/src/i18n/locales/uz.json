@@ -309,7 +309,7 @@
     "zoom_paper": "Yaqindan",
     "spectrogram": "Spektrogramma",
     "aiTitle": "AI fikri",
-    "confidence": "Ishonch {{percent}} %",
+    "confidence": "Shovqin ehtimoli {{percent}} %",
     "outcome": {
       "murmur": "Shovqin aniqlandi",
       "clear": "Shovqin aniqlanmadi",
@@ -318,7 +318,7 @@
       "other": "AI notanish javob berdi: «{{label}}»"
     },
     "outcomeBody": {
-      "murmur": "Rozi yoki rozi emasligingizni aytishdan oldin yozuvni oʻzingiz tinglang.",
+      "murmur": "AI shovqinni oʻtkazib yubormaslik uchun uni past ehtimolda ham belgilaydi. Rozi yoki rozi emasligingizni aytishdan oldin yozuvni oʻzingiz tinglang.",
       "clear": "Rozi yoki rozi emasligingizni aytishdan oldin yozuvni oʻzingiz tinglang.",
       "poorQuality": "AI bu yozuvni baholamadi. Oʻzingiz tinglang yoki qayta yozing.",
       "unavailable": "AI modeli hali ulanmagan. Xulosa — sizning tinglashingiz boʻyicha.",

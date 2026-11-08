@@ -22,7 +22,7 @@ choice, ask a doctor before the demo. Change a term here first, then in `fronten
 | re-record | перезаписать | qayta yozish | high | failed exam | plain wording |
 | murmur detected / no murmur detected | обнаружен шум / шум не обнаружен | shovqin aniqlandi / shovqin aniqlanmadi | high | AI card | follows *yurak shovqini* [3] |
 | spectrogram | спектрограмма | spektrogramma | high | recording | loanword, same in all three |
-| confidence (of the AI) | уверенность | ishonch | medium | AI card | plain word; a doctor may prefer *ehtimollik* |
+| murmur probability (AI score) | вероятность шума | shovqin ehtimoli | high | AI card | always P(murmur); replaced "confidence" (1.1.0 flags from a low probability) |
 | screening aid, not a diagnosis | средство скрининга, не диагноз | skrining vositasi, tashxis emas | high | AI card | *tashxis* = diagnosis |
 | clipped (too loud) | перегрузка (слишком громко) | haddan tashqari baland | medium | quality reasons | plain wording rather than a technical term |
 

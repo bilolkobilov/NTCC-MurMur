@@ -309,7 +309,7 @@
     "zoom_paper": "Close-up",
     "spectrogram": "Spectrogram",
     "aiTitle": "AI opinion",
-    "confidence": "Confidence {{percent}} %",
+    "confidence": "Murmur probability {{percent}} %",
     "outcome": {
       "murmur": "Murmur detected",
       "clear": "No murmur detected",
@@ -318,7 +318,7 @@
       "other": "Unknown AI answer: “{{label}}”"
     },
     "outcomeBody": {
-      "murmur": "Listen to the recording yourself before you agree or disagree.",
+      "murmur": "The AI flags a recording even at a low murmur probability, so that fewer murmurs are missed. Listen to the recording yourself before you agree or disagree.",
       "clear": "Listen to the recording yourself before you agree or disagree.",
       "poorQuality": "The AI did not judge this recording. Listen yourself, or record again.",
       "unavailable": "The AI model is not connected yet. Your own listening is the conclusion.",

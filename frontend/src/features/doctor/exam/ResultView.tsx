@@ -60,9 +60,9 @@ function AiCard({ outcome, patientId }: { outcome: AiOutcome; patientId: number 
           <OutcomeMark kind={outcome.kind} />
           {t(`result.outcome.${outcome.kind}`, outcome.kind === "other" ? { label: outcome.label } : {})}
         </p>
-        {(outcome.kind === "murmur" || outcome.kind === "clear") && outcome.confidence !== null && (
+        {(outcome.kind === "murmur" || outcome.kind === "clear") && outcome.murmurProbability !== null && (
           <p className="font-mono text-label text-ink-700 tabular-nums">
-            {t("result.confidence", { percent: formatNumber(Math.round(outcome.confidence * 100), i18n.language) })}
+            {t("result.confidence", { percent: formatNumber(Math.round(outcome.murmurProbability * 100), i18n.language) })}
           </p>
         )}
         <p className="text-ink-700">{t(`result.outcomeBody.${outcome.kind}`)}</p>

@@ -9,7 +9,7 @@
 import type { AIResult } from "../../../api/doctor";
 
 export type AiOutcome =
-  | { kind: "murmur" | "clear"; confidence: number | null; model: string }
+  | { kind: "murmur" | "clear"; murmurProbability: number | null; model: string }
   | { kind: "poorQuality"; model: string }
   | { kind: "unavailable"; model: string | null }
   | { kind: "other"; label: string; model: string };
@@ -18,8 +18,8 @@ export function aiOutcome(ai: AIResult | null): AiOutcome {
   if (!ai) return { kind: "unavailable", model: null };
   const model = `${ai.model_name} ${ai.model_version}`;
   if (ai.quality === "bad") return { kind: "poorQuality", model };
-  if (ai.label === "murmur") return { kind: "murmur", confidence: ai.score, model };
-  if (ai.label === "absent") return { kind: "clear", confidence: ai.score, model };
+  if (ai.label === "murmur") return { kind: "murmur", murmurProbability: ai.score, model };
+  if (ai.label === "absent") return { kind: "clear", murmurProbability: ai.score, model };
   if (ai.label === "not_analyzed") return { kind: "unavailable", model };
   return { kind: "other", label: ai.label, model };
 }

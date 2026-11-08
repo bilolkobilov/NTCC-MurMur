@@ -167,7 +167,7 @@ describe("result and review", () => {
     const user = userEvent.setup();
 
     expect(await screen.findByText("Murmur detected")).toBeInTheDocument();
-    expect(screen.getByText("Confidence 87 %")).toBeInTheDocument();
+    expect(screen.getByText("Murmur probability 87 %")).toBeInTheDocument();
     expect(screen.getByText("cnn 1.2")).toBeInTheDocument();
     expect(screen.getByText(/not a diagnosis/)).toBeInTheDocument();
 
