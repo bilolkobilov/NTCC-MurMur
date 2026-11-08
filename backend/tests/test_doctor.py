@@ -563,3 +563,49 @@ def test_every_doctor_action_that_returns_patient_data_is_audited(client, db, he
         ("exam.cancel", first["id"]),
         ("exam.review", second["id"]),
     ]
+
+
+def test_start_exam_while_patient_is_being_deleted_gives_404(db, doctor, monkeypatch):
+    import threading
+    import time
+
+    from app.db import SessionLocal
+    from app.services import audit, exams, patients
+    from app.services.errors import NotFound
+
+    patient = make_patient(db, doctor)
+    device, _ = make_device(db, "MM-RACE", doctor)
+    real_record = audit.record
+
+    def slow_record(session, user, action, *args):
+        if action == "patient.delete":  # the delete holds the patient lock and has not committed yet
+            time.sleep(0.6)
+        real_record(session, user, action, *args)
+
+    monkeypatch.setattr(audit, "record", slow_record)
+    outcome: dict = {}
+
+    def delete():
+        with SessionLocal() as session:
+            patients.delete_patient(session, session.get(type(doctor), doctor.id), patient.id)
+
+    def start():
+        with SessionLocal() as session:
+            try:
+                exams.start_exam(session, session.get(type(doctor), doctor.id), patient.id, device.id, "MV")
+                outcome["start"] = "created"
+            except NotFound:
+                outcome["start"] = "404"
+            except Exception as exc:
+                outcome["start"] = repr(exc)
+
+    deleter = threading.Thread(target=delete)
+    deleter.start()
+    time.sleep(0.2)
+    starter = threading.Thread(target=start)
+    starter.start()
+    deleter.join(10)
+    starter.join(10)
+
+    assert outcome["start"] == "404"
+    assert db.scalar(select(Exam)) is None

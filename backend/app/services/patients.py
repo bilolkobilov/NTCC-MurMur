@@ -65,8 +65,15 @@ def read_patient(db: Session, doctor: User, patient_id: int) -> Patient:
 
 
 def get_patient_for_exam(db: Session, doctor: User, patient_id: int) -> Patient:
-    """Ownership check without an audit row (creating an exam is a write, not a read)."""
-    return _own_patient(db, doctor, patient_id)
+    """Ownership check for a new exam, holding a share lock on the patient until the exam is committed.
+
+    If the patient is being deleted at the same moment, we wait for the delete and then see 404 — instead of
+    inserting an exam for a patient that no longer exists (500). Parallel exam starts do not block each other.
+    """
+    patient = db.get(Patient, patient_id, with_for_update={"read": True}, populate_existing=True)
+    if patient is None or patient.doctor_id != doctor.id:
+        raise NotFound("patient not found")
+    return patient
 
 
 def record_consent(db: Session, doctor: User, patient_id: int) -> Patient:
