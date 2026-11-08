@@ -1,0 +1,83 @@
+# MurMur — project rules for Claude Code
+
+## What this is
+NTCC university project (B.Tech CSE): a portable heart-sound screening device (ESP32-S3 + I2S microphone)
+that records ~20 s of heart sound, sends it to our backend, where a local AI model analyzes it, and doctors
+see results on a website. Research prototype and screening aid, NOT a medical device.
+
+Full plan (in Uzbek): `docs/PLAN.md`. If this file and PLAN.md disagree, this file wins.
+
+## Stack (fixed — ask before changing anything here)
+- Python 3.14 (owner's installed Python, run via `py`), FastAPI, SQLAlchemy 2.0 (sync, psycopg 3), Alembic, Pydantic v2 + pydantic-settings
+- Auth: PyJWT access tokens, bcrypt password hashing
+- Database: PostgreSQL 16 via Docker Compose, from day one. No SQLite anywhere, including tests.
+- Tests: pytest + FastAPI TestClient against a separate Postgres test database (`murmur_test`)
+- Package manager: uv
+- Frontend (React + Vite) and firmware (Arduino, ESP32-S3) are NOT part of the current stage.
+
+## Repo layout
+```
+backend/
+  app/
+    main.py, config.py, db.py, security.py, cli.py
+    models/      # SQLAlchemy models
+    schemas/     # Pydantic schemas
+    api/         # routers: auth, admin, doctor, patient, device
+    services/    # business logic, analyzer interface
+  alembic/
+  tests/
+scripts/fake_device.py   # simulated device (no hardware yet)
+samples/              # sample heart-sound WAVs for manual tests, gitignored
+storage/recordings/   # WAV files, gitignored
+docs/PLAN.md
+docker-compose.yml
+.env.example
+```
+
+## Roles and access rules (must be enforced AND covered by tests)
+- **No public signup.** The first admin is created with a CLI command using values from env.
+- Everyone logs in with a `username` (not email). Any logged-in user can change their own password.
+- **admin**: creates and blocks doctors; manages devices (on create, generate an API key, show it once,
+  store only its hash; assign device to a doctor); sees system stats and the audit log.
+  Admin does NOT see patients' medical data (recordings, AI results, doctor notes), only counts.
+- **doctor**: created by admin, who sets the password (no forced change). Creates patients and a login for each patient (temporary password shown
+  once; patient must change it on first login). Sees ONLY their own patients. Creates exams on devices
+  assigned to them, adds a note + agree/disagree with the AI, and marks an exam as `reviewed`.
+- **patient**: created by a doctor. Sees ONLY their own profile and their own exams with status `reviewed`
+  (including the doctor's note). Never sees unreviewed or raw AI results, never sees other patients.
+- **device**: authenticates with header `X-Device-Key`. Can only send heartbeats, poll its own commands,
+  and upload audio for exams assigned to it.
+
+## Data model
+Tables: `users` (role: admin/doctor/patient), `devices`, `patients` (linked to a doctor and to a patient
+user), `exams`, `recordings`, `ai_results`, `device_commands`, `audit_logs`. Field details: PLAN.md section 4.
+
+- Exam status flow: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`).
+- Auscultation point per exam: one of `AV`, `PV`, `TV`, `MV`.
+- An exam cannot be created if the patient has no recorded consent (`consent_given_at` is null).
+- Every AI result stores the model name and model version.
+
+## Device flow
+- `POST /api/device/heartbeat` — every ~10 s: firmware version, Wi-Fi RSSI. Updates `last_seen_at`;
+  a device is "online" if seen in the last 30 s.
+- `GET /api/device/command` — device polls every 1–2 s; returns the pending command (e.g. record 20 s for exam X) or nothing.
+- `POST /api/device/upload/{exam_id}` — multipart: `audio` (WAV) + `meta` (JSON: sample rate, motion flag, etc.).
+- Save WAV as `storage/recordings/<uuid>.wav`. File names never contain patient names.
+- After upload, run analysis as a FastAPI BackgroundTask through an `Analyzer` interface.
+  For now only a `DummyAnalyzer` exists (quality=`unknown`, label=`not_analyzed`). Real models come later.
+
+## Security
+- bcrypt for passwords; device API keys stored hashed; short-lived JWT access tokens.
+- Role checks via FastAPI dependencies, never ad-hoc inside handlers.
+- Write an `audit_logs` row whenever a doctor or patient reads patient data.
+- Uploads: accept WAV only, enforce a size limit.
+- Secrets only in `.env` (gitignored); commit `.env.example`. CORS origins from env.
+
+## Working rules
+- Write tests together with each feature. Run `pytest` and keep it green before calling a task done.
+- Do NOT build any UI or visual design. No frontend code until explicitly asked.
+- Do NOT add real AI model code yet — only the `Analyzer` interface and the dummy.
+- Keep the code simple and readable (middle-level). No microservices, no Celery/Redis, no Kubernetes.
+- Ask before adding dependencies outside the stack above.
+- Small, focused commits with clear messages.
+- Keep `README.md` up to date with how to run the project and the tests.
