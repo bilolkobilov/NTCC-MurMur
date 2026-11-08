@@ -3,7 +3,7 @@
 import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.models import AIResult, DeviceCommand, Exam, Patient, Recording, Role, Sex, User
@@ -52,8 +52,14 @@ def _own_patient(db: Session, doctor: User, patient_id: int, *, for_update: bool
     return patient
 
 
-def list_patients(db: Session, doctor: User) -> list[Patient]:
-    patients = list(db.scalars(select(Patient).where(Patient.doctor_id == doctor.id).order_by(Patient.id)))
+def list_patients(db: Session, doctor: User, *, search: str | None, limit: int, offset: int) -> list[Patient]:
+    """Own patients sorted by name; `search` matches any part of the name, case-insensitive."""
+    query = select(Patient).where(Patient.doctor_id == doctor.id)
+    if search:
+        escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # % and _ match literally
+        query = query.where(Patient.full_name.ilike(f"%{escaped}%", escape="\\"))
+    query = query.order_by(func.lower(Patient.full_name), Patient.id).limit(limit).offset(offset)
+    patients = list(db.scalars(query))
     audit.record(db, doctor, "patient.list", "patient", None)
     return patients
 

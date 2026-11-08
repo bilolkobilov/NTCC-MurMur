@@ -1,13 +1,16 @@
 """Doctor: own patients, patient logins, exams and reviews."""
 
-from fastapi import APIRouter, status
+from typing import Annotated
+
+from fastapi import APIRouter, Query, status
 from fastapi.responses import FileResponse
 
 from app.deps import CurrentDoctor, DbSession
-from app.models import Patient
+from app.models import ExamStatus, Patient
 from app.schemas.common import PathId
 from app.schemas.doctor import (
     DoctorDeviceOut,
+    DoctorExamListItem,
     ExamCreate,
     ExamDetail,
     ExamReview,
@@ -36,8 +39,15 @@ def create_patient(body: PatientCreate, db: DbSession, doctor: CurrentDoctor) ->
 
 
 @router.get("/patients")
-def list_patients(db: DbSession, doctor: CurrentDoctor) -> list[PatientOut]:
-    return [_patient_out(p) for p in patients.list_patients(db, doctor)]
+def list_patients(
+    db: DbSession,
+    doctor: CurrentDoctor,
+    q: Annotated[str | None, Query(max_length=100, description="part of the name")] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[PatientOut]:
+    found = patients.list_patients(db, doctor, search=q.strip() if q else None, limit=limit, offset=offset)
+    return [_patient_out(p) for p in found]
 
 
 @router.get("/patients/{patient_id}")
@@ -82,6 +92,19 @@ def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor)
 
 
 # --- exams ---
+
+
+@router.get("/exams")
+def list_exams(
+    db: DbSession,
+    doctor: CurrentDoctor,
+    status_filter: Annotated[ExamStatus | None, Query(alias="status")] = None,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DoctorExamListItem]:
+    """My exams across all patients, newest first. `?status=analyzed` = waiting for my review."""
+    rows = exams.list_exams(db, doctor, status=status_filter, limit=limit, offset=offset)
+    return [DoctorExamListItem(**ExamSummary.model_validate(e).model_dump(), patient_full_name=n) for e, n in rows]
 
 
 @router.post("/exams", status_code=status.HTTP_201_CREATED)

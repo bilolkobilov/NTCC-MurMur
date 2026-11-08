@@ -263,6 +263,7 @@ DOCTOR_ENDPOINTS = [
     ("post", "/api/exams/1/cancel"),
     ("patch", "/api/patients/1"),
     ("delete", "/api/patients/1"),
+    ("get", "/api/exams"),
 ]
 
 
@@ -609,3 +610,48 @@ def test_start_exam_while_patient_is_being_deleted_gives_404(db, doctor, monkeyp
 
     assert outcome["start"] == "404"
     assert db.scalar(select(Exam)) is None
+
+
+# --- lists for the web app ---
+
+
+def test_doctor_exam_list_filters_by_status_and_shows_patient_names(client, db, headers, doctor, other_doctor):
+    waiting = make_exam(db, doctor, ExamStatus.WAITING)
+    analyzed = make_exam(db, doctor, ExamStatus.ANALYZED)
+    make_exam(db, other_doctor, ExamStatus.ANALYZED)
+
+    everything = client.get("/api/exams", headers=headers).json()
+    to_review = client.get("/api/exams?status=analyzed", headers=headers).json()
+
+    assert [e["id"] for e in everything] == [analyzed.id, waiting.id], "own exams only, newest first"
+    assert [e["id"] for e in to_review] == [analyzed.id]
+    assert to_review[0]["patient_full_name"] == "Ali Valiyev"
+    assert "ai_result" not in to_review[0]
+    assert ("exam.list", None) in audit_actions(db)
+
+
+def test_exam_list_paging_and_bad_parameters(client, db, headers, doctor):
+    ids = [make_exam(db, doctor).id for _ in range(3)]
+
+    page1 = client.get("/api/exams?limit=2", headers=headers).json()
+    page2 = client.get("/api/exams?limit=2&offset=2", headers=headers).json()
+
+    assert [e["id"] for e in page1 + page2] == list(reversed(ids))
+    assert client.get("/api/exams?limit=0", headers=headers).status_code == 422
+    assert client.get("/api/exams?limit=201", headers=headers).status_code == 422
+    assert client.get("/api/exams?status=bogus", headers=headers).status_code == 422
+
+
+def test_patient_list_search_sort_and_paging(client, db, headers, doctor, other_doctor):
+    for name in ["Zarina Karimova", "ali valiyev", "Bobur Aliev", "100%_real"]:
+        make_patient(db, doctor, name)
+    make_patient(db, other_doctor, "Ali Other")
+
+    def names(query=""):
+        return [p["full_name"] for p in client.get(f"/api/patients{query}", headers=headers).json()]
+
+    assert names() == ["100%_real", "ali valiyev", "Bobur Aliev", "Zarina Karimova"], "sorted by name, own only"
+    assert names("?q=ALI") == ["ali valiyev", "Bobur Aliev"], "case-insensitive, any part"
+    assert names("?q=%25") == ["100%_real"], "% is matched literally"
+    assert names("?q=_") == ["100%_real"], "_ is matched literally"
+    assert names("?limit=2&offset=1") == ["ali valiyev", "Bobur Aliev"]

@@ -99,6 +99,10 @@ class ExamSummary(BaseModel):
     reviewed_at: datetime | None
 
 
+class DoctorExamListItem(ExamSummary):
+    patient_full_name: str
+
+
 class ExamDetail(ExamSummary):
     failure_reason: str | None
     doctor_note: str | None
