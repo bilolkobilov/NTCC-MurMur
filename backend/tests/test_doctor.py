@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 import pytest
 from sqlalchemy import select
 
@@ -404,7 +406,7 @@ def test_doctor_lists_only_own_devices_with_online_status(client, db, headers, d
 
 
 def test_exam_detail_poll_uses_few_queries(client, db, headers, doctor):
-    """The exam page polls every ~2 s: token user + exam (with recording and AI result) + audit insert."""
+    """The exam page polls every second: token user + exam (with recording and AI result) + "logged recently?"."""
     from sqlalchemy import event
 
     from app.db import engine
@@ -426,7 +428,21 @@ def test_exam_detail_poll_uses_few_queries(client, db, headers, doctor):
         event.remove(engine, "before_cursor_execute", count)
 
     assert response.json()["recording"] and response.json()["ai_result"]
-    assert statements.count("SELECT") <= 2, statements
+    assert statements.count("SELECT") <= 3, statements
+
+
+def test_repeated_reads_are_logged_once_per_five_minutes_changes_always(client, db, headers, doctor):
+    exam = make_exam(db, doctor, ExamStatus.ANALYZED)
+    for _ in range(5):  # the live page polling
+        assert client.get(f"/api/exams/{exam.id}", headers=headers).status_code == 200
+    client.patch(f"/api/exams/{exam.id}/review", headers=headers, json={"note": "ok"})
+    assert audit_actions(db) == [("exam.read", exam.id), ("exam.review", exam.id)]
+
+    first = db.scalars(select(AuditLog).where(AuditLog.action == "exam.read")).one()
+    first.created_at = first.created_at - timedelta(minutes=6)  # the window has passed
+    db.commit()
+    client.get(f"/api/exams/{exam.id}", headers=headers)
+    assert [a for a in audit_actions(db) if a[0] == "exam.read"] == [("exam.read", exam.id)] * 2
 
 
 def test_doctor_resets_patients_forgotten_password(client, db, headers, doctor):

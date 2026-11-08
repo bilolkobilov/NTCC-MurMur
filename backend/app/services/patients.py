@@ -60,13 +60,13 @@ def list_patients(db: Session, doctor: User, *, search: str | None, limit: int, 
         query = query.where(Patient.full_name.ilike(f"%{escaped}%", escape="\\"))
     query = query.order_by(func.lower(Patient.full_name), Patient.id).limit(limit).offset(offset)
     patients = list(db.scalars(query))
-    audit.record(db, doctor, "patient.list", "patient", None)
+    audit.record_read(db, doctor, "patient.list", "patient", None)
     return patients
 
 
 def read_patient(db: Session, doctor: User, patient_id: int) -> Patient:
     patient = _own_patient(db, doctor, patient_id)
-    audit.record(db, doctor, "patient.read", "patient", patient.id)
+    audit.record_read(db, doctor, "patient.read", "patient", patient.id)
     return patient
 
 
@@ -112,7 +112,7 @@ def create_patient_login(db: Session, doctor: User, patient_id: int, username: s
 def list_patient_exams(db: Session, doctor: User, patient_id: int) -> list[Exam]:
     patient = _own_patient(db, doctor, patient_id)
     exams = list(db.scalars(select(Exam).where(Exam.patient_id == patient.id).order_by(Exam.id.desc())))
-    audit.record(db, doctor, "patient.exams.list", "patient", patient.id)
+    audit.record_read(db, doctor, "patient.exams.list", "patient", patient.id)
     return exams
 
 

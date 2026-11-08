@@ -17,7 +17,7 @@ def _own_patient_record(db: Session, user: User) -> Patient:
 
 def read_profile(db: Session, user: User) -> Patient:
     patient = _own_patient_record(db, user)
-    audit.record(db, user, "me.read", "patient", patient.id)
+    audit.record_read(db, user, "me.read", "patient", patient.id)
     return patient
 
 
@@ -30,5 +30,5 @@ def list_reviewed_exams(db: Session, user: User) -> list[Exam]:
             .order_by(Exam.reviewed_at.desc())
         )
     )
-    audit.record(db, user, "me.exams.list", "patient", patient.id)
+    audit.record_read(db, user, "me.exams.list", "patient", patient.id)
     return exams

@@ -39,7 +39,7 @@ def start_exam(db: Session, doctor: User, patient_id: int, device_id: int, point
 
 def read_exam(db: Session, doctor: User, exam_id: int) -> Exam:
     exam = _own_exam(db, doctor, exam_id)
-    audit.record(db, doctor, "exam.read", "exam", exam.id)
+    audit.record_read(db, doctor, "exam.read", "exam", exam.id)
     return exam
 
 
@@ -50,7 +50,7 @@ def exam_audio_path(db: Session, doctor: User, exam_id: int) -> Path:
     path = storage.recording_path(exam.recording.file_name)
     if not path.is_file():
         raise NotFound("recording file is missing")
-    audit.record(db, doctor, "exam.audio", "exam", exam.id)
+    audit.record_read(db, doctor, "exam.audio", "exam", exam.id)
     return path
 
 
@@ -78,5 +78,5 @@ def list_exams(
     if status is not None:
         query = query.where(Exam.status == status)
     rows = db.execute(query.order_by(Exam.created_at.desc(), Exam.id.desc()).limit(limit).offset(offset)).all()
-    audit.record(db, doctor, "exam.list", "exam", None)
+    audit.record_read(db, doctor, "exam.list", "exam", None)
     return [(exam, name) for exam, name in rows]
