@@ -252,6 +252,29 @@ def test_limiter_memory_is_bounded():
 
     limiter = login_limiter.LoginLimiter(max_failures=5, window_seconds=60)
     for i in range(login_limiter.MAX_TRACKED_KEYS + 50):
-        limiter.record_failure(("1.2.3.4", f"user{i}"))
+        limiter.begin_attempt(("1.2.3.4", f"user{i}"))
 
     assert len(limiter._failures) <= login_limiter.MAX_TRACKED_KEYS
+
+
+def test_parallel_attempts_cannot_slip_past_the_limit():
+    """40 simultaneous wrong logins must not all be allowed before the first failure is counted."""
+    import threading
+
+    from app.services.login_limiter import LoginLimiter
+
+    limiter = LoginLimiter(max_failures=5, window_seconds=900)
+    barrier = threading.Barrier(40)
+    allowed: list[bool] = []
+
+    def attempt():
+        barrier.wait()
+        allowed.append(limiter.begin_attempt(("1.2.3.4", "dr.aziz")) is None)
+
+    threads = [threading.Thread(target=attempt) for _ in range(40)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(10)
+
+    assert allowed.count(True) == 5

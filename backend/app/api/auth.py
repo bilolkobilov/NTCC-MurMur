@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 def login(body: LoginRequest, request: Request, db: DbSession) -> TokenResponse:
     limiter = get_login_limiter()
     key = limiter_key(request.client.host if request.client else None, body.username)
-    wait = limiter.retry_after(key)
+    wait = limiter.begin_attempt(key)
     if wait is not None:
         raise HTTPException(
             status.HTTP_429_TOO_MANY_REQUESTS,
@@ -26,8 +26,7 @@ def login(body: LoginRequest, request: Request, db: DbSession) -> TokenResponse:
             headers={"Retry-After": str(wait)},
         )
     user = users.authenticate(db, body.username, body.password)
-    if user is None:
-        limiter.record_failure(key)
+    if user is None:  # the attempt is already counted
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "wrong username or password")
     limiter.reset(key)
     if not user.is_active:

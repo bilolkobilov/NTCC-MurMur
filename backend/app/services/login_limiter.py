@@ -29,23 +29,22 @@ class LoginLimiter:
             failures.popleft()
         return failures
 
-    def retry_after(self, key: tuple[str, str]) -> int | None:
-        """Seconds to wait if this key is blocked, else None."""
+    def begin_attempt(self, key: tuple[str, str]) -> int | None:
+        """Count a login attempt BEFORE the password is checked; return seconds to wait if the key is blocked.
+
+        Counting first (and in one locked step) means parallel requests cannot all slip past the limit; a
+        successful login then calls `reset(key)`, so only wrong passwords stay counted.
+        """
         with self._lock:
             now = self.clock()
             failures = self._recent(key, now)
-            if len(failures) < self.max_failures:
-                return None
-            return max(1, int(failures[0] + self.window_seconds - now) + 1)
-
-    def record_failure(self, key: tuple[str, str]) -> None:
-        with self._lock:
-            now = self.clock()
+            if len(failures) >= self.max_failures:
+                return max(1, int(failures[0] + self.window_seconds - now) + 1)
             if len(self._failures) >= MAX_TRACKED_KEYS:
                 self._prune(now)
-            failures = self._recent(key, now)
             failures.append(now)
             self._failures[key] = failures
+            return None
 
     def reset(self, key: tuple[str, str] | None = None) -> None:
         with self._lock:
