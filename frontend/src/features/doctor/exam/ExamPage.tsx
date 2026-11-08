@@ -224,13 +224,16 @@ function FlatStrip() {
  * time (negative delay), so reloading mid-recording does not restart it. Reduced motion: no sweep, countdown only.
  */
 function SweepStrip({ elapsed }: { elapsed: number }) {
+  // Read the elapsed time once, when the sweep appears: changing animation-delay on a running animation makes it
+  // jump ahead (it ran twice as fast while the page re-rendered every 250 ms).
+  const [startAt] = useState(() => Math.min(elapsed, RECORD_SECONDS));
   return (
     <div className="chart-grid relative h-24 overflow-hidden rounded-control border border-grid-major" aria-hidden="true">
       <div
         className="absolute inset-y-0 left-0 w-full motion-reduce:hidden"
         style={{
           animation: `sweep ${RECORD_SECONDS}s linear forwards`,
-          animationDelay: `-${Math.min(elapsed, RECORD_SECONDS)}s`,
+          animationDelay: `-${startAt}s`,
         }}
       >
         <span className="absolute inset-y-0 right-full w-[200vw] bg-signal/5" />

@@ -5,7 +5,7 @@ import type { AIResult, ExamDetail, Patient } from "../../../api/doctor";
 import { session } from "../../../app/session";
 import { backend, bodyOf, ok, renderAt } from "../../../test/utils";
 import { aiAnswered, aiOutcome } from "./aiOutcome";
-import { gridScale, PAPER_PX_PER_SEC, robustPeak } from "./HeartStrip";
+import { gridScale, hexToRgb, PAPER_PX_PER_SEC, robustPeak } from "./HeartStrip";
 
 // wavesurfer needs Web Audio and canvas, which jsdom lacks: a small fake records what the page asks of it.
 const fake = vi.hoisted(() => {
@@ -321,4 +321,10 @@ describe("heart-sound strip", () => {
     await router.navigate("/doctor/patients/12");
     await waitFor(() => expect(fake.instances.every((ws) => ws.destroyed)).toBe(true));
   });
+});
+
+test("spectrogram colours read short and long hex (the CSS build writes white as #fff)", () => {
+  expect(hexToRgb("#fff")).toEqual([1, 1, 1]);
+  expect(hexToRgb("#c1121f")).toEqual([193 / 255, 18 / 255, 31 / 255]);
+  expect(hexToRgb("oklch(0.5 0.1 20)")).toEqual([0, 0, 0]);
 });

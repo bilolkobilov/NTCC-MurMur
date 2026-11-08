@@ -23,17 +23,35 @@ function token(name: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(`--color-${name}`).trim() || "#000";
 }
 
-/** 256 colours from paper white through grid pink and the signal red to ink: the spectrogram stays on "paper". */
+/**
+ * 256 colours from paper white through the grid pinks and the signal red to ink: the spectrogram stays on "paper".
+ * Most of the scale is light, so background noise stays pale and only real sound turns red (a noisy recording
+ * was one red block with evenly spaced stops).
+ */
+/** "#c1121f" or the short "#fff" (the CSS build shortens white) → [r, g, b] in 0..1. */
+export function hexToRgb(color: string): number[] {
+  let hex = color.trim().replace("#", "");
+  if (hex.length === 3) hex = [...hex].map((c) => c + c).join("");
+  if (!/^[0-9a-f]{6}$/i.test(hex)) return [0, 0, 0];
+  return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+}
+
+const COLOR_STOPS: [string, number][] = [
+  ["surface", 0],
+  ["grid-minor", 0.45],
+  ["grid-major", 0.7],
+  ["signal", 0.88],
+  ["ink-900", 1],
+];
 function paperColorMap(): number[][] {
-  const stops = ["surface", "grid-major", "signal", "ink-900"].map((name) => {
-    const hex = token(name).replace("#", "");
-    return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
-  });
+  const stops = COLOR_STOPS.map(([name, at]) => ({ at, rgb: hexToRgb(token(name)) }));
   return Array.from({ length: 256 }, (_, i) => {
-    const position = (i / 255) * (stops.length - 1);
-    const from = Math.min(Math.floor(position), stops.length - 2);
-    const t = position - from;
-    return [...stops[from].map((c, k) => c + (stops[from + 1][k] - c) * t), 1];
+    const x = i / 255;
+    const upper = stops.findIndex((s) => s.at >= x);
+    const b = stops[Math.max(1, upper)];
+    const a = stops[Math.max(0, Math.max(1, upper) - 1)];
+    const t = (x - a.at) / (b.at - a.at);
+    return [...a.rgb.map((c, k) => c + (b.rgb[k] - c) * t), 1];
   });
 }
 
@@ -154,7 +172,7 @@ export function HeartStrip({ examId }: { examId: number }) {
           frequencyMax: SPECTROGRAM_MAX_HZ,
           scale: "linear",
           autoGain: true, // loudest sound = darkest ink, whatever the microphone gain
-          rangeDB: 50,
+          rangeDB: 70, // 70 dB below the loudest beat: room for the quiet murmur between beats
           colorMap: paperColorMap(),
         }),
       );

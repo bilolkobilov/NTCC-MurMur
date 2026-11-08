@@ -256,3 +256,15 @@ test("chest point targets (44 px) never overlap, even at the smallest drawing si
     }
   }
 });
+
+test("the 20 s sweep keeps its start: re-renders every 250 ms do not push it ahead", async () => {
+  backend({ ...common, "GET /api/exams/7": () => ok(exam({ status: "recording", updated_at: ago(5) })) });
+  renderAt("/doctor/exams/7");
+
+  await screen.findByRole("heading", { name: "Recording" });
+  const sweep = () => document.querySelector<HTMLElement>('[style*="sweep"]')!;
+  const first = sweep().style.animationDelay;
+  expect(Number.parseFloat(first)).toBeCloseTo(-5, 0);
+  await new Promise((r) => setTimeout(r, 700)); // the countdown re-rendered a few times
+  expect(sweep().style.animationDelay).toBe(first);
+});
