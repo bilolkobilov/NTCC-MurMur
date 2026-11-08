@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from sqlalchemy import URL
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     frontend_dist: Path = Path("frontend/dist")  # built web app; served at / when it exists
     max_upload_mb: int = 10
     min_recording_seconds: int = 10  # shorter recordings are rejected as "re-record"
+    # Which analyzer runs after upload. "cardiophon" needs `uv sync --group ai` + model files (docs/runbook.md);
+    # if they are missing the server logs it and uses "dummy" (no AI opinion).
+    ai_model: Literal["dummy", "cardiophon"] = "dummy"
+    ai_model_dir: Path = Path("models")
 
     @property
     def database_url(self) -> URL:
@@ -52,6 +57,11 @@ class Settings(BaseSettings):
     @property
     def frontend_dist_path(self) -> Path:
         path = self.frontend_dist
+        return path if path.is_absolute() else REPO_ROOT / path
+
+    @property
+    def ai_model_path(self) -> Path:
+        path = self.ai_model_dir
         return path if path.is_absolute() else REPO_ROOT / path
 
     @property

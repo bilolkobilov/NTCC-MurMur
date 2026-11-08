@@ -74,6 +74,20 @@ py scripts/fake_device.py --samples samples/        # or --wav path\to\file.wav;
 Sample WAVs go in `samples/` (gitignored). Heart sounds from the CirCor DigiScope dataset (PhysioNet, ODC-BY 1.0):
 cite it if results are shown in the report.
 
+## AI model (CardioPHON murmur analyzer)
+
+Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `docs/specs/2026-11-08-ai-model.md`.
+
+1. Install PyTorch (CPU) and numpy: `cd backend && uv sync --group ai` (first `import torch` takes ~20 s once).
+2. Encoder weights (CardioPHON, used with citation; never committed) into `models/cardiophon/`:
+   `curl -L -o models/cardiophon/pretrained_physionet_2022_4kHz.pth https://git.lih.lu/vdespotovic/cardiophon/-/raw/main/heart_sound_classification/checkpoints/pretrained_physionet_2022_4kHz.pth`
+3. CirCor 1.0.3 (471 MB zip, ODC-By) unpacked into `samples/circor/`:
+   `https://physionet-open.s3.amazonaws.com/circor-heart-sound/circor-heart-sound-1.0.3.zip` (check `SHA256SUMS.txt`).
+4. Train the murmur head (embeds all 3 163 recordings once, cached): `uv run --group ai python ../scripts/ai/train_head.py`
+5. Measure it on the held-out patients → `docs/specs/ai-results.md`: `uv run --group ai python ../scripts/ai/evaluate.py`
+6. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
+   Bump `MODEL_VERSION` in `train_head.py` on every retrain (it is stored with every result).
+
 ## Database migrations
 
 ```bash

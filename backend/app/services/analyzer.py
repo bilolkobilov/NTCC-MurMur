@@ -1,12 +1,19 @@
-"""The analyzer interface. Real models (quality check, murmur classifier) will implement `Analyzer` later.
+"""The analyzer interface and the switch between models (setting `AI_MODEL`).
 
-To plug in a real model: write a class with `name`, `version` and `analyze()`, then return it from `get_analyzer()`.
+`DummyAnalyzer` (default) never claims anything; `CardiophonAnalyzer` (services/ai/cardiophon.py) is the real murmur
+model. Another model: a class with `name`, `version` and `analyze()`, built in `_build()`.
 Every result is stored with `name` and `version`, so old results always show which model produced them.
 """
 
+import logging
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol
+
+from app.config import Settings, get_settings
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -51,5 +58,27 @@ class DummyAnalyzer:
         return AnalysisResult(quality="unknown", label="not_analyzed", score=None)
 
 
+_lock = threading.Lock()
+_instance: Analyzer | None = None
+
+
 def get_analyzer() -> Analyzer:
+    """The configured analyzer, built once (loading a real model takes seconds) and shared by all analyses."""
+    global _instance
+    with _lock:
+        if _instance is None:
+            _instance = _build(get_settings())
+        return _instance
+
+
+def _build(settings: Settings) -> Analyzer:
+    if settings.ai_model == "cardiophon":
+        try:
+            from app.services.ai.cardiophon import CardiophonAnalyzer  # needs the optional `ai` group
+
+            analyzer = CardiophonAnalyzer(settings.ai_model_path)
+            log.info("AI model loaded: %s %s", analyzer.name, analyzer.version)
+            return analyzer
+        except Exception:
+            log.exception("AI_MODEL=cardiophon but the model could not be loaded; using the dummy analyzer")
     return DummyAnalyzer()

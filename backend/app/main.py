@@ -1,8 +1,11 @@
 """FastAPI application: middleware, error mapping, routers and (when built) the web app itself."""
 
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy import text
@@ -10,13 +13,22 @@ from sqlalchemy import text
 from app.api import admin, auth, device, doctor, patient
 from app.config import get_settings
 from app.deps import DbSession
+from app.services import analyzer
 from app.services.errors import ServiceError
 from app.upload_limit import UploadSizeLimitMiddleware
 
 
+@asynccontextmanager
+async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+    # A real model takes seconds to load: do it before the server says it is ready, not during the first exam.
+    if get_settings().ai_model != "dummy":
+        await run_in_threadpool(analyzer.get_analyzer)
+    yield
+
+
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="MurMur API", version="0.1.0")
+    app = FastAPI(title="MurMur API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origin_list,

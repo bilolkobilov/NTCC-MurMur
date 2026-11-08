@@ -10,7 +10,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `README.md` — what MurMur is, first run, tests, roles, API overview
 - `AGENTS.md` — all project rules (Claude reads it through `CLAUDE.md`)
 - `CLAUDE.md` — only imports `AGENTS.md`
-- `.gitignore` — ignores `.env`, Python caches, `storage/`, `samples/`
+- `.gitignore` — ignores `.env`, Python caches, `storage/`, `samples/`, `models/` (AI weights, downloaded at setup)
 - `.claude/settings.json` — permissions + hook that blocks reading secret files
 - `.claude/secret-files.txt` — list of real secret files (`.env`)
 - `.claude/hooks/block-secrets.mjs` — the hook itself
@@ -44,7 +44,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
 - `backend/app/api/device.py` — `/api/device/*`: heartbeat, command poll (204 = nothing), WAV upload (202)
 - `backend/app/services/device_flow.py` — heartbeat, take next command (row lock), WAV check + save
-- `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here);
+- `backend/app/services/ai/cardiophon.py` — CardioPHON encoder (BYOL-A port), log-mel, resample, `CardiophonAnalyzer`
+- `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (AI_MODEL switch);
   answer vocabulary `ANSWER_LABELS` / `gave_answer()` (mirrored by frontend `aiOutcome.ts`)
 - `backend/app/api/patient.py` — `/api/me`, `/api/me/exams` (reviewed only, no AI fields)
 - `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
@@ -102,3 +103,4 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Scripts
 
 - `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference
+- `scripts/ai/` — CirCor labels + patient split (`circor.py`), `train_head.py`, `evaluate.py` (→ `docs/specs/ai-results.md`)
