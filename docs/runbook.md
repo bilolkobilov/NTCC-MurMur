@@ -54,7 +54,8 @@ cd frontend && npm run build        # creates frontend/dist
 cd ../backend && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open http://localhost:8000 — FastAPI serves the web app and the API from one origin (no CORS). The device on the
+Open http://localhost:8000 — FastAPI serves the web app and the API from one origin (no CORS). The full demo
+script (admin → device → doctor → patient → audit) is in README.md, "Run the demo". The device on the
 hotspot talks to http://<laptop-ip>:8000/api/device/... . `FRONTEND_DIST` can point elsewhere; if the folder has no
 `index.html`, only the API runs.
 
