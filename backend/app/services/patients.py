@@ -37,6 +37,7 @@ def create_patient(
     )
     db.add(patient)
     db.commit()
+    audit.record(db, doctor, "patient.create", "patient", patient.id)
     return patient
 
 
@@ -72,7 +73,7 @@ def record_consent(db: Session, doctor: User, patient_id: int) -> Patient:
     patient = _own_patient(db, doctor, patient_id)
     if patient.consent_given_at is None:
         patient.consent_given_at = datetime.now(UTC)
-        db.commit()
+    audit.record(db, doctor, "patient.consent", "patient", patient.id)  # commits the consent too
     return patient
 
 

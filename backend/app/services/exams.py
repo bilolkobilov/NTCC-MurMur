@@ -31,7 +31,9 @@ def _own_exam(db: Session, doctor: User, exam_id: int, *, for_update: bool = Fal
 def start_exam(db: Session, doctor: User, patient_id: int, device_id: int, point: AuscultationPoint) -> Exam:
     patient = get_patient_for_exam(db, doctor, patient_id)
     device = _own_device(db, doctor, device_id)
-    return exam_flow.create_exam(db, doctor, patient, device, point)
+    exam = exam_flow.create_exam(db, doctor, patient, device, point)
+    audit.record(db, doctor, "exam.start", "exam", exam.id)  # the response shows the exam
+    return exam
 
 
 def read_exam(db: Session, doctor: User, exam_id: int) -> Exam:
@@ -52,10 +54,14 @@ def exam_audio_path(db: Session, doctor: User, exam_id: int) -> Path:
 
 
 def review_exam(db: Session, doctor: User, exam_id: int, note: str, agrees_with_ai: bool) -> Exam:
-    exam = _own_exam(db, doctor, exam_id)
-    return exam_flow.review(db, exam, note, agrees_with_ai)
+    exam = _own_exam(db, doctor, exam_id, for_update=True)  # a second, parallel review gets 409
+    exam_flow.review(db, exam, note, agrees_with_ai)
+    audit.record(db, doctor, "exam.review", "exam", exam.id)
+    return exam
 
 
 def cancel_exam(db: Session, doctor: User, exam_id: int) -> Exam:
     exam = _own_exam(db, doctor, exam_id, for_update=True)
-    return exam_flow.cancel(db, exam)
+    exam_flow.cancel(db, exam)
+    audit.record(db, doctor, "exam.cancel", "exam", exam.id)
+    return exam

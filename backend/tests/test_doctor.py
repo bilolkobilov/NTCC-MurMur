@@ -539,3 +539,27 @@ def test_delete_patient_without_login_or_exams(client, db, headers, doctor):
 
     assert client.delete(f"/api/patients/{patient.id}", headers=headers).status_code == 204
     assert client.get(f"/api/patients/{patient.id}", headers=headers).status_code == 404
+
+
+def test_every_doctor_action_that_returns_patient_data_is_audited(client, db, headers, doctor):
+    device, _ = make_device(db, "MM-AUD", doctor)
+    created = client.post(
+        "/api/patients", headers=headers, json={"full_name": "A", "birth_year": 1990, "sex": "male"}
+    ).json()
+    client.post(f"/api/patients/{created['id']}/consent", headers=headers)
+    body = {"patient_id": created["id"], "device_id": device.id, "point": "MV"}
+    first = client.post("/api/exams", headers=headers, json=body).json()
+    second = client.post("/api/exams", headers=headers, json=body).json()
+    client.post(f"/api/exams/{first['id']}/cancel", headers=headers)
+    db.get(Exam, second["id"]).status = ExamStatus.ANALYZED
+    db.commit()
+    client.patch(f"/api/exams/{second['id']}/review", headers=headers, json={"note": "ok", "agrees_with_ai": True})
+
+    assert audit_actions(db) == [
+        ("patient.create", created["id"]),
+        ("patient.consent", created["id"]),
+        ("exam.start", first["id"]),
+        ("exam.start", second["id"]),
+        ("exam.cancel", first["id"]),
+        ("exam.review", second["id"]),
+    ]
