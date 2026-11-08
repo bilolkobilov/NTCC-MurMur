@@ -509,3 +509,28 @@ def test_poll_during_cancel_does_not_deadlock(client, db, doctor, device_and_key
     assert "error" not in poll_result, poll_result
     assert cancel_result["value"] == ExamStatus.FAILED
     assert poll_result["value"] is None, "the cancelled exam's command must not be handed out"
+
+
+def test_two_simultaneous_polls_get_the_command_once(db, device_and_key, exam):
+    import threading
+
+    from app.db import SessionLocal
+    from app.services import device_flow
+
+    barrier = threading.Barrier(2)
+    results: list = []
+
+    def poll():
+        with SessionLocal() as session:
+            device = session.get(Device, device_and_key[0].id)
+            barrier.wait()
+            command = device_flow.take_next_command(session, device)
+            results.append(command.exam_id if command else None)
+
+    threads = [threading.Thread(target=poll) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(10)
+
+    assert sorted(results, key=str) == sorted([exam.id, None], key=str)
