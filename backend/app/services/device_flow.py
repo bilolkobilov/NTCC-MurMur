@@ -25,24 +25,31 @@ def take_next_command(db: Session, device: Device) -> DeviceCommand | None:
     """Oldest pending command for this device; marks it taken and moves its exam to 'recording'.
 
     Row lock with SKIP LOCKED: two quick polls can never take the same command twice.
+    A command whose exam is no longer 'waiting' (e.g. the exam was cancelled) is closed and skipped,
+    so it can never block the commands behind it.
     """
     device.last_seen_at = datetime.now(UTC)  # polling also proves the device is alive
-    command = db.scalar(
-        select(DeviceCommand)
-        .where(DeviceCommand.device_id == device.id, DeviceCommand.status == CommandStatus.PENDING)
-        .order_by(DeviceCommand.id)
-        .limit(1)
-        .with_for_update(skip_locked=True)
-    )
-    if command is None:
-        db.commit()
-        return None
-    exam = db.get(Exam, command.exam_id)
-    command.status = CommandStatus.TAKEN
-    command.taken_at = datetime.now(UTC)
-    exam_flow.mark_recording(exam)
-    db.commit()
-    return command
+    while True:
+        command = db.scalar(
+            select(DeviceCommand)
+            .where(DeviceCommand.device_id == device.id, DeviceCommand.status == CommandStatus.PENDING)
+            .order_by(DeviceCommand.id)
+            .limit(1)
+            .with_for_update(skip_locked=True)
+        )
+        if command is None:
+            db.commit()
+            return None
+        command.status = CommandStatus.TAKEN
+        command.taken_at = datetime.now(UTC)
+        exam = db.get(Exam, command.exam_id, with_for_update=True)
+        if exam.status == ExamStatus.WAITING:
+            exam_flow.mark_recording(exam)
+            db.commit()
+            return command
+        command.status = CommandStatus.DONE  # stale: nothing to record any more
+        command.done_at = datetime.now(UTC)
+        db.flush()
 
 
 def read_wav_info(data: bytes) -> tuple[int, float]:

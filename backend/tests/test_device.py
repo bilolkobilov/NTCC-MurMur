@@ -330,3 +330,23 @@ def test_result_that_cannot_be_stored_marks_exam_failed(client, db, key, exam, m
     assert failed.failure_reason == "could not store analysis result: DataError"
     assert db.scalar(select(AIResult)) is None
     assert db.scalar(select(Recording).where(Recording.exam_id == exam.id)) is not None, "the recording is kept"
+
+
+def test_stale_command_is_skipped_and_does_not_block_newer_ones(client, db, doctor, key, device_and_key, exam):
+    """If an exam stops waiting before the device polls, its command is closed and the next one is delivered."""
+    exam.status = ExamStatus.FAILED  # e.g. cancelled by the doctor
+    db.commit()
+    patient = make_patient(db, doctor, "Second Patient")
+    body = {"patient_id": patient.id, "device_id": device_and_key[0].id, "point": "PV"}
+    second = client.post("/api/exams", headers=login(client, "dr.aziz"), json=body).json()
+
+    polled = client.get("/api/device/command", headers=key)
+
+    assert polled.status_code == 200
+    assert polled.json()["exam_id"] == second["id"]
+    stale = db.scalar(select(DeviceCommand).where(DeviceCommand.exam_id == exam.id))
+    db.refresh(stale)
+    assert stale.status == CommandStatus.DONE
+    db.refresh(exam)
+    assert exam.status == ExamStatus.FAILED, "a stale exam is left as it was"
+    assert client.get("/api/device/command", headers=key).status_code == 204
