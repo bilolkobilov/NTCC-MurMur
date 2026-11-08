@@ -37,6 +37,32 @@ export type ExamSummary = {
 
 export type ExamListItem = ExamSummary & { patient_full_name: string };
 
+export type RecordingInfo = {
+  sample_rate: number;
+  duration_s: number;
+  motion_detected: boolean;
+  size_bytes: number;
+  created_at: string;
+};
+
+export type AIResult = {
+  model_name: string;
+  model_version: string;
+  quality: string;
+  label: string;
+  score: number | null;
+  created_at: string;
+};
+
+export type ExamDetail = ExamSummary & {
+  failure_reason: string | null;
+  doctor_note: string | null;
+  doctor_agrees_with_ai: boolean | null;
+  updated_at: string;
+  recording: RecordingInfo | null;
+  ai_result: AIResult | null;
+};
+
 export type DoctorDevice = { id: number; name: string; serial: string; online: boolean; last_seen_at: string | null };
 
 export type OneTimeLogin = { username: string; temporary_password: string };
@@ -60,4 +86,8 @@ export const doctorApi = {
   listExams: (status?: ExamStatus, limit = 20) =>
     api<ExamListItem[]>(`/exams?${new URLSearchParams({ ...(status ? { status } : {}), limit: String(limit) })}`),
   myDevices: () => api<DoctorDevice[]>("/devices"),
+  startExam: (patientId: number, deviceId: number, point: Point) =>
+    api<ExamDetail>("/exams", { body: { patient_id: patientId, device_id: deviceId, point } }),
+  getExam: (id: number) => api<ExamDetail>(`/exams/${id}`),
+  cancelExam: (id: number) => api<ExamDetail>(`/exams/${id}/cancel`, { method: "POST" }),
 };

@@ -105,6 +105,16 @@
       "PV": "oʻpka arteriyasi qopqogʻi",
       "TV": "uch tavaqali qopqoq",
       "MV": "mitral qopqoq"
+    },
+    "failure": {
+      "cancelled": "Siz bu tekshiruvni yozuv kelmasdan bekor qildingiz.",
+      "tooShort": "Juda qisqa: {{seconds}} s, kamida {{minimum}} s kerak.",
+      "silent": "Deyarli jim. Stetoskop teriga tegib turganini tekshiring.",
+      "clipped": "Haddan baland: tovushning {{percent}} % i kesilgan. Stetoskopni yengilroq bosing.",
+      "motion": "Yozish paytida harakat boʻldi. Bemordan qimirlamaslikni soʻrang.",
+      "quality": "Yozuv sifati juda past.",
+      "analysis": "Serverda tahlil bajarilmadi. Yozuv saqlangan; qayta yozing yoki administratorga murojaat qiling.",
+      "unknown": "Tekshiruv yakunlanmadi."
     }
   },
   "device": {
@@ -218,5 +228,69 @@
     "keep": "Bemorni qoldirish",
     "deleteTypeName": "Tasdiqlash uchun “{{name}}” deb yozing",
     "deleteTypeHint": "Ism mos kelganda oʻchirish tugmasi yoqiladi."
+  },
+  "newExam": {
+    "title": "Yangi tekshiruv",
+    "lead": "Qurilma tanlangan nuqtada {{seconds}} soniya yurak tovushini yozadi.",
+    "device": "Qurilma",
+    "point": "Eshitish nuqtasi",
+    "chooseDevice": "Qurilmani tanlang.",
+    "deviceWentOffline": "Bu qurilma uzildi. Boshqasini tanlang yoki Wi-Fi ni tekshiring.",
+    "choosePoint": "Stetoskop qayerga qoʻyilganini tanlang.",
+    "lastSeen": "Oxirgi marta {{when}} koʻringan",
+    "neverSeen": "Hech ulanmagan",
+    "allOffline": "Barcha qurilmalaringiz uzilgan. Bittasini yoqing va «Ulangan» chiqquncha kuting.",
+    "noDevicesTitle": "Yozish uchun qurilma yoʻq",
+    "whatHappens": "{{seconds}} soniya stetoskopni nuqtada ushlang, bemor qimirlamasin.",
+    "start": "Yozishni boshlash",
+    "starting": "Boshlanmoqda…",
+    "backToPatient": "Bemorga qaytish"
+  },
+  "chest": {
+    "patientRightShort": "Oʻ",
+    "patientLeftShort": "Ch",
+    "orientation": "Siz bemorga qarab turasiz: bemorning oʻng tomoni (Oʻ) sizning chapingizda.",
+    "where": {
+      "AV": "toʻsh suyagidan oʻngda, 2-qovurgʻalararo oraliq",
+      "PV": "toʻsh suyagidan chapda, 2-qovurgʻalararo oraliq",
+      "TV": "toʻsh suyagining pastki chap chekkasi, 4-oraliq",
+      "MV": "choʻqqi: chap oʻrta-oʻmrov chizigʻi, 5-oraliq"
+    }
+  },
+  "live": {
+    "reconnecting": "Server bilan aloqa uzildi. Qayta ulanmoqda… Qurilma yozishda davom etadi.",
+    "stepDone": "Bajarildi:",
+    "stepNow": "Hozir:",
+    "stepLater": "Keyin:",
+    "waitingTitle": "{{device}} ga buyruq yuborilmoqda…",
+    "waitingBody": "Qurilma uni bir-ikki soniyada qabul qiladi.",
+    "stuckTitle": "Qurilma javob bermayapti",
+    "stuckPower": "Qurilma yoqilganmi va quvvati bormi?",
+    "stuckWifi": "U shu noutbukning Wi-Fi nuqtasiga ulanganmi?",
+    "stuckServer": "Bu tekshiruvni bekor qilib, qurilma «Ulangan» boʻlganda yangisini boshlashingiz mumkin.",
+    "recordingTitle": "Yozilmoqda",
+    "uploadingTitle": "Yozuv yuborilmoqda…",
+    "secondsLeft_one": "{{count}} s",
+    "secondsLeft_other": "{{count}} s",
+    "recordingBody": "Stetoskopni qimirlatmang. Bemor tinch nafas olsin va gapirmasin.",
+    "overdue": "Yozuv allaqachon kelishi kerak edi. Qurilmaning Wi-Fi sini tekshiring yoki bekor qilib, qayta yozing.",
+    "checkingTitle": "Sifat tekshirilmoqda va tahlil qilinmoqda…",
+    "checkingBody": "Odatda bir necha soniya. Juda qisqa, juda past, haddan baland yoki harakatli yozuv tahlil qilinmaydi.",
+    "readyTitle": "Xulosangiz uchun tayyor",
+    "reviewedTitle": "Xulosa yozilgan",
+    "resultViewNext": "Toʻlqin, tinglash va AI natijasi rejaning keyingi bosqichida quriladi.",
+    "failedTitle": "Qayta yozish kerak",
+    "cancelledTitle": "Tekshiruv bekor qilindi",
+    "recordAgain": "Qayta yozish",
+    "cancel": "Tekshiruvni bekor qilish",
+    "cancelling": "Bekor qilinmoqda…",
+    "stage": {
+      "command": "Buyruq",
+      "recording": "Yozish",
+      "checking": "Sifat va AI",
+      "result": "Natija"
+    },
+    "stepFailed": "Shu yerda toʻxtadi:",
+    "progress": "Tekshiruv bosqichlari"
   }
 }

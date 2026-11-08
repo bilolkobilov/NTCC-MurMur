@@ -105,6 +105,16 @@
       "PV": "pulmonary valve",
       "TV": "tricuspid valve",
       "MV": "mitral valve"
+    },
+    "failure": {
+      "cancelled": "You cancelled this exam before a recording arrived.",
+      "tooShort": "Too short: {{seconds}} s, at least {{minimum}} s are needed.",
+      "silent": "Almost silent. Check that the stethoscope touches the skin.",
+      "clipped": "Too loud: {{percent}} % of the sound is clipped. Press the stethoscope more lightly.",
+      "motion": "Movement during the recording. Ask the patient to stay still.",
+      "quality": "The recording quality was too low.",
+      "analysis": "The analysis failed on the server. The recording is kept; record again or ask the administrator.",
+      "unknown": "This exam did not finish."
     }
   },
   "device": {
@@ -218,5 +228,69 @@
     "keep": "Keep patient",
     "deleteTypeName": "Type “{{name}}” to confirm",
     "deleteTypeHint": "The delete button unlocks when the name matches."
+  },
+  "newExam": {
+    "title": "New exam",
+    "lead": "The device records {{seconds}} seconds of heart sound at the point you choose.",
+    "device": "Device",
+    "point": "Listening point",
+    "chooseDevice": "Choose a device.",
+    "deviceWentOffline": "This device went offline. Choose another or check its Wi-Fi.",
+    "choosePoint": "Choose where the stethoscope is placed.",
+    "lastSeen": "Last seen {{when}}",
+    "neverSeen": "Never connected",
+    "allOffline": "All your devices are offline. Turn one on and wait until it shows Online.",
+    "noDevicesTitle": "No device to record with",
+    "whatHappens": "Keep the stethoscope on the point and the patient still for {{seconds}} s.",
+    "start": "Start recording",
+    "starting": "Starting…",
+    "backToPatient": "Back to the patient"
+  },
+  "chest": {
+    "patientRightShort": "R",
+    "patientLeftShort": "L",
+    "orientation": "You face the patient: the patient's right side (R) is on your left.",
+    "where": {
+      "AV": "2nd intercostal space, right of the sternum",
+      "PV": "2nd intercostal space, left of the sternum",
+      "TV": "lower left edge of the sternum, 4th space",
+      "MV": "apex: 5th space, left mid-clavicular line"
+    }
+  },
+  "live": {
+    "reconnecting": "Connection to the server was lost. Reconnecting… The device keeps recording.",
+    "stepDone": "Done:",
+    "stepNow": "Now:",
+    "stepLater": "Next:",
+    "waitingTitle": "Sending the command to {{device}}…",
+    "waitingBody": "The device picks it up within a couple of seconds.",
+    "stuckTitle": "The device is not responding",
+    "stuckPower": "Is the device switched on and charged?",
+    "stuckWifi": "Is it connected to this laptop's Wi-Fi hotspot?",
+    "stuckServer": "You can cancel this exam and start a new one when the device is Online.",
+    "recordingTitle": "Recording",
+    "uploadingTitle": "Sending the recording…",
+    "secondsLeft_one": "{{count}} s",
+    "secondsLeft_other": "{{count}} s",
+    "recordingBody": "Keep the stethoscope still on the point. The patient breathes calmly and does not talk.",
+    "overdue": "The recording should have arrived by now. Check the device's Wi-Fi, or cancel and record again.",
+    "checkingTitle": "Checking quality and analysing…",
+    "checkingBody": "Usually a few seconds. A recording that is too short, too quiet, clipped or moved is not analysed.",
+    "readyTitle": "Ready for your review",
+    "reviewedTitle": "Reviewed",
+    "resultViewNext": "The waveform, listening and AI result view is built in the next step of the plan.",
+    "failedTitle": "Record again",
+    "cancelledTitle": "Exam cancelled",
+    "recordAgain": "Record again",
+    "cancel": "Cancel exam",
+    "cancelling": "Cancelling…",
+    "stage": {
+      "command": "Command sent",
+      "recording": "Recording",
+      "checking": "Quality and AI",
+      "result": "Result"
+    },
+    "stepFailed": "Stopped here:",
+    "progress": "Exam progress"
   }
 }

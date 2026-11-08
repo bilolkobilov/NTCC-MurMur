@@ -93,6 +93,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/ui/` — also Dialog (Radix), SecretDialog (one-time secrets), States (empty/error/skeleton/panel)
 - `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
 - `frontend/src/features/doctor/` — DoctorHome (review queue), `patients/` list, form, patient page; `shared.tsx`
+- `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
+  (status → screen state, polling speed, backend failure text → i18n keys)
 - `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests
 
 ## Scripts
