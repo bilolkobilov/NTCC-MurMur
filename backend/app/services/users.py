@@ -1,5 +1,7 @@
 """Creating accounts and changing passwords."""
 
+from functools import lru_cache
+
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -42,9 +44,18 @@ def create_user(
     return user
 
 
+@lru_cache
+def _dummy_hash() -> str:
+    return hash_password("no-such-user-placeholder")
+
+
 def authenticate(db: Session, username: str, password: str) -> User | None:
     user = db.scalar(select(User).where(User.username == username))
-    if user is None or not verify_password(password, user.password_hash):
+    if user is None:
+        # Spend the same bcrypt time as for a real user, so response time does not reveal which usernames exist.
+        verify_password(password, _dummy_hash())
+        return None
+    if not verify_password(password, user.password_hash):
         return None
     return user
 

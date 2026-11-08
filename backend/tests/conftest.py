@@ -69,6 +69,17 @@ def clean_tables(test_database) -> None:
         conn.execute(text(f"TRUNCATE {names} RESTART IDENTITY CASCADE"))
 
 
+@pytest.fixture(autouse=True)
+def reset_login_limiter():
+    """Wrong-password counters live in memory; never let one test's failures block another test."""
+    from app.services.login_limiter import get_login_limiter
+
+    limiter = get_login_limiter()
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 @pytest.fixture
 def db():
     from app.db import SessionLocal

@@ -160,3 +160,92 @@ def test_temporary_password_must_be_changed_before_anything_else(client, db):
     new_headers = {"Authorization": f"Bearer {changed.json()['access_token']}"}
     assert client.get("/api/auth/me", headers=new_headers).status_code == 200
     assert client.get("/api/auth/me", headers=headers).status_code == 401, "the temporary-password token is dead"
+
+
+# --- brute-force protection ---
+
+
+def wrong_login(client, username="dr.aziz"):
+    return client.post("/api/auth/login", json={"username": username, "password": "wrong-password"})
+
+
+def test_five_wrong_passwords_block_login_even_with_the_right_one(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    for _ in range(5):
+        assert wrong_login(client).status_code == 401
+
+    blocked = client.post("/api/auth/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD})
+
+    assert blocked.status_code == 429
+    assert 1 <= int(blocked.headers["Retry-After"]) <= 15 * 60
+
+
+def test_block_is_per_username(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    make_user(db, "dr.other", Role.DOCTOR)
+    for _ in range(5):
+        wrong_login(client, "dr.aziz")
+
+    assert client.post("/api/auth/login", json={"username": "dr.other", "password": DEFAULT_PASSWORD}).status_code == 200
+    assert client.post("/api/auth/login", json={"username": "DR.AZIZ ", "password": DEFAULT_PASSWORD}).status_code == 429
+
+
+def test_block_ends_after_the_window(client, db):
+    from app.services.login_limiter import get_login_limiter
+
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    limiter = get_login_limiter()
+    now = [1000.0]
+    limiter.clock = lambda: now[0]
+    try:
+        for _ in range(5):
+            wrong_login(client)
+        assert login_status(client) == 429
+
+        now[0] += 15 * 60  # the window has passed
+        assert login_status(client) == 200
+    finally:
+        import time
+
+        limiter.clock = time.monotonic
+
+
+def login_status(client) -> int:
+    return client.post("/api/auth/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD}).status_code
+
+
+def test_successful_login_resets_the_counter(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    for _ in range(4):
+        wrong_login(client)
+    assert login_status(client) == 200
+
+    for _ in range(4):
+        wrong_login(client)
+
+    assert login_status(client) == 200
+
+
+def test_unknown_username_costs_the_same_bcrypt_work(client, db, monkeypatch):
+    from app.services import users
+
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    calls: list[str] = []
+    real_verify = users.verify_password
+    monkeypatch.setattr(users, "verify_password", lambda pw, h: calls.append(h) or real_verify(pw, h))
+
+    wrong_login(client, "dr.aziz")
+    wrong_login(client, "nobody.here")
+
+    assert len(calls) == 2, "a missing user must still run one bcrypt check"
+    assert all(h.startswith("$2b$") for h in calls)
+
+
+def test_limiter_memory_is_bounded():
+    from app.services import login_limiter
+
+    limiter = login_limiter.LoginLimiter(max_failures=5, window_seconds=60)
+    for i in range(login_limiter.MAX_TRACKED_KEYS + 50):
+        limiter.record_failure(("1.2.3.4", f"user{i}"))
+
+    assert len(limiter._failures) <= login_limiter.MAX_TRACKED_KEYS

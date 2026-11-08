@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_expire_minutes: int = 60
     bcrypt_rounds: int = 12  # tests lower this to stay fast
+    login_max_failures: int = 5  # wrong passwords per (IP, username) ...
+    login_lock_minutes: int = 15  # ... within this many minutes → login blocked for the rest of the window
 
     first_admin_username: str = "admin"
     first_admin_password: str | None = None
