@@ -100,3 +100,12 @@ export function formatNumber(value: number, language: string): string {
   }
   return new Intl.NumberFormat(locale(language), { maximumFractionDigits: 1 }).format(value);
 }
+
+/** Playback time "0:03.4" (stopwatch style); decimal comma in Uzbek and Russian, like `formatNumber`. */
+export function formatClock(seconds: number, language: string): string {
+  const tenths = Math.floor(Math.max(0, seconds) * 10 + 1e-6);
+  const minutes = Math.floor(tenths / 600);
+  const rest = tenths % 600;
+  const separator = language === "en" ? "." : ",";
+  return `${minutes}:${String(Math.floor(rest / 10)).padStart(2, "0")}${separator}${rest % 10}`;
+}

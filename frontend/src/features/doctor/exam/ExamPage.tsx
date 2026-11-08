@@ -12,6 +12,7 @@ import { ErrorState, SkeletonRows } from "../../../components/ui/States";
 import { formatDateTime, formatNumber } from "../../../lib/format";
 import { PointLabel } from "../shared";
 import { type LiveState, liveState, pollInterval, RECORD_SECONDS, type Stage, STAGES } from "./liveState";
+import { ResultView } from "./ResultView";
 
 /** Re-render every `ms` while `active` (countdowns, "stuck" timers). */
 function useNow(active: boolean, ms = 250): number {
@@ -87,6 +88,9 @@ export function ExamPage() {
           <LiveBody exam={e} state={state} deviceName={device?.name} />
         </div>
       </section>
+
+      {/* Outside the live region: a screen reader hears "Ready for your review", not the whole result. */}
+      {(state.kind === "ready" || state.kind === "reviewed") && <ResultView exam={e} />}
     </div>
   );
 }
@@ -194,11 +198,11 @@ function LiveBody({ exam, state, deviceName }: { exam: ExamDetail; state: LiveSt
     case "ready":
     case "reviewed":
       return (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1">
           <h2 id="live-title" className="text-title font-semibold">
             {state.kind === "ready" ? t("live.readyTitle") : t("live.reviewedTitle")}
           </h2>
-          <p className="text-ink-500">{t("live.resultViewNext")}</p>
+          <p className="text-ink-500">{state.kind === "ready" ? t("live.readyBody") : t("live.reviewedBody")}</p>
         </div>
       );
     case "failed":

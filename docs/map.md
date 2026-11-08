@@ -44,7 +44,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
 - `backend/app/api/device.py` — `/api/device/*`: heartbeat, command poll (204 = nothing), WAV upload (202)
 - `backend/app/services/device_flow.py` — heartbeat, take next command (row lock), WAV check + save
-- `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here)
+- `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here);
+  answer vocabulary `ANSWER_LABELS` / `gave_answer()` (mirrored by frontend `aiOutcome.ts`)
 - `backend/app/api/patient.py` — `/api/me`, `/api/me/exams` (reviewed only, no AI fields)
 - `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
 - `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
@@ -94,7 +95,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
 - `frontend/src/features/doctor/` — DoctorHome (review queue), `patients/` list, form, patient page; `shared.tsx`
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
-  (status → screen state, polling speed, backend failure text → i18n keys)
+  (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,
+  saved conclusion), HeartStrip (wavesurfer on chart paper, close-up, spectrogram), `aiOutcome.ts`
 - `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests
 
 ## Scripts

@@ -1,5 +1,5 @@
 /** Doctor endpoints (backend `app/api/doctor.py`). */
-import { api } from "./client";
+import { api, apiBlob } from "./client";
 
 export type Sex = "male" | "female";
 export type Point = "AV" | "PV" | "TV" | "MV";
@@ -90,4 +90,11 @@ export const doctorApi = {
     api<ExamDetail>("/exams", { body: { patient_id: patientId, device_id: deviceId, point } }),
   getExam: (id: number) => api<ExamDetail>(`/exams/${id}`),
   cancelExam: (id: number) => api<ExamDetail>(`/exams/${id}/cancel`, { method: "POST" }),
+  examAudio: (id: number, signal?: AbortSignal) => apiBlob(`/exams/${id}/audio`, { signal }),
+  /** `agreesWithAi` must be null when the AI gave no answer (backend checks it). */
+  reviewExam: (id: number, note: string, agreesWithAi: boolean | null) =>
+    api<ExamDetail>(`/exams/${id}/review`, {
+      method: "PATCH",
+      body: agreesWithAi === null ? { note } : { note, agrees_with_ai: agreesWithAi },
+    }),
 };

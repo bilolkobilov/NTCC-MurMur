@@ -1,4 +1,4 @@
-import { formatDate, formatDateTime, formatNumber, formatRelative } from "./format";
+import { formatClock, formatDate, formatDateTime, formatNumber, formatRelative } from "./format";
 
 // 09:05 UTC = 14:05 in Tashkent (UTC+5). These results must not depend on the runtime's Uzbek locale data.
 const iso = "2026-11-08T09:05:00Z";
@@ -26,4 +26,11 @@ test("decimal comma in Uzbek and Russian", () => {
   expect(formatNumber(1250.5, "uz")).toBe("1 250,5");
   expect(formatNumber(6.6, "ru")).toBe("6,6");
   expect(formatNumber(6.6, "en")).toBe("6.6");
+});
+
+test("playback clock: minutes, seconds, tenths; decimal comma outside English", () => {
+  expect(formatClock(3.46, "en")).toBe("0:03.4");
+  expect(formatClock(20, "uz")).toBe("0:20,0");
+  expect(formatClock(75.05, "ru")).toBe("1:15,0");
+  expect(formatClock(-1, "en")).toBe("0:00.0");
 });

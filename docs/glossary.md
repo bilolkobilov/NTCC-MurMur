@@ -20,6 +20,10 @@ choice, ask a doctor before the demo. Change a term here first, then in `fronten
 | one-time password | одноразовый пароль | bir martalik parol | high | logins | standard UI term |
 | research prototype, not a medical device | исследовательский прототип, не медицинское изделие | tadqiqot prototipi, tibbiy buyum emas | medium | disclaimer | ru: *медицинское изделие* is the legal term; uz: *tibbiy buyum* — ask a doctor whether *tibbiy asbob* reads better |
 | re-record | перезаписать | qayta yozish | high | failed exam | plain wording |
+| murmur detected / no murmur detected | обнаружен шум / шум не обнаружен | shovqin aniqlandi / shovqin aniqlanmadi | high | AI card | follows *yurak shovqini* [3] |
+| spectrogram | спектрограмма | spektrogramma | high | recording | loanword, same in all three |
+| confidence (of the AI) | уверенность | ishonch | medium | AI card | plain word; a doctor may prefer *ehtimollik* |
+| screening aid, not a diagnosis | средство скрининга, не диагноз | skrining vositasi, tashxis emas | high | AI card | *tashxis* = diagnosis |
 | clipped (too loud) | перегрузка (слишком громко) | haddan tashqari baland | medium | quality reasons | plain wording rather than a technical term |
 
 Sources: [1] Apollo Hospitals, Uzbek page on MitraClip / valves — https://www.apollohospitals.com/uz/procedures/mitraclip-valve-repair ·

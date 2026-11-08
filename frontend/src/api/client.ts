@@ -30,9 +30,10 @@ function readDetail(payload: unknown, fallback: string): string {
   return fallback;
 }
 
-export async function api<T>(path: string, options: Options = {}): Promise<T> {
+/** One request with the token; every failure (no connection, 4xx/5xx) becomes an ApiError. */
+async function send(path: string, options: Options, accept: string): Promise<Response> {
   const token = session.get()?.token;
-  const headers: Record<string, string> = { Accept: "application/json" };
+  const headers: Record<string, string> = { Accept: accept };
   if (options.body !== undefined) headers["Content-Type"] = "application/json";
   if (token) headers.Authorization = `Bearer ${token}`;
 
@@ -48,11 +49,7 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ApiError(0, "network");
   }
-
-  if (response.ok) {
-    if (response.status === 204) return undefined as T;
-    return (await response.json()) as T;
-  }
+  if (response.ok) return response;
 
   const payload = await response.json().catch(() => null);
   const detail = readDetail(payload, response.statusText);
@@ -61,6 +58,17 @@ export async function api<T>(path: string, options: Options = {}): Promise<T> {
   if (response.status === 401 && token) session.end("expired");
   if (response.status === 403 && detail === "password change required") session.requirePasswordChange();
   throw new ApiError(response.status, detail, retryAfter);
+}
+
+export async function api<T>(path: string, options: Options = {}): Promise<T> {
+  const response = await send(path, options, "application/json");
+  if (response.status === 204) return undefined as T;
+  return (await response.json()) as T;
+}
+
+/** A file behind the login (e.g. the exam's WAV): fetched with the token, never put in a URL. */
+export async function apiBlob(path: string, options: Options = {}): Promise<Blob> {
+  return (await send(path, options, "*/*")).blob();
 }
 
 /** i18n key + values for a failure. Backend details are matched here, in one place. */

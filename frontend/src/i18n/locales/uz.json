@@ -278,7 +278,6 @@
     "checkingBody": "Odatda bir necha soniya. Juda qisqa, juda past, haddan baland yoki harakatli yozuv tahlil qilinmaydi.",
     "readyTitle": "Xulosangiz uchun tayyor",
     "reviewedTitle": "Xulosa yozilgan",
-    "resultViewNext": "Toʻlqin, tinglash va AI natijasi rejaning keyingi bosqichida quriladi.",
     "failedTitle": "Qayta yozish kerak",
     "cancelledTitle": "Tekshiruv bekor qilindi",
     "recordAgain": "Qayta yozish",
@@ -291,6 +290,60 @@
       "result": "Natija"
     },
     "stepFailed": "Shu yerda toʻxtadi:",
-    "progress": "Tekshiruv bosqichlari"
+    "progress": "Tekshiruv bosqichlari",
+    "readyBody": "Yozuvni tinglang, AI fikrini oʻqing, soʻng xulosangizni yozing.",
+    "reviewedBody": "Xulosangiz saqlandi. Bemor uni koʻra oladi."
+  },
+  "result": {
+    "recording": "Yozuv",
+    "scale": "1 katta katak = {{seconds}} s",
+    "audioLoading": "Yozuv yuklanmoqda…",
+    "audioLoadFailed": "Yozuvni yuklab boʻlmadi. Aloqani tekshirib, qayta urinib koʻring.",
+    "audioDecodeFailed": "Bu brauzer yozuvni ocha olmadi. Chrome yoki Edge brauzerida urinib koʻring.",
+    "stripLabel": "Yurak tovushi yozuvi, tinglash oʻrni",
+    "position": "{{time}} / {{total}}",
+    "play": "Tinglash",
+    "pause": "Pauza",
+    "zoom": "Masshtab",
+    "zoom_whole": "Butun",
+    "zoom_paper": "Yaqindan",
+    "spectrogram": "Spektrogramma",
+    "aiTitle": "AI fikri",
+    "confidence": "Ishonch {{percent}} %",
+    "outcome": {
+      "murmur": "Shovqin aniqlandi",
+      "clear": "Shovqin aniqlanmadi",
+      "poorQuality": "Yozuv sifati baholash uchun past",
+      "unavailable": "AI fikri yoʻq",
+      "other": "AI notanish javob berdi: «{{label}}»"
+    },
+    "outcomeBody": {
+      "murmur": "Rozi yoki rozi emasligingizni aytishdan oldin yozuvni oʻzingiz tinglang.",
+      "clear": "Rozi yoki rozi emasligingizni aytishdan oldin yozuvni oʻzingiz tinglang.",
+      "poorQuality": "AI bu yozuvni baholamadi. Oʻzingiz tinglang yoki qayta yozing.",
+      "unavailable": "AI modeli hali ulanmagan. Xulosa — sizning tinglashingiz boʻyicha.",
+      "other": "Bu sahifa bunday javobni bilmaydi. Oʻz tinglashingizga tayaning."
+    },
+    "disclaimer": "Skrining vositasi, tashxis emas. Yakuniy xulosa — sizniki."
+  },
+  "review": {
+    "title": "Xulosangiz",
+    "agreeQuestion": "AI bilan rozimisiz?",
+    "agree": "Roziman",
+    "disagree": "Rozi emasman",
+    "agreeRequired": "AI bilan rozi yoki rozi emasligingizni tanlang.",
+    "note": "Xulosa",
+    "noteHint": "Tasdiqlaganingizdan soʻng bemor bu matnni koʻradi. Oddiy soʻzlar bilan yozing.",
+    "noteRequired": "Xulosangizni yozing.",
+    "saving": "Saqlanmoqda…",
+    "confirm": "Xulosani tasdiqlash",
+    "final": "Tasdiqlangandan soʻng xulosani oʻzgartirib boʻlmaydi.",
+    "leaveTitle": "Saqlamasdan chiqasizmi?",
+    "leaveBody": "Xulosangiz hali saqlanmagan, u yoʻqoladi.",
+    "alreadyReviewed": "Bu tekshiruv allaqachon koʻrib chiqilgan — ehtimol boshqa oynada. Quyida saqlangan xulosa.",
+    "conclusionTitle": "Xulosangiz",
+    "youAgreed": "Siz AI bilan rozi boʻldingiz",
+    "youDisagreed": "Siz AI bilan rozi boʻlmadingiz",
+    "patientSees": "Bemor bu xulosani oʻz sahifasida koʻradi."
   }
 }

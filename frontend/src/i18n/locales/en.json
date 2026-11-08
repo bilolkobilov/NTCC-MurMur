@@ -278,7 +278,6 @@
     "checkingBody": "Usually a few seconds. A recording that is too short, too quiet, clipped or moved is not analysed.",
     "readyTitle": "Ready for your review",
     "reviewedTitle": "Reviewed",
-    "resultViewNext": "The waveform, listening and AI result view is built in the next step of the plan.",
     "failedTitle": "Record again",
     "cancelledTitle": "Exam cancelled",
     "recordAgain": "Record again",
@@ -291,6 +290,60 @@
       "result": "Result"
     },
     "stepFailed": "Stopped here:",
-    "progress": "Exam progress"
+    "progress": "Exam progress",
+    "readyBody": "Listen to the recording, read the AI's opinion, then write your conclusion.",
+    "reviewedBody": "Your conclusion is saved. The patient can see it."
+  },
+  "result": {
+    "recording": "Recording",
+    "scale": "1 big square = {{seconds}} s",
+    "audioLoading": "Loading the recording…",
+    "audioLoadFailed": "The recording could not be loaded. Check the connection and try again.",
+    "audioDecodeFailed": "This browser could not open the recording. Try Chrome or Edge.",
+    "stripLabel": "Heart sound recording, playback position",
+    "position": "{{time}} of {{total}}",
+    "play": "Play",
+    "pause": "Pause",
+    "zoom": "Zoom",
+    "zoom_whole": "Whole",
+    "zoom_paper": "Close-up",
+    "spectrogram": "Spectrogram",
+    "aiTitle": "AI opinion",
+    "confidence": "Confidence {{percent}} %",
+    "outcome": {
+      "murmur": "Murmur detected",
+      "clear": "No murmur detected",
+      "poorQuality": "Recording too poor to judge",
+      "unavailable": "No AI opinion",
+      "other": "Unknown AI answer: “{{label}}”"
+    },
+    "outcomeBody": {
+      "murmur": "Listen to the recording yourself before you agree or disagree.",
+      "clear": "Listen to the recording yourself before you agree or disagree.",
+      "poorQuality": "The AI did not judge this recording. Listen yourself, or record again.",
+      "unavailable": "The AI model is not connected yet. Your own listening is the conclusion.",
+      "other": "This page does not know this answer. Rely on your own listening."
+    },
+    "disclaimer": "Screening aid, not a diagnosis. Your conclusion is the final one."
+  },
+  "review": {
+    "title": "Your conclusion",
+    "agreeQuestion": "Do you agree with the AI?",
+    "agree": "I agree",
+    "disagree": "I disagree",
+    "agreeRequired": "Choose whether you agree with the AI.",
+    "note": "Conclusion",
+    "noteHint": "The patient sees this text after you confirm. Write in plain words.",
+    "noteRequired": "Write your conclusion.",
+    "saving": "Saving…",
+    "confirm": "Confirm review",
+    "final": "Once confirmed, the conclusion cannot be changed.",
+    "leaveTitle": "Leave without saving?",
+    "leaveBody": "Your conclusion is not saved yet. It will be lost.",
+    "alreadyReviewed": "This exam was already reviewed, perhaps in another tab. The saved conclusion is shown below.",
+    "conclusionTitle": "Your conclusion",
+    "youAgreed": "You agreed with the AI",
+    "youDisagreed": "You disagreed with the AI",
+    "patientSees": "The patient can see this conclusion in their account."
   }
 }
