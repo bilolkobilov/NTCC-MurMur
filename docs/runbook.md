@@ -46,6 +46,17 @@ npm run build      # type-check + production build into frontend/dist
 TypeScript is pinned to ~5.9 and linting uses ESLint on purpose: TypeScript 7 / oxlint use native binaries that
 Smart App Control blocks or that ESLint cannot use (see docs/decisions/2026-11.md).
 
+## Demo mode (one process, offline laptop)
+
+```bash
+cd frontend && npm run build        # creates frontend/dist
+cd ../backend && uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+Open http://localhost:8000 — FastAPI serves the web app and the API from one origin (no CORS). The device on the
+hotspot talks to http://<laptop-ip>:8000/api/device/... . `FRONTEND_DIST` can point elsewhere; if the folder has no
+`index.html`, only the API runs.
+
 ## Manual test without hardware (fake device)
 
 1. Start the API (above). As admin, register a device assigned to a doctor; copy the one-time `api_key`.

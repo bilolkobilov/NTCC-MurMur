@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     app_timezone: str = "Asia/Tashkent"  # what "today" means in admin stats
     cors_origins: str = ""
     recordings_dir: Path = Path("storage/recordings")
+    frontend_dist: Path = Path("frontend/dist")  # built web app; served at / when it exists
     max_upload_mb: int = 10
     min_recording_seconds: int = 10  # shorter recordings are rejected as "re-record"
 
@@ -47,6 +48,11 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @property
+    def frontend_dist_path(self) -> Path:
+        path = self.frontend_dist
+        return path if path.is_absolute() else REPO_ROOT / path
 
     @property
     def recordings_path(self) -> Path:

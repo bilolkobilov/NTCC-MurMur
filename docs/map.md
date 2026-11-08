@@ -18,7 +18,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Backend
 
 - `backend/pyproject.toml` — dependencies (uv), pytest config, pure-Python SQLAlchemy setting
-- `backend/app/main.py` — `create_app()`: CORS, routers, `/api/health`
+- `backend/app/main.py` — `create_app()`: CORS, routers, `/api/health`; serves `frontend/dist` at `/` when built
 - `backend/app/upload_limit.py` — ASGI middleware: rejects big/unsized device uploads from Content-Length
 - `backend/app/config.py` — `Settings` from env / `.env`; builds the database URL
 - `backend/app/db.py` — engine, `SessionLocal`, `Base` (constraint naming), `CreatedAtMixin`, `get_db` dependency
@@ -53,6 +53,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
 - `backend/tests/test_migrations.py` — tables exist, models match migrations, downgrade/upgrade round trip
 - `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient`, `make_wav` builders shared by tests
+- `backend/tests/test_web_app.py` — built web app served next to the API: client routes, cache, no traversal
 - `backend/tests/test_full_flow.py` — the whole story through the API: admin → doctor → device → analysis → review → patient
 - `backend/tests/test_access_rules.py` — whose data / which data each role may see (patients, admin, AI fields)
 
