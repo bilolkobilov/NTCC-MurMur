@@ -32,7 +32,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/login_limiter.py` — in-memory brute-force guard: 5 wrong passwords per (IP, username) / 15 min
 - `backend/app/api/admin.py` — `/api/admin/*`: doctors, devices (+ one-time key), stats, audit
 - `backend/app/services/doctors.py` — create / list (with patient count) / block doctors, reset a doctor's password
-- `backend/app/services/devices.py` — register device + key, assign to doctor, list a doctor's devices
+- `backend/app/services/devices.py` — register device + key, rotate key, assign to doctor, list a doctor's devices
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
 - `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*`, `/api/devices` (own devices) for the doctor

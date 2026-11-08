@@ -74,6 +74,13 @@ def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, _: Curre
     return DeviceOut.model_validate(devices.assign_device(db, device_id, body.doctor_id))
 
 
+@router.post("/devices/{device_id}/rotate-key")
+def rotate_device_key(device_id: PathId, db: DbSession, _: CurrentAdmin) -> DeviceCreated:
+    """Issue a new key (shown once). The old key stops working at once; put the new one into the firmware."""
+    device, api_key = devices.rotate_key(db, device_id)
+    return DeviceCreated(**DeviceOut.model_validate(device).model_dump(), api_key=api_key)
+
+
 # --- system ---
 
 

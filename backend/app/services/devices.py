@@ -59,3 +59,12 @@ def assign_device(db: Session, device_id: int, doctor_id: int | None) -> Device:
     device.doctor_id = doctor_id
     db.commit()
     return device
+
+
+def rotate_key(db: Session, device_id: int) -> tuple[Device, str]:
+    """New API key for a device (old one lost or leaked). The old key stops working immediately."""
+    device = get_device(db, device_id)
+    api_key = generate_api_key()
+    device.api_key_hash = hash_api_key(api_key)
+    db.commit()
+    return device, api_key

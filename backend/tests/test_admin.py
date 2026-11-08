@@ -220,6 +220,7 @@ ADMIN_ENDPOINTS = [
     ("get", "/api/admin/stats"),
     ("get", "/api/admin/audit"),
     ("post", "/api/admin/doctors/1/password"),
+    ("post", "/api/admin/devices/1/rotate-key"),
 ]
 
 
@@ -259,3 +260,19 @@ def test_password_reset_only_for_doctors_and_with_a_valid_password(client, admin
     assert reset(other_admin.id).status_code == 404
     assert reset(9999).status_code == 404
     assert reset(doctor["id"], "short").status_code == 422
+
+
+def test_rotate_device_key(client, admin, db):
+    created = client.post("/api/admin/devices", headers=admin, json={"name": "A", "serial": "MM-001"}).json()
+    old_key = {"X-Device-Key": created["api_key"]}
+    assert client.post("/api/device/heartbeat", headers=old_key, json={}).status_code == 200
+
+    rotated = client.post(f"/api/admin/devices/{created['id']}/rotate-key", headers=admin)
+
+    assert rotated.status_code == 200
+    new_key = {"X-Device-Key": rotated.json()["api_key"]}
+    assert rotated.json()["api_key"] != created["api_key"]
+    assert client.post("/api/device/heartbeat", headers=old_key, json={}).status_code == 401
+    assert client.post("/api/device/heartbeat", headers=new_key, json={}).status_code == 200
+    assert rotated.json()["api_key"] not in client.get("/api/admin/devices", headers=admin).text
+    assert client.post("/api/admin/devices/9999/rotate-key", headers=admin).status_code == 404
