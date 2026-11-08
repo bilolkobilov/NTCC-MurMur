@@ -216,3 +216,60 @@ def test_device_assigned_elsewhere_after_exam_start_cannot_touch_it(client, db, 
 
     # the same physical device still finishes the exam it already started
     assert upload(client, key, exam.id).status_code == 202
+
+
+def _wav_files() -> set[str]:
+    return {p.name for p in get_settings().recordings_path.glob("*.wav")}
+
+
+def test_simultaneous_uploads_store_exactly_one_recording(client, db, key, exam, device_and_key):
+    """A retry that arrives while the first upload is still saving must get 409, not 500 + an orphan file."""
+    import threading
+
+    from app.db import SessionLocal
+    from app.services import device_flow
+    from app.services.errors import Conflict
+
+    client.get("/api/device/command", headers=key)
+    before = _wav_files()
+    barrier = threading.Barrier(2)
+    outcomes: list[str] = []
+
+    def upload_in_own_session():
+        with SessionLocal() as session:
+            device = session.get(Device, device_and_key[0].id)
+            barrier.wait()
+            try:
+                device_flow.accept_upload(session, device, exam.id, make_wav(), motion_detected=False)
+                outcomes.append("ok")
+            except Conflict:
+                outcomes.append("conflict")
+
+    threads = [threading.Thread(target=upload_in_own_session) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join(timeout=30)
+
+    assert sorted(outcomes) == ["conflict", "ok"]
+    assert len(_wav_files() - before) == 1
+    assert len(db.scalars(select(Recording).where(Recording.exam_id == exam.id)).all()) == 1
+
+
+def test_failed_save_leaves_no_orphan_file(client, db, key, exam, monkeypatch):
+    from app.services import exam_flow
+
+    client.get("/api/device/command", headers=key)
+    before = _wav_files()
+
+    def broken_mark_uploaded(_exam):
+        raise RuntimeError("database went away")
+
+    monkeypatch.setattr(exam_flow, "mark_uploaded", broken_mark_uploaded)
+    with pytest.raises(RuntimeError):
+        upload(client, key, exam.id)
+
+    assert _wav_files() == before
+    db.expire_all()
+    assert db.get(Exam, exam.id).status == ExamStatus.RECORDING
+    assert db.scalar(select(Recording)) is None

@@ -61,7 +61,8 @@ def read_wav_info(data: bytes) -> tuple[int, float]:
 
 
 def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion_detected: bool) -> Exam:
-    exam = db.get(Exam, exam_id)
+    # Row lock: a retried upload arriving while the first is still saving waits here, then sees 'uploaded' → 409.
+    exam = db.get(Exam, exam_id, with_for_update=True, populate_existing=True)
     if exam is None or exam.device_id != device.id:
         raise NotFound("exam not found")
     if exam.status != ExamStatus.RECORDING:
@@ -69,22 +70,29 @@ def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion
     sample_rate, duration_s = read_wav_info(data)
 
     file_name = storage.save_recording(data)
-    db.add(
-        Recording(
-            exam_id=exam.id,
-            file_name=file_name,
-            size_bytes=len(data),
-            sample_rate=sample_rate,
-            duration_s=duration_s,
-            motion_detected=motion_detected,
+    try:
+        db.add(
+            Recording(
+                exam_id=exam.id,
+                file_name=file_name,
+                size_bytes=len(data),
+                sample_rate=sample_rate,
+                duration_s=duration_s,
+                motion_detected=motion_detected,
+            )
         )
-    )
-    command = db.scalar(
-        select(DeviceCommand).where(DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN)
-    )
-    if command is not None:
-        command.status = CommandStatus.DONE
-        command.done_at = datetime.now(UTC)
-    exam_flow.mark_uploaded(exam)
-    db.commit()
+        command = db.scalar(
+            select(DeviceCommand).where(
+                DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN
+            )
+        )
+        if command is not None:
+            command.status = CommandStatus.DONE
+            command.done_at = datetime.now(UTC)
+        exam_flow.mark_uploaded(exam)
+        db.commit()
+    except Exception:
+        db.rollback()
+        storage.delete_recording(file_name)  # never leave a WAV on disk that no row points to
+        raise
     return exam

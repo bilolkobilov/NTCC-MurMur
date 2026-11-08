@@ -25,3 +25,7 @@ def save_recording(data: bytes) -> str:
     file_name = new_file_name()
     (folder / file_name).write_bytes(data)
     return file_name
+
+
+def delete_recording(file_name: str) -> None:
+    recording_path(file_name).unlink(missing_ok=True)
