@@ -52,16 +52,17 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 | Who | Endpoint | What |
 | --- | --- | --- |
 | all | `POST /api/auth/login`, `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change (returns a fresh token; older tokens die), who am I |
-| admin | `GET/POST /api/admin/doctors`, `POST /api/admin/doctors/{id}/block` · `/unblock` | doctors |
-| admin | `GET/POST /api/admin/devices`, `PATCH /api/admin/devices/{id}` | devices, assignment |
+| admin | `GET/POST /api/admin/doctors`, `POST /api/admin/doctors/{id}/block` · `/unblock` · `/password` | doctors, password reset |
+| admin | `GET/POST /api/admin/devices`, `PATCH /api/admin/devices/{id}`, `POST …/rotate-key` | devices, assignment, new key |
 | admin | `GET /api/admin/stats`, `GET /api/admin/audit` | counts, audit log |
-| doctor | `GET/POST /api/patients`, `GET /api/patients/{id}`, `POST …/consent`, `POST …/login`, `GET …/exams` | patients |
-| doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET /api/exams/{id}/audio`, `PATCH /api/exams/{id}/review` | exams |
+| doctor | `GET/POST /api/patients`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
+| doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET …/audio`, `PATCH …/review`, `POST …/cancel` | exams |
 | doctor | `GET /api/devices` | own devices with online status |
 | patient | `GET /api/me`, `GET /api/me/exams` | own data |
 | device | `POST /api/device/heartbeat`, `GET /api/device/command`, `POST /api/device/upload/{exam_id}` | device link |
 
-Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`).
+Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`: cancelled, analysis error, or
+a "re-record" quality problem — too short, almost silent, clipped, or movement).
 
 ## Project docs
 
