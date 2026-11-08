@@ -251,6 +251,7 @@ DOCTOR_ENDPOINTS = [
     ("get", "/api/exams/1"),
     ("get", "/api/exams/1/audio"),
     ("patch", "/api/exams/1/review"),
+    ("get", "/api/devices"),
 ]
 
 
@@ -334,3 +335,18 @@ def test_parallel_same_serial_gives_409_not_500(db):
 
     assert sum(isinstance(r, tuple) for r in results) == 1
     assert sum(isinstance(r, Conflict) for r in results) == 1, results
+
+
+def test_doctor_lists_only_own_devices_with_online_status(client, db, headers, doctor, other_doctor):
+    from datetime import UTC, datetime
+
+    mine, _ = make_device(db, "MM-MINE", doctor)
+    make_device(db, "MM-THEIRS", other_doctor)
+    make_device(db, "MM-FREE")
+    mine.last_seen_at = datetime.now(UTC)
+    db.commit()
+
+    listed = client.get("/api/devices", headers=headers).json()
+
+    assert [(d["serial"], d["online"]) for d in listed] == [("MM-MINE", True)]
+    assert "api_key" not in str(listed) and "api_key_hash" not in str(listed)

@@ -31,10 +31,10 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/users.py` — create user, authenticate, change password
 - `backend/app/api/admin.py` — `/api/admin/*`: doctors, devices (+ one-time key), stats, audit
 - `backend/app/services/doctors.py` — create / list (with patient count) / block doctors
-- `backend/app/services/devices.py` — register device + key, assign to doctor, `is_online` (30 s window)
+- `backend/app/services/devices.py` — register device + key, assign to doctor, list a doctor's devices
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
-- `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*` for the doctor
+- `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*`, `/api/devices` (own devices) for the doctor
 - `backend/app/services/patients.py` — doctor's own patients, consent, patient login (temp password); audits reads
 - `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review; audits reads
 - `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table

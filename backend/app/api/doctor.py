@@ -7,6 +7,7 @@ from app.deps import CurrentDoctor, DbSession
 from app.models import Patient
 from app.schemas.common import PathId
 from app.schemas.doctor import (
+    DoctorDeviceOut,
     ExamCreate,
     ExamDetail,
     ExamReview,
@@ -16,7 +17,7 @@ from app.schemas.doctor import (
     PatientLoginCreated,
     PatientOut,
 )
-from app.services import exams, patients
+from app.services import devices, exams, patients
 
 router = APIRouter(prefix="/api", tags=["doctor"])
 
@@ -85,3 +86,12 @@ def get_exam_audio(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> Fil
 def review_exam(exam_id: PathId, body: ExamReview, db: DbSession, doctor: CurrentDoctor) -> ExamDetail:
     exam = exams.review_exam(db, doctor, exam_id, body.note, body.agrees_with_ai)
     return ExamDetail.model_validate(exam)
+
+
+# --- devices ---
+
+
+@router.get("/devices")
+def list_my_devices(db: DbSession, doctor: CurrentDoctor) -> list[DoctorDeviceOut]:
+    """Devices assigned to me, with online status — to pick one when starting an exam."""
+    return [DoctorDeviceOut.model_validate(d) for d in devices.list_doctor_devices(db, doctor)]

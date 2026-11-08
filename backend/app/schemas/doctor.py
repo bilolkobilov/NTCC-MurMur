@@ -89,3 +89,15 @@ class ExamDetail(ExamSummary):
     updated_at: datetime
     recording: RecordingOut | None
     ai_result: AIResultOut | None
+
+
+class DoctorDeviceOut(BaseModel):
+    """A device the doctor can start exams on."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    serial: str
+    online: bool
+    last_seen_at: datetime | None

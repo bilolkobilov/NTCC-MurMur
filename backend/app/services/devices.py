@@ -1,23 +1,13 @@
-"""Devices: registration with a one-time API key, assignment to a doctor, online status."""
-
-from datetime import UTC, datetime, timedelta
+"""Devices: registration with a one-time API key, assignment to a doctor. Online status: `Device.online`."""
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Device
+from app.models import Device, User
 from app.security import generate_api_key, hash_api_key
 from app.services.doctors import get_doctor
 from app.services.errors import BadRequest, Conflict, NotFound
-
-ONLINE_WINDOW = timedelta(seconds=30)
-
-
-def is_online(device: Device, now: datetime | None = None) -> bool:
-    if device.last_seen_at is None:
-        return False
-    return (now or datetime.now(UTC)) - device.last_seen_at <= ONLINE_WINDOW
 
 
 def _check_assignable_doctor(db: Session, doctor_id: int | None) -> None:
@@ -49,6 +39,11 @@ def create_device(db: Session, *, name: str, serial: str, doctor_id: int | None)
 
 def list_devices(db: Session) -> list[Device]:
     return list(db.scalars(select(Device).order_by(Device.id)))
+
+
+def list_doctor_devices(db: Session, doctor: User) -> list[Device]:
+    """Devices assigned to this doctor — the ones they can start exams on."""
+    return list(db.scalars(select(Device).where(Device.doctor_id == doctor.id).order_by(Device.id)))
 
 
 def get_device(db: Session, device_id: int) -> Device:

@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from app.deps import CurrentAdmin, DbSession
-from app.models import Device
 from app.schemas.common import PathId
 from app.schemas.admin import (
     AuditEntryOut,
@@ -20,20 +19,6 @@ from app.schemas.admin import (
 from app.services import audit, devices, doctors, stats
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
-
-
-def _device_out(device: Device) -> DeviceOut:
-    return DeviceOut(
-        id=device.id,
-        name=device.name,
-        serial=device.serial,
-        doctor_id=device.doctor_id,
-        online=devices.is_online(device),
-        last_seen_at=device.last_seen_at,
-        wifi_rssi=device.wifi_rssi,
-        firmware_version=device.firmware_version,
-        created_at=device.created_at,
-    )
 
 
 # --- doctors ---
@@ -69,17 +54,17 @@ def unblock_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorO
 @router.post("/devices", status_code=status.HTTP_201_CREATED)
 def create_device(body: DeviceCreate, db: DbSession, _: CurrentAdmin) -> DeviceCreated:
     device, api_key = devices.create_device(db, name=body.name, serial=body.serial, doctor_id=body.doctor_id)
-    return DeviceCreated(**_device_out(device).model_dump(), api_key=api_key)
+    return DeviceCreated(**DeviceOut.model_validate(device).model_dump(), api_key=api_key)
 
 
 @router.get("/devices")
 def list_devices(db: DbSession, _: CurrentAdmin) -> list[DeviceOut]:
-    return [_device_out(device) for device in devices.list_devices(db)]
+    return [DeviceOut.model_validate(device) for device in devices.list_devices(db)]
 
 
 @router.patch("/devices/{device_id}")
 def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, _: CurrentAdmin) -> DeviceOut:
-    return _device_out(devices.assign_device(db, device_id, body.doctor_id))
+    return DeviceOut.model_validate(devices.assign_device(db, device_id, body.doctor_id))
 
 
 # --- system ---

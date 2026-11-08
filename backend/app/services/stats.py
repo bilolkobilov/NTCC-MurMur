@@ -9,7 +9,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings
 from app.models import Device, Exam, ExamStatus, Patient, Role, User
 from app.services.analyzer import get_analyzer
-from app.services.devices import ONLINE_WINDOW
+from app.models.device import ONLINE_WINDOW
 
 
 def system_stats(db: Session) -> dict:

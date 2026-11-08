@@ -1,10 +1,13 @@
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import DateTime, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base, CreatedAtMixin
 from app.models.user import User
+
+# A device is "online" if it sent a heartbeat or polled within this window.
+ONLINE_WINDOW = timedelta(seconds=30)
 
 
 class Device(CreatedAtMixin, Base):
@@ -22,3 +25,9 @@ class Device(CreatedAtMixin, Base):
     firmware_version: Mapped[str | None] = mapped_column(String(32))
 
     doctor: Mapped[User | None] = relationship()
+
+    @property
+    def online(self) -> bool:
+        if self.last_seen_at is None:
+            return False
+        return datetime.now(UTC) - self.last_seen_at <= ONLINE_WINDOW
