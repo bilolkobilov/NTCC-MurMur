@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
 
     jwt_secret: str
-    jwt_expire_minutes: int = 60
+    jwt_expire_minutes: int = 480  # 8 hours = one working day (owner, 2026-11-08)
     bcrypt_rounds: int = 12  # tests lower this to stay fast
     login_max_failures: int = 5  # wrong passwords per (IP, username) ...
     login_lock_minutes: int = 15  # ... within this many minutes → login blocked for the rest of the window
