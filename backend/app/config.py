@@ -25,6 +25,7 @@ class Settings(BaseSettings):
     first_admin_username: str = "admin"
     first_admin_password: str | None = None
 
+    app_timezone: str = "Asia/Tashkent"  # what "today" means in admin stats
     cors_origins: str = ""
     recordings_dir: Path = Path("storage/recordings")
     max_upload_mb: int = 10
