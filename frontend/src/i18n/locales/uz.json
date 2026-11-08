@@ -107,8 +107,8 @@
     "failure": {
       "cancelled": "Siz bu tekshiruvni yozuv kelmasdan bekor qildingiz.",
       "tooShort": "Juda qisqa: {{seconds}} s, kamida {{minimum}} s kerak.",
-      "silent": "Deyarli jim. Stetoskop teriga tegib turganini tekshiring.",
-      "clipped": "Haddan baland: tovushning {{percent}} % i kesilgan. Stetoskopni yengilroq bosing.",
+      "silent": "Ovoz deyarli yoʻq. Stetoskop teriga tegib turganini tekshiring.",
+      "clipped": "Haddan tashqari baland: tovushning {{percent}} foizi kesilgan. Stetoskopni yengilroq bosing.",
       "motion": "Yozish paytida harakat boʻldi. Bemordan qimirlamaslikni soʻrang.",
       "quality": "Yozuv sifati juda past.",
       "analysis": "Serverda tahlil bajarilmadi. Yozuv saqlangan; qayta yozing yoki administratorga murojaat qiling.",
@@ -171,7 +171,7 @@
     "sex": "Jinsi",
     "height": "Boʻyi, sm",
     "weight": "Vazni, kg",
-    "optional": "Ixtiyoriy. Kiritilsa, AI model hisobga oladi.",
+    "optional": "Ixtiyoriy. Bemor kartasi uchun; hozirgi AI modeli faqat tovushdan foydalanadi.",
     "consent": "Imzolangan rozilik varaqasi olindi",
     "consentHint": "Usiz tekshiruv boshlanmaydi. Keyinroq ham belgilash mumkin.",
     "saveChanges": "Oʻzgarishlarni saqlash",
@@ -192,7 +192,7 @@
     "saved": "Bemor maʼlumotlari saqlandi.",
     "exams": "Tekshiruvlar",
     "noExamsTitle": "Hali tekshiruv yoʻq",
-    "noExamsBody": "Birinchi tekshiruvni boshlang: qurilma va eshitish nuqtasini tanlang.",
+    "noExamsBody": "Birinchi tekshiruvni boshlang: qurilma va tinglash nuqtasini tanlang.",
     "noExamsNeedConsent": "Avval bemor roziligini belgilang, keyin tekshiruvni boshlang.",
     "consent": "Rozilik",
     "consentRecorded": "Imzolangan rozilik {{date}} da belgilangan.",
@@ -223,8 +223,8 @@
     "deleteHint": "Maʼlumotni oʻchirish soʻrovi uchun. Bemorga oid hamma narsani oʻchiradi.",
     "delete": "Bemorni oʻchirish",
     "deleteTitle": "{{name}} oʻchirilsinmi?",
-    "deleteBody_one": "Profil, login va {{count}} ta tekshiruv yozuvi hamda AI natijasi bilan oʻchiriladi. Buni qaytarib boʻlmaydi.",
-    "deleteBody_other": "Profil, login va {{count}} ta tekshiruv yozuvlari hamda AI natijalari bilan oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "deleteBody_one": "Profil, login va {{count}} ta tekshiruv (yozuvi va AI natijasi bilan) oʻchiriladi. Buni qaytarib boʻlmaydi.",
+    "deleteBody_other": "Profil, login va {{count}} ta tekshiruv (yozuvlari va AI natijalari bilan) oʻchiriladi. Buni qaytarib boʻlmaydi.",
     "keep": "Bemorni qoldirish",
     "deleteTypeName": "Tasdiqlash uchun “{{name}}” deb yozing",
     "deleteTypeHint": "Ism mos kelganda oʻchirish tugmasi yoqiladi."
@@ -233,12 +233,12 @@
     "title": "Yangi tekshiruv",
     "lead": "Qurilma tanlangan nuqtada {{seconds}} soniya yurak tovushini yozadi.",
     "device": "Qurilma",
-    "point": "Eshitish nuqtasi",
+    "point": "Tinglash nuqtasi",
     "chooseDevice": "Qurilmani tanlang.",
     "deviceWentOffline": "Bu qurilma uzildi. Boshqasini tanlang yoki Wi-Fi ni tekshiring.",
     "choosePoint": "Stetoskop qayerga qoʻyilganini tanlang.",
-    "lastSeen": "Oxirgi marta {{when}} koʻringan",
-    "neverSeen": "Hech ulanmagan",
+    "lastSeen": "Oxirgi marta {{when}} koʻrindi",
+    "neverSeen": "Hech qachon ulanmagan",
     "allOffline": "Barcha qurilmalaringiz uzilgan. Bittasini yoqing va «Ulangan» chiqquncha kuting.",
     "noDevicesTitle": "Yozish uchun qurilma yoʻq",
     "whatHappens": "{{seconds}} soniya stetoskopni nuqtada ushlang, bemor qimirlamasin.",
@@ -253,8 +253,8 @@
     "where": {
       "AV": "toʻsh suyagidan oʻngda, 2-qovurgʻalararo oraliq",
       "PV": "toʻsh suyagidan chapda, 2-qovurgʻalararo oraliq",
-      "TV": "toʻsh suyagining pastki chap chekkasi, 4-oraliq",
-      "MV": "choʻqqi: chap oʻrta-oʻmrov chizigʻi, 5-oraliq"
+      "TV": "toʻsh suyagining chap pastki cheti, 4-qovurgʻalararo oraliq",
+      "MV": "yurak uchi: chap oʻrta oʻmrov chizigʻi, 5-qovurgʻalararo oraliq"
     },
     "patientWhere": {
       "AV": "koʻkrakning yuqori qismi, toʻsh suyagining oʻng tomoni",
@@ -281,7 +281,7 @@
     "recordingBody": "Stetoskopni qimirlatmang. Bemor tinch nafas olsin va gapirmasin.",
     "overdue": "Yozuv allaqachon kelishi kerak edi. Qurilmaning Wi-Fi sini tekshiring yoki bekor qilib, qayta yozing.",
     "checkingTitle": "Sifat tekshirilmoqda va tahlil qilinmoqda…",
-    "checkingBody": "Odatda bir necha soniya. Juda qisqa, juda past, haddan baland yoki harakatli yozuv tahlil qilinmaydi.",
+    "checkingBody": "Odatda bir necha soniya. Juda qisqa, juda past ovozli, haddan tashqari baland yoki harakatli yozuv tahlil qilinmaydi.",
     "readyTitle": "Xulosangiz uchun tayyor",
     "reviewedTitle": "Xulosa yozilgan",
     "failedTitle": "Qayta yozish kerak",
@@ -396,10 +396,10 @@
     "add": "Shifokor qoʻshish",
     "addBody": "Birinchi parolni siz qoʻyasiz va shifokorga shaxsan berasiz. Keyin u parolni oʻzgartira oladi.",
     "create": "Shifokorni yaratish",
-    "fullName": "F.I.Sh.",
-    "nameRequired": "Shifokorning F.I.Sh. ni kiriting.",
+    "fullName": "Ism-familiya",
+    "nameRequired": "Shifokorning ism-familiyasini kiriting.",
     "passwordRule": "Kamida {{min}} ta belgi.",
-    "generate": "Yaratish",
+    "generate": "Avtomatik yaratish",
     "patients_one": "{{formatted}} ta bemor",
     "patients_other": "{{formatted}} ta bemor",
     "since": "{{date}} da qoʻshilgan",
@@ -422,7 +422,7 @@
   },
   "devices": {
     "title": "Qurilmalar",
-    "onlineOf": "{{total}} tadan {{online}} tasi onlayn",
+    "onlineOf": "{{total}} tadan {{online}} tasi ulangan",
     "add": "Qurilmani roʻyxatdan oʻtkazish",
     "addBody": "Qurilma maxfiy kalit oladi, u bir marta koʻrsatiladi. Uni qurilma proshivkasi sozlamalariga yozing.",
     "register": "Roʻyxatdan oʻtkazish",
@@ -436,7 +436,7 @@
     "unassigned": "Biriktirilmagan",
     "rotate": "Yangi kalit",
     "rotateTitle": "{{name}} uchun yangi kalit?",
-    "rotateBody": "Hozirgi kalit darhol ishlamay qoladi. Yangi kalitni proshivkaga yozmaguningizcha qurilma oflayn boʻladi.",
+    "rotateBody": "Hozirgi kalit darhol ishlamay qoladi. Yangi kalitni proshivkaga yozmaguningizcha qurilma ulanmagan boʻlib turadi.",
     "rotateConfirm": "Yangi kalit yaratish",
     "keyCreatedTitle": "Qurilma roʻyxatdan oʻtdi",
     "keyRotatedTitle": "Yangi kalit yaratildi",
@@ -450,12 +450,12 @@
     "signal": {
       "strong": "kuchli",
       "ok": "oʻrtacha",
-      "weak": "kuchsiz, hotspotga yaqinroq qoʻying"
+      "weak": "kuchsiz, Wi-Fi nuqtasiga yaqinroq qoʻying"
     }
   },
   "audit": {
     "title": "Kirishlar jurnali",
-    "about": "Shifokor yoki bemor bemor maʼlumotlarini har safar ochganda yoki oʻzgartirganda. Faqat yozuv raqamlari.",
+    "about": "Bemor maʼlumotlari har safar ochilganda yoki oʻzgartirilganda yoziladi (shifokor yoki bemorning oʻzi tomonidan). Faqat yozuv raqamlari saqlanadi.",
     "filter": "Koʻrsatish",
     "groups": {
       "all": "Hammasi",
@@ -464,7 +464,7 @@
       "me": "Bemorlarning oʻzi"
     },
     "emptyTitle": "Bu yerda hali yozuv yoʻq",
-    "emptyBody": "Shifokor yoki bemor bemor maʼlumotlarini ochganda yozuvlar paydo boʻladi.",
+    "emptyBody": "Shifokor yoki bemor maʼlumotlarni ochganda yozuvlar shu yerda paydo boʻladi.",
     "when": "Qachon",
     "who": "Kim",
     "what": "Harakat",

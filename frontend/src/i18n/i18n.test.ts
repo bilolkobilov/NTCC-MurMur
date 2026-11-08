@@ -54,6 +54,37 @@ describe("translations", () => {
   });
 });
 
+describe("script and spelling", () => {
+  test("Uzbek: Latin script only, tutuq belgisi (ʼ U+02BC) instead of any apostrophe", () => {
+    for (const [key, text] of Object.entries(locales.uz)) {
+      if (key.startsWith("language.")) continue; // language names are written in their own script ("Русский")
+      expect(text, key).not.toMatch(/[Ѐ-ӿ]/); // no Cyrillic letters
+      expect(text, key).not.toMatch(/['’‘`´]/); // maʼlumot, eʼlon: U+02BC
+    }
+  });
+
+  test("Russian: no Latin look-alike letters inside Cyrillic words", () => {
+    for (const [key, text] of Object.entries(locales.ru)) {
+      expect(text, key).not.toMatch(/[а-яё][a-z]|[a-z][а-яё]/i);
+    }
+  });
+
+  test("nothing left untranslated (same text as English), except a reviewed list", () => {
+    // Checked by hand (2026-11-08): names, units and words that are the same in that language.
+    const reviewed = new Set([
+      "uz:app.name", "ru:app.name", "uz:roles.admin", "uz:patientForm.fullNamePlaceholder",
+      "uz:devices.wifi", "ru:devices.wifi",
+    ]);
+    for (const lang of ["uz", "ru"] as const) {
+      for (const [key, text] of Object.entries(locales[lang])) {
+        if (key.startsWith("language.") || reviewed.has(`${lang}:${key}`)) continue; // own names, same everywhere
+        const words = text.replace(/{{\s*\w+\s*}}/g, ""); // a unit after a number ("{{value}} kg") is not a word
+        if (locales.en[key] === text && /[a-z]{3}/i.test(words)) expect.fail(`${lang}:${key} is still English: ${text}`);
+      }
+    }
+  });
+});
+
 describe("language detection", () => {
   test("the user's own choice wins", () => {
     expect(detectLanguage("ru", ["en-US", "uz"])).toBe("ru");

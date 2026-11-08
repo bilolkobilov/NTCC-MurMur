@@ -171,7 +171,7 @@
     "sex": "Sex",
     "height": "Height, cm",
     "weight": "Weight, kg",
-    "optional": "Optional. The AI model uses it if given.",
+    "optional": "Optional. For the doctor's record; the current AI model uses only the sound.",
     "consent": "Signed consent form received",
     "consentHint": "An exam cannot start without it. You can also record it later.",
     "saveChanges": "Save changes",

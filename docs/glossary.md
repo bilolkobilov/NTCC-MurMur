@@ -23,10 +23,23 @@ choice, ask a doctor before the demo. Change a term here first, then in `fronten
 | murmur detected / no murmur detected | обнаружен шум / шум не обнаружен | shovqin aniqlandi / shovqin aniqlanmadi | high | AI card | follows *yurak shovqini* [3] |
 | spectrogram | спектрограмма | spektrogramma | high | recording | loanword, same in all three |
 | murmur probability (AI score) | вероятность шума | shovqin ehtimoli | high | AI card | always P(murmur); replaced "confidence" (1.1.0 flags from a low probability) |
+| listening (auscultation) point | точка аускультации (врачу) / точка выслушивания (пациенту) | tinglash nuqtasi | high | new exam, patient result | plain word *tinglash*; "eshitish" (hearing) was replaced |
+| intercostal space | межреберье | qovurgʻalararo oraliq | high | chest point notes (doctor) | standard anatomy term in Uzbek texts [4] |
+| sternum (doctor) / breastbone (patient) | грудина | toʻsh suyagi | high | chest point notes | everyday and anatomical word [4] |
+| mid-clavicular line | срединно-ключичная линия | oʻrta oʻmrov chizigʻi | medium | MV point note | seen as "qovurgʻaning oʻrta oʻmrov chizigʻi" in an Uzbek anatomy note [4] |
+| (cardiac) apex | верхушка сердца | yurak uchi | medium | MV point note | [4] uses *yurak uchi*; *yurak choʻqqisi* also occurs — was "choʻqqi", changed |
+| nipple | сосок | koʻkrak soʻrgʻichi | high | patient MV description | everyday word, patient-facing |
+| almost silent (recording) | почти тишина | ovoz deyarli yoʻq | high | quality reasons | plain wording |
+| AI (artificial intelligence) | ИИ (искусственный интеллект) | AI (sunʼiy intellekt) | medium | AI card, review | uz UI keeps the short "AI" as on Uzbek tech sites; the pitch spells *sunʼiy intellekt* once |
+| online / offline (device) | в сети / не в сети | ulangan / ulanmagan | high | devices | one pair everywhere ("onlayn" removed) |
 | screening aid, not a diagnosis | средство скрининга, не диагноз | skrining vositasi, tashxis emas | high | AI card | *tashxis* = diagnosis |
 | clipped (too loud) | перегрузка (слишком громко) | haddan tashqari baland | medium | quality reasons | plain wording rather than a technical term |
 
 Sources: [1] Apollo Hospitals, Uzbek page on MitraClip / valves — https://www.apollohospitals.com/uz/procedures/mitraclip-valve-repair ·
 [2] medigence.com Uzbek blog on valve replacement — https://medigence.com/uz/blog/heart-valve-replacement-cost-india/ ·
-[3] Uzbek-language auscultation material (Termiz/Bukhara university papers via uniwork.buxdu.uz, journals.nuu.uz).
-Uzbek medical terminology is less standardized than Russian: before the demo, one doctor should read the uz column once.
+[3] Uzbek-language auscultation material (Termiz/Bukhara university papers via uniwork.buxdu.uz, journals.nuu.uz). ·
+[4] Uzbek anatomy note on the heart's position (oefen.uz, "yurak tuzilishi va joylashuvi") — https://oefen.uz/uz/documents/referatlar/umumiy/yurak-tuzilishi-va-joylashuvi.
+Uzbek medical terminology is less standardized than Russian: before the demo, one doctor should read the uz column once —
+first the **medium** rows. Full string pass done 2026-11-08 (task 8): 414 keys × 3 languages read; automated checks in
+`frontend/src/i18n/i18n.test.ts` (same keys, plural forms, placeholders, Uzbek Latin script with ʻ/ʼ, no Latin
+look-alikes in Russian, nothing left in English).
