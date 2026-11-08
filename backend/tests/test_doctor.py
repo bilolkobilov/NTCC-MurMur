@@ -262,6 +262,7 @@ DOCTOR_ENDPOINTS = [
     ("post", "/api/patients/1/reset-password"),
     ("post", "/api/exams/1/cancel"),
     ("patch", "/api/patients/1"),
+    ("delete", "/api/patients/1"),
 ]
 
 
@@ -458,3 +459,83 @@ def test_cannot_edit_another_doctors_patient(client, db, headers, other_doctor):
     theirs = make_patient(db, other_doctor)
 
     assert client.patch(f"/api/patients/{theirs.id}", headers=headers, json={"full_name": "X"}).status_code == 404
+
+
+# --- delete patient ---
+
+
+def test_delete_patient_erases_everything_and_keeps_only_ids_in_audit(client, db, headers, doctor):
+    from app.config import get_settings
+    from app.models import AIResult, Patient, User
+
+    keep = make_patient(db, doctor, "Keep Me")
+    keep_exam = make_exam(db, doctor, ExamStatus.WAITING)
+    patient = make_patient(db, doctor, "Erase Me")
+    created = client.post(f"/api/patients/{patient.id}/login", headers=headers, json={"username": "erase.me"}).json()
+    first = client.post("/api/auth/login", json={"username": "erase.me", "password": created["temporary_password"]})
+    patient_token = {"Authorization": f"Bearer {first.json()['access_token']}"}
+    db.refresh(patient)  # the login was created through the API, outside this session
+    patient_user_id = patient.user_id
+    assert patient_user_id is not None
+    device, _ = make_device(db, "MM-DEL", doctor)
+    exam = Exam(patient_id=patient.id, doctor_id=doctor.id, device_id=device.id, point="MV", status=ExamStatus.ANALYZED)
+    db.add(exam)
+    db.flush()
+    file_name = storage.save_recording(b"RIFF....WAVE")
+    db.add_all(
+        [
+            Recording(exam_id=exam.id, file_name=file_name, size_bytes=12, sample_rate=4000, duration_s=20),
+            AIResult(exam_id=exam.id, model_name="dummy", model_version="0", quality="unknown", label="x"),
+            DeviceCommand(exam_id=exam.id, device_id=device.id, status=CommandStatus.DONE),
+            AuditLog(user_id=patient_user_id, action="me.read", object_type="patient", object_id=patient.id),
+        ]
+    )
+    db.commit()
+    exam_id, patient_id = exam.id, patient.id
+
+    response = client.delete(f"/api/patients/{patient_id}", headers=headers)
+
+    assert response.status_code == 204
+    db.expire_all()
+    assert db.get(Patient, patient_id) is None
+    assert db.get(User, patient_user_id) is None
+    assert db.get(Exam, exam_id) is None
+    assert db.scalar(select(Recording).where(Recording.exam_id == exam_id)) is None
+    assert db.scalar(select(AIResult).where(AIResult.exam_id == exam_id)) is None
+    assert db.scalar(select(DeviceCommand).where(DeviceCommand.exam_id == exam_id)) is None
+    assert not (get_settings().recordings_path / file_name).exists()
+    # the deleted patient can no longer use their session or log in
+    assert client.get("/api/auth/me", headers=patient_token).status_code == 401
+    assert (
+        client.post(
+            "/api/auth/login", json={"username": "erase.me", "password": created["temporary_password"]}
+        ).status_code
+        == 401
+    )
+    # other data untouched
+    assert db.get(Patient, keep.id) is not None and db.get(Exam, keep_exam.id) is not None
+    # audit: the delete is logged; the patient's old read stays as a bare id
+    assert ("patient.delete", patient_id) in audit_actions(db)
+    old_read = db.scalar(select(AuditLog).where(AuditLog.action == "me.read"))
+    assert old_read.user_id == patient_user_id
+    make_user(db, "admin", Role.ADMIN)
+    entries = client.get("/api/admin/audit", headers=login(client, "admin")).json()
+    entry = next(e for e in entries if e["action"] == "me.read")
+    assert (entry["user_id"], entry["username"]) == (patient_user_id, None)
+    assert "Erase Me" not in str(entries)
+
+
+def test_cannot_delete_another_doctors_patient(client, db, headers, other_doctor):
+    from app.models import Patient
+
+    theirs = make_patient(db, other_doctor)
+
+    assert client.delete(f"/api/patients/{theirs.id}", headers=headers).status_code == 404
+    assert db.get(Patient, theirs.id) is not None
+
+
+def test_delete_patient_without_login_or_exams(client, db, headers, doctor):
+    patient = make_patient(db, doctor)
+
+    assert client.delete(f"/api/patients/{patient.id}", headers=headers).status_code == 204
+    assert client.get(f"/api/patients/{patient.id}", headers=headers).status_code == 404

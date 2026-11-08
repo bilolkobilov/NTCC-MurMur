@@ -33,6 +33,8 @@ sqlalchemy = { DISABLE_SQLALCHEMY_CEXT = "1" }
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+# A SQLAlchemy warning usually means a real bug (e.g. a stale object in a test) — fail on it.
+filterwarnings = ["error::sqlalchemy.exc.SAWarning"]
 
 [tool.ruff]
 line-length = 120

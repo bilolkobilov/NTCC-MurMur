@@ -58,5 +58,7 @@ def run_analysis(exam_id: int) -> None:
 
 def _fail(db: Session, exam_id: int, reason: str) -> None:
     exam = db.get(Exam, exam_id, populate_existing=True)
+    if exam is None:  # the patient was deleted while the analysis ran
+        return
     exam_flow.mark_failed(exam, reason)
     db.commit()

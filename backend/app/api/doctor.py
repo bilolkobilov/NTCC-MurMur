@@ -50,6 +50,12 @@ def update_patient(patient_id: PathId, body: PatientUpdate, db: DbSession, docto
     return _patient_out(patients.update_patient(db, doctor, patient_id, body.model_dump(exclude_unset=True)))
 
 
+@router.delete("/patients/{patient_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_patient(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> None:
+    """Permanently erase the patient, their login, exams, results and recordings. Cannot be undone."""
+    patients.delete_patient(db, doctor, patient_id)
+
+
 @router.post("/patients/{patient_id}/consent")
 def record_consent(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> PatientOut:
     return _patient_out(patients.record_consent(db, doctor, patient_id))

@@ -36,7 +36,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
 - `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*`, `/api/devices` (own devices) for the doctor
-- `backend/app/services/patients.py` — doctor's own patients: create/edit, consent, patient login + reset; audits reads
+- `backend/app/services/patients.py` — doctor's own patients: create/edit/delete (erases all), consent, login + reset; audits
 - `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review, cancel; audits reads
 - `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`

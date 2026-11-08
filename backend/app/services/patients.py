@@ -1,15 +1,18 @@
 """Patients as seen by their doctor. Every read of patient data is written to the audit log."""
 
+import logging
 from datetime import UTC, datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import Session
 
-from app.models import Exam, Patient, Role, Sex, User
+from app.models import AIResult, DeviceCommand, Exam, Patient, Recording, Role, Sex, User
 from app.security import generate_temp_password
-from app.services import audit
+from app.services import audit, storage
 from app.services.errors import Conflict, NotFound
 from app.services.users import create_user, set_password
+
+log = logging.getLogger(__name__)
 
 
 def create_patient(
@@ -119,3 +122,31 @@ def update_patient(db: Session, doctor: User, patient_id: int, changes: dict) ->
     db.commit()
     audit.record(db, doctor, "patient.update", "patient", patient.id)
     return patient
+
+
+def delete_patient(db: Session, doctor: User, patient_id: int) -> None:
+    """Erase a patient completely (data-deletion request): profile, login, exams, AI results, commands, WAV files.
+
+    Cannot be undone. The audit log keeps only ids. Exam rows are locked first, so an upload that is in progress
+    finishes before (and is then deleted too) instead of racing with the delete.
+    """
+    patient = _own_patient(db, doctor, patient_id, for_update=True)
+    exam_ids = list(db.scalars(select(Exam.id).where(Exam.patient_id == patient.id).with_for_update()))
+    file_names = list(db.scalars(select(Recording.file_name).where(Recording.exam_id.in_(exam_ids))))
+
+    db.execute(delete(AIResult).where(AIResult.exam_id.in_(exam_ids)))
+    db.execute(delete(Recording).where(Recording.exam_id.in_(exam_ids)))
+    db.execute(delete(DeviceCommand).where(DeviceCommand.exam_id.in_(exam_ids)))
+    db.execute(delete(Exam).where(Exam.id.in_(exam_ids)))
+    login_user = patient.user
+    db.delete(patient)
+    db.flush()  # the patient row points at its login, so it must go first
+    if login_user is not None:
+        db.delete(login_user)
+    audit.record(db, doctor, "patient.delete", "patient", patient_id)  # commits everything above at once
+
+    for file_name in file_names:  # only after the commit: a failed delete must not lose the audio
+        try:
+            storage.delete_recording(file_name)
+        except OSError:
+            log.exception("could not delete recording file %s", file_name)
