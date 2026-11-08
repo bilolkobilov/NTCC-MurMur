@@ -70,3 +70,7 @@ class AuditEntryOut(BaseModel):
     object_type: str
     object_id: int | None
     created_at: datetime
+
+
+class DoctorPasswordReset(BaseModel):
+    password: NewPassword

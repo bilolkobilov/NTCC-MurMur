@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.models import Patient, Role, User
 from app.services.errors import NotFound
-from app.services.users import create_user
+from app.services.users import create_user, set_password
 
 
 def create_doctor(db: Session, *, username: str, password: str, full_name: str) -> User:
@@ -38,4 +38,11 @@ def set_doctor_active(db: Session, doctor_id: int, active: bool) -> User:
     doctor = get_doctor(db, doctor_id)
     doctor.is_active = active
     db.commit()
+    return doctor
+
+
+def reset_doctor_password(db: Session, doctor_id: int, password: str) -> User:
+    """Admin sets a new password (e.g. the doctor forgot it). The doctor's open sessions end."""
+    doctor = get_doctor(db, doctor_id)
+    set_password(db, doctor, password, must_change=False)
     return doctor

@@ -65,7 +65,12 @@ def change_password(db: Session, user: User, current_password: str, new_password
         raise BadRequest("current password is wrong")
     if current_password == new_password:
         raise BadRequest("new password must be different")
-    user.password_hash = hash_password(new_password)
-    user.must_change_password = False
-    user.token_version += 1  # every token issued before this moment stops working
+    set_password(db, user, new_password, must_change=False)
+
+
+def set_password(db: Session, user: User, password: str, *, must_change: bool) -> None:
+    """Replace the password and log the user out everywhere (all tokens issued before now stop working)."""
+    user.password_hash = hash_password(password)
+    user.must_change_password = must_change
+    user.token_version += 1
     db.commit()

@@ -57,6 +57,13 @@ def create_patient_login(
     return PatientLoginCreated(username=user.username, temporary_password=temp_password)
 
 
+@router.post("/patients/{patient_id}/reset-password")
+def reset_patient_password(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> PatientLoginCreated:
+    """New one-time password for a patient who forgot theirs (shown once; must be changed on next login)."""
+    user, temp_password = patients.reset_patient_password(db, doctor, patient_id)
+    return PatientLoginCreated(username=user.username, temporary_password=temp_password)
+
+
 @router.get("/patients/{patient_id}/exams")
 def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> list[ExamSummary]:
     return [ExamSummary.model_validate(e) for e in patients.list_patient_exams(db, doctor, patient_id)]

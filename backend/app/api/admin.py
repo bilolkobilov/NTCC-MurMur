@@ -13,6 +13,7 @@ from app.schemas.admin import (
     DeviceOut,
     DoctorCreate,
     DoctorOut,
+    DoctorPasswordReset,
     StatsOut,
 )
 from app.schemas.common import PathId
@@ -46,6 +47,12 @@ def block_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorOut
 @router.post("/doctors/{doctor_id}/unblock")
 def unblock_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorOut:
     return DoctorOut.model_validate(doctors.set_doctor_active(db, doctor_id, active=True))
+
+
+@router.post("/doctors/{doctor_id}/password")
+def reset_doctor_password(doctor_id: PathId, body: DoctorPasswordReset, db: DbSession, _: CurrentAdmin) -> DoctorOut:
+    """Set a new password for a doctor who forgot theirs. Their open sessions end."""
+    return DoctorOut.model_validate(doctors.reset_doctor_password(db, doctor_id, body.password))
 
 
 # --- devices ---

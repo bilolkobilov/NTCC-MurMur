@@ -9,7 +9,7 @@ from app.models import Exam, Patient, Role, Sex, User
 from app.security import generate_temp_password
 from app.services import audit
 from app.services.errors import Conflict, NotFound
-from app.services.users import create_user
+from app.services.users import create_user, set_password
 
 
 def create_patient(
@@ -97,3 +97,13 @@ def list_patient_exams(db: Session, doctor: User, patient_id: int) -> list[Exam]
     exams = list(db.scalars(select(Exam).where(Exam.patient_id == patient.id).order_by(Exam.id.desc())))
     audit.record(db, doctor, "patient.exams.list", "patient", patient.id)
     return exams
+
+
+def reset_patient_password(db: Session, doctor: User, patient_id: int) -> tuple[User, str]:
+    """New one-time password for the patient's login (shown once; must be changed). Old sessions end."""
+    patient = _own_patient(db, doctor, patient_id)
+    if patient.user is None:
+        raise Conflict("patient has no login yet")
+    temp_password = generate_temp_password()
+    set_password(db, patient.user, temp_password, must_change=True)
+    return patient.user, temp_password

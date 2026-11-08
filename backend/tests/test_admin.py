@@ -219,6 +219,7 @@ ADMIN_ENDPOINTS = [
     ("patch", "/api/admin/devices/1"),
     ("get", "/api/admin/stats"),
     ("get", "/api/admin/audit"),
+    ("post", "/api/admin/doctors/1/password"),
 ]
 
 
@@ -230,3 +231,31 @@ def test_only_admin_can_use_admin_endpoints(client, db, method, path, role):
 
     assert client.request(method, path, headers=headers, json={}).status_code == 403
     assert client.request(method, path, json={}).status_code == 401
+
+
+def test_admin_resets_a_doctors_forgotten_password(client, admin):
+    doctor = create_doctor(client, admin)
+    old_session = login(client, "dr.aziz", "doctor-pass-1")
+
+    response = client.post(
+        f"/api/admin/doctors/{doctor['id']}/password", headers=admin, json={"password": "new-pass-99"}
+    )
+
+    assert response.status_code == 200
+    assert client.get("/api/auth/me", headers=old_session).status_code == 401, "old sessions end"
+    assert client.post("/api/auth/login", json={"username": "dr.aziz", "password": "doctor-pass-1"}).status_code == 401
+    new_login = client.post("/api/auth/login", json={"username": "dr.aziz", "password": "new-pass-99"})
+    assert new_login.status_code == 200
+    assert new_login.json()["must_change_password"] is False
+
+
+def test_password_reset_only_for_doctors_and_with_a_valid_password(client, admin, db):
+    doctor = create_doctor(client, admin)
+    other_admin = make_user(db, "admin2", Role.ADMIN)
+
+    def reset(user_id, password="new-pass-99"):
+        return client.post(f"/api/admin/doctors/{user_id}/password", headers=admin, json={"password": password})
+
+    assert reset(other_admin.id).status_code == 404
+    assert reset(9999).status_code == 404
+    assert reset(doctor["id"], "short").status_code == 422

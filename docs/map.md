@@ -28,10 +28,10 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/api/auth.py` — login, change-password, `/api/auth/me`
 - `backend/app/schemas/` — request/response shapes; `common.py` has password/username field rules
 - `backend/app/services/errors.py` — `NotFound`/`Conflict`/`BadRequest`; mapped to HTTP in `main.py`
-- `backend/app/services/users.py` — create user, authenticate (equal timing), change password (bumps token_version)
+- `backend/app/services/users.py` — create user, authenticate (equal timing), change/set password (bumps token_version)
 - `backend/app/services/login_limiter.py` — in-memory brute-force guard: 5 wrong passwords per (IP, username) / 15 min
 - `backend/app/api/admin.py` — `/api/admin/*`: doctors, devices (+ one-time key), stats, audit
-- `backend/app/services/doctors.py` — create / list (with patient count) / block doctors
+- `backend/app/services/doctors.py` — create / list (with patient count) / block doctors, reset a doctor's password
 - `backend/app/services/devices.py` — register device + key, assign to doctor, list a doctor's devices
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries

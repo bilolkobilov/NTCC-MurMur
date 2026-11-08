@@ -259,6 +259,7 @@ DOCTOR_ENDPOINTS = [
     ("get", "/api/exams/1/audio"),
     ("patch", "/api/exams/1/review"),
     ("get", "/api/devices"),
+    ("post", "/api/patients/1/reset-password"),
 ]
 
 
@@ -387,3 +388,30 @@ def test_exam_detail_poll_uses_few_queries(client, db, headers, doctor):
 
     assert response.json()["recording"] and response.json()["ai_result"]
     assert statements.count("SELECT") <= 2, statements
+
+
+def test_doctor_resets_patients_forgotten_password(client, db, headers, doctor):
+    patient = make_patient(db, doctor)
+    created = client.post(f"/api/patients/{patient.id}/login", headers=headers, json={"username": "ali.v"}).json()
+    first = client.post("/api/auth/login", json={"username": "ali.v", "password": created["temporary_password"]})
+    patient_session = {"Authorization": f"Bearer {first.json()['access_token']}"}
+
+    reset = client.post(f"/api/patients/{patient.id}/reset-password", headers=headers)
+
+    assert reset.status_code == 200
+    new_temp = reset.json()["temporary_password"]
+    assert reset.json()["username"] == "ali.v"
+    assert new_temp != created["temporary_password"]
+    old_pw = client.post("/api/auth/login", json={"username": "ali.v", "password": created["temporary_password"]})
+    assert old_pw.status_code == 401
+    assert client.post("/api/auth/change-password", headers=patient_session, json={}).status_code == 401
+    relogin = client.post("/api/auth/login", json={"username": "ali.v", "password": new_temp})
+    assert relogin.json()["must_change_password"] is True
+
+
+def test_patient_password_reset_needs_own_patient_with_a_login(client, db, headers, doctor, other_doctor):
+    no_login = make_patient(db, doctor, "No Login")
+    theirs = make_patient(db, other_doctor, "Theirs")
+
+    assert client.post(f"/api/patients/{no_login.id}/reset-password", headers=headers).status_code == 409
+    assert client.post(f"/api/patients/{theirs.id}/reset-password", headers=headers).status_code == 404
