@@ -38,12 +38,18 @@ export function AppShell() {
 
   return (
     <div className="min-h-dvh bg-canvas">
+      <a
+        href="#main"
+        className="sr-only z-30 rounded-control bg-ink-900 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        {t("nav.skip")}
+      </a>
       <header className="sticky top-0 z-10 border-b border-line bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5 sm:px-6">
           <Link to="/" className="rounded focus-visible:outline-2 focus-visible:outline-ink-900">
             <Logo />
           </Link>
-          <nav aria-label={t("app.name")} className="order-last -mx-1 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
+          <nav aria-label={t("nav.main")} className="order-last -mx-1 flex w-full gap-1 overflow-x-auto sm:order-none sm:w-auto">
             {NAV[current.role].map((item) => (
               <NavLink
                 key={item.to}
@@ -51,7 +57,7 @@ export function AppShell() {
                 end={item.end}
                 className={({ isActive }) =>
                   clsx(
-                    "flex min-h-10 shrink-0 items-center rounded-lg px-3 text-sm whitespace-nowrap",
+                    "flex min-h-10 shrink-0 items-center rounded-control px-3 text-label whitespace-nowrap",
                     "focus-visible:outline-2 focus-visible:outline-ink-900",
                     isActive ? "bg-canvas font-semibold text-ink-900" : "text-ink-500 hover:text-ink-900",
                   )
@@ -65,7 +71,7 @@ export function AppShell() {
             <LanguageSwitch />
             <Menu.Root>
               <Menu.Trigger
-                className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-left text-sm hover:bg-canvas focus-visible:outline-2 focus-visible:outline-ink-900"
+                className="flex min-h-10 items-center gap-2 rounded-control px-2 text-left text-label hover:bg-canvas focus-visible:outline-2 focus-visible:outline-ink-900"
                 aria-label={t("nav.account")}
               >
                 <span
@@ -76,25 +82,25 @@ export function AppShell() {
                 </span>
                 <span className="hidden flex-col leading-tight md:flex">
                   <span className="max-w-40 truncate font-medium">{account.data?.full_name ?? "…"}</span>
-                  <span className="text-xs text-ink-500">{t(`roles.${current.role}`)}</span>
+                  <span className="text-caption text-ink-500">{t(`roles.${current.role}`)}</span>
                 </span>
               </Menu.Trigger>
               <Menu.Portal>
                 <Menu.Content
                   align="end"
                   sideOffset={6}
-                  className="z-20 min-w-48 rounded-xl border border-line bg-surface p-1 shadow-[0_8px_24px_rgba(20,33,61,0.12)]"
+                  className="z-20 min-w-48 rounded-card border border-line bg-surface p-1 shadow-float"
                 >
                   <Menu.Item
                     onSelect={() => navigate("/change-password")}
-                    className="flex min-h-10 cursor-pointer items-center rounded-lg px-3 text-sm outline-none data-[highlighted]:bg-canvas"
+                    className="flex min-h-11 cursor-pointer items-center rounded-control px-3 text-label outline-none data-[highlighted]:bg-canvas"
                   >
                     {t("nav.changePassword")}
                   </Menu.Item>
                   <Menu.Separator className="my-1 h-px bg-line" />
                   <Menu.Item
                     onSelect={logOut}
-                    className="flex min-h-10 cursor-pointer items-center rounded-lg px-3 text-sm outline-none data-[highlighted]:bg-canvas"
+                    className="flex min-h-11 cursor-pointer items-center rounded-control px-3 text-label outline-none data-[highlighted]:bg-canvas"
                   >
                     {t("nav.logOut")}
                   </Menu.Item>
@@ -104,7 +110,7 @@ export function AppShell() {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-4 py-6 outline-none sm:px-6 sm:py-8">
         <Outlet />
       </main>
     </div>

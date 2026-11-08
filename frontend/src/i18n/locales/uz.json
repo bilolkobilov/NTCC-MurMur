@@ -21,7 +21,9 @@
     "myResults": "Natijalaringiz",
     "account": "Hisob",
     "changePassword": "Parolni almashtirish",
-    "logOut": "Chiqish"
+    "logOut": "Chiqish",
+    "main": "Asosiy menyu",
+    "skip": "Asosiy qismga oʻtish"
   },
   "roles": {
     "admin": "Administrator",
@@ -36,7 +38,9 @@
     "submitting": "Kirilmoqda…",
     "noSignup": "Hisoblarni administrator yoki shifokoringiz yaratadi.",
     "sessionEnded": "Seans tugadi. Davom etish uchun qaytadan kiring.",
-    "loggedOut": "Tizimdan chiqdingiz."
+    "loggedOut": "Tizimdan chiqdingiz.",
+    "usernameRequired": "Foydalanuvchi nomini kiriting.",
+    "passwordRequired": "Parolni kiriting."
   },
   "changePassword": {
     "title": "Parolni almashtirish",
@@ -52,7 +56,9 @@
     "saved": "Parol saqlandi. Boshqa qurilmalardagi seanslar yopildi.",
     "mismatch": "Ikkala yangi parol bir xil emas.",
     "tooShort": "Kamida 8 ta belgidan foydalaning.",
-    "tooLong": "Parol juda uzun. Qisqaroq parol tanlang."
+    "tooLong": "Parol juda uzun. Qisqaroq parol tanlang.",
+    "currentRequired": "Joriy parolni kiriting.",
+    "oneTimeRequired": "Sizga berilgan bir martalik parolni kiriting."
   },
   "errors": {
     "wrongCredentials": "Foydalanuvchi nomi yoki parol notoʻgʻri.",

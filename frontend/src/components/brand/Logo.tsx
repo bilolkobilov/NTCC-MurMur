@@ -5,7 +5,7 @@ export function Logo({ size = "md" }: { size?: "md" | "lg" }) {
   const { t } = useTranslation();
   const large = size === "lg";
   return (
-    <span className="inline-flex items-center gap-2 font-semibold tracking-tight text-ink-900">
+    <span translate="no" className="inline-flex items-center gap-2 font-semibold tracking-tight text-ink-900">
       <svg
         width={large ? 34 : 26}
         height={large ? 24 : 18}
@@ -22,7 +22,7 @@ export function Logo({ size = "md" }: { size?: "md" | "lg" }) {
           strokeLinejoin="round"
         />
       </svg>
-      <span className={large ? "text-2xl" : "text-lg"}>{t("app.name")}</span>
+      <span className={large ? "text-headline" : "text-title"}>{t("app.name")}</span>
     </span>
   );
 }

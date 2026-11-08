@@ -23,9 +23,9 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <ChartTrace seconds={4} className="h-28 w-full border-y border-grid-major lg:h-56" />
         </div>
         <div className="hidden px-8 pb-8 lg:block">
-          <p className="text-3xl font-semibold tracking-tight text-balance">{t("app.tagline")}</p>
-          <p className="mt-3 max-w-md text-ink-500 text-pretty">{t("app.pitch")}</p>
-          <p className="mt-6 font-mono text-xs text-ink-500">{t("app.disclaimer")}</p>
+          <p className="text-display font-semibold">{t("app.tagline")}</p>
+          <p className="mt-3 max-w-md text-ink-500">{t("app.pitch")}</p>
+          <p className="mt-6 font-mono text-caption text-ink-500">{t("app.disclaimer")}</p>
         </div>
       </aside>
       <section className="flex flex-col px-5 py-6 sm:px-8 lg:py-7">
@@ -33,7 +33,7 @@ export function AuthLayout({ children }: { children: ReactNode }) {
           <LanguageSwitch />
         </div>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-start py-2 lg:justify-center lg:py-4">{children}</div>
-        <p className="mt-4 text-center font-mono text-xs text-ink-500 lg:hidden">{t("app.disclaimer")}</p>
+        <p className="mt-4 text-center font-mono text-caption text-ink-500 lg:hidden">{t("app.disclaimer")}</p>
       </section>
     </div>
   );

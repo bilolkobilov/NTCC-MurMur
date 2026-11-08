@@ -20,7 +20,7 @@ export function LanguageSwitch() {
             aria-label={t(`language.${lang}`)}
             onClick={() => changeLanguage(lang)}
             className={clsx(
-              "relative min-h-8 min-w-9 rounded-md px-2 font-mono text-xs uppercase transition-colors",
+              "relative min-h-8 min-w-9 rounded-[6px] px-2 font-mono text-caption uppercase transition-colors",
               "focus-visible:outline-2 focus-visible:outline-ink-900",
               "after:absolute after:-inset-1 after:content-['']", // ≥ 40 px hit area
               active ? "bg-ink-900 text-white" : "text-ink-500 hover:text-ink-900",

@@ -44,9 +44,32 @@
   --color-clear: #0f766e;
   --color-clear-bg: #e7f6f3;
   --color-danger: #b91c1c;
+  --color-field: #f3f5f8; /* inputs are inset: a touch darker than the surface around them */
 
   --font-sans: "Uzbek Okina", "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Type scale, ratio ≈ 1.25 (.interface-design/system.md) */
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-body: 15px;
+  --text-body--line-height: 23px;
+  --text-title: 19px;
+  --text-title--line-height: 26px;
+  --text-headline: 24px;
+  --text-headline--line-height: 30px;
+  --text-headline--letter-spacing: -0.01em;
+  --text-display: 30px;
+  --text-display--line-height: 36px;
+  --text-display--letter-spacing: -0.02em;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-dialog: 16px;
+  --shadow-float: 0 8px 24px rgb(20 33 61 / 0.12), 0 2px 6px rgb(20 33 61 / 0.08);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* Millimetre chart paper: small square 8 px, big square 40 px (= 0.2 s at 200 px/s). The product's signature. */
@@ -69,4 +92,33 @@
   color: var(--color-ink-900);
   background: var(--color-canvas);
   font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+  -webkit-tap-highlight-color: transparent;
+}
+
+a,
+button,
+input,
+label,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation; /* no 300 ms double-tap delay on phones */
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
 }

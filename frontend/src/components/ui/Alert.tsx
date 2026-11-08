@@ -14,11 +14,11 @@ export function Alert({ tone = "info", children }: { tone?: Tone; children: Reac
   return (
     <div
       role={tone === "danger" ? "alert" : "status"}
-      className={clsx("flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-sm", tones[tone].box)}
+      className={clsx("flex items-start gap-2.5 rounded-control border px-3 py-2.5 text-body", tones[tone].box)}
     >
       <span
         aria-hidden="true"
-        className="mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border border-current text-[10px] font-semibold"
+        className="mt-1 grid size-4 shrink-0 place-items-center rounded-full border border-current font-mono text-[10px] leading-none font-semibold"
       >
         {tones[tone].icon}
       </span>

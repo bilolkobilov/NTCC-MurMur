@@ -21,7 +21,9 @@
     "myResults": "Your results",
     "account": "Account",
     "changePassword": "Change password",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "main": "Main navigation",
+    "skip": "Skip to content"
   },
   "roles": {
     "admin": "Administrator",
@@ -36,7 +38,9 @@
     "submitting": "Logging in…",
     "noSignup": "Accounts are created by your administrator or doctor.",
     "sessionEnded": "Your session ended. Log in again to continue.",
-    "loggedOut": "You logged out."
+    "loggedOut": "You logged out.",
+    "usernameRequired": "Enter your username.",
+    "passwordRequired": "Enter your password."
   },
   "changePassword": {
     "title": "Change password",
@@ -52,7 +56,9 @@
     "saved": "Password saved. Other devices were logged out.",
     "mismatch": "The two new passwords are different.",
     "tooShort": "Use at least 8 characters.",
-    "tooLong": "That password is too long. Use a shorter one."
+    "tooLong": "That password is too long. Use a shorter one.",
+    "currentRequired": "Enter your current password.",
+    "oneTimeRequired": "Enter the one-time password you were given."
   },
   "errors": {
     "wrongCredentials": "Wrong username or password.",

@@ -25,8 +25,8 @@ export function Button({ variant = "secondary", busy = false, busyText, classNam
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={clsx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg px-4 text-sm font-semibold",
-        "transition-[background-color,transform] duration-150 active:scale-[0.96]",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-control px-4 text-body font-semibold",
+        "transition-[background-color,transform] duration-150 ease-[var(--ease-out-strong)] active:scale-[0.97]",
         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink-900",
         "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
         styles[variant],

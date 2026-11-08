@@ -183,3 +183,28 @@ test("?next= from another role's area is ignored after login", async () => {
   expect(await screen.findByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
   expect(screen.queryByText("Not available for your account")).not.toBeInTheDocument();
 });
+
+test("empty fields: errors appear next to them and focus moves to the first one; nothing is sent", async () => {
+  const fetchMock = vi.spyOn(globalThis, "fetch");
+  renderAt("/login");
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("button", { name: "Log in" }));
+
+  expect(screen.getByText("Enter your username.")).toBeInTheDocument();
+  expect(screen.getByText("Enter your password.")).toBeInTheDocument();
+  expect(screen.getByLabelText("Username")).toHaveFocus();
+  expect(screen.getByLabelText("Username")).toHaveAttribute("aria-invalid", "true");
+  expect(fetchMock).not.toHaveBeenCalled();
+});
+
+test("the skip link jumps to the main content", async () => {
+  backend({ "GET /api/auth/me": doctorMe });
+  session.start({ token: "t", role: "doctor", mustChangePassword: false });
+  renderAt("/doctor");
+
+  const skip = await screen.findByRole("link", { name: "Skip to content" });
+  expect(skip).toHaveAttribute("href", "#main");
+  expect(document.getElementById("main")).toBeInTheDocument();
+  expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+});
