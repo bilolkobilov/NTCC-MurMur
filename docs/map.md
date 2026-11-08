@@ -68,6 +68,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docs/map.md` — this file
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
+- `docs/glossary.md` — medical terms in uz/ru/en with sources and confidence
 
 ## Frontend
 
