@@ -80,7 +80,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
 - `frontend/scripts/check-offline.mjs` — `npm run check:offline`: fails if the build would load anything from the internet
 - `frontend/src/main.tsx` — entry: CSS, i18n, `<App/>`
-- `frontend/src/app/App.tsx` — data router, role pages lazy-loaded, QueryClient (retries only network/5xx)
+- `frontend/src/app/App.tsx` — data router, role pages lazy-loaded, QueryClient (retries only network/5xx),
+  ForgetDataOnUserChange (cache cleared + pages remounted when the user changes)
 - `frontend/src/app/session.ts` — token + role in sessionStorage; `useSession()`; why the session ended
 - `frontend/src/app/guards.tsx` — `RequireRole`, `RequireSession`, `HomeRedirect`, safe `?next=`
 - `frontend/src/api/client.ts` — `api()`: Bearer token, 401 → session expired, 403 → change password; `errorMessage()`
@@ -94,8 +95,10 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/lib/format.ts` — dates (Asia/Tashkent), relative time, numbers per language, age
 - `frontend/src/components/ui/` — also Dialog (Radix), SecretDialog (one-time secrets), States (empty/error/skeleton/panel)
 - `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
+- `frontend/src/components/device/OnlineBadge.tsx` — online dot + word (doctor and admin pages)
 - `frontend/src/components/exam/ChestDiagram.tsx` — chest outline + 4 points (shared: doctor picker, patient map)
 - `frontend/src/features/doctor/` — DoctorHome (review queue), `patients/` list, form, patient page; `shared.tsx`
+  (RecordNo, PointLabel, useOneTimeState for once-only banners)
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,
   saved conclusion), HeartStrip (wavesurfer on chart paper, close-up, spectrogram), `aiOutcome.ts`

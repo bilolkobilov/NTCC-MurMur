@@ -237,8 +237,6 @@
     "chooseDevice": "Qurilmani tanlang.",
     "deviceWentOffline": "Bu qurilma uzildi. Boshqasini tanlang yoki Wi-Fi ni tekshiring.",
     "choosePoint": "Stetoskop qayerga qoʻyilganini tanlang.",
-    "lastSeen": "Oxirgi marta {{when}} koʻrindi",
-    "neverSeen": "Hech qachon ulanmagan",
     "allOffline": "Barcha qurilmalaringiz uzilgan. Bittasini yoqing va «Ulangan» chiqquncha kuting.",
     "noDevicesTitle": "Yozish uchun qurilma yoʻq",
     "whatHappens": "{{seconds}} soniya stetoskopni nuqtada ushlang, bemor qimirlamasin.",

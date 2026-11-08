@@ -1,14 +1,14 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 
 import { doctorApi, type Patient, PAGE_SIZE } from "../../../api/doctor";
 import { Alert } from "../../../components/ui/Alert";
 import { Button, ButtonLink } from "../../../components/ui/Button";
 import { EmptyState, ErrorState, PageHeader, SkeletonRows } from "../../../components/ui/States";
 import { ageFromBirthYear, formatNumber } from "../../../lib/format";
-import { RecordNo } from "../shared";
+import { RecordNo, useOneTimeState } from "../shared";
 
 /**
  * Patients list. Dense, hairline rows (scanned, not read). Search lives in the URL (?q=) so reload/back keep it.
@@ -37,7 +37,7 @@ export function PatientsPage() {
     getNextPageParam: (last, all) => (last.length === PAGE_SIZE ? all.length * PAGE_SIZE : undefined),
   });
   const rows = patients.data?.pages.flat() ?? [];
-  const deleted = (useLocation().state as { deleted?: string } | null)?.deleted;
+  const deleted = useOneTimeState<string>("deleted");
 
   return (
     <>
@@ -74,7 +74,7 @@ export function PatientsPage() {
         </div>
 
         {patients.isPending && <SkeletonRows rows={6} label={t("common.loading")} />}
-        {patients.isError && <ErrorState error={patients.error} onRetry={() => void patients.refetch()} />}
+        {patients.isError && rows.length === 0 && <ErrorState error={patients.error} onRetry={() => void patients.refetch()} />}
         {patients.isSuccess && rows.length === 0 && !urlQuery && (
           <EmptyState
             title={t("patients.emptyTitle")}

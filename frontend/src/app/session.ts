@@ -11,6 +11,8 @@ export type EndReason = "expired" | "loggedOut" | null;
 
 const KEY = "murmur.session";
 const listeners = new Set<() => void>();
+/** Called when a different user may now be using this tab (log in, log out, session expired). */
+const userListeners = new Set<() => void>();
 let current: Session | null = load();
 let endReason: EndReason = null;
 
@@ -43,6 +45,7 @@ export const session = {
   start(next: Session): void {
     endReason = null;
     set(next);
+    userListeners.forEach((listener) => listener());
   },
   /** Password changed: new token, no forced change any more. */
   replaceToken(token: string): void {
@@ -54,6 +57,7 @@ export const session = {
   end(reason: Exclude<EndReason, null>): void {
     endReason = reason;
     set(null);
+    userListeners.forEach((listener) => listener());
   },
   /** Read once: the login page shows the message, then it is gone. */
   takeEndReason(): EndReason {
@@ -64,6 +68,13 @@ export const session = {
   subscribe(listener: () => void): () => void {
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+  /** Not for a password change (same user, new token) — only when the person at the screen may have changed. */
+  onUserChange(listener: () => void): () => void {
+    userListeners.add(listener);
+    return () => {
+      userListeners.delete(listener);
+    };
   },
 };
 

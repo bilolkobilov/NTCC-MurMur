@@ -254,3 +254,17 @@ test("helpers: Wi-Fi words and generated passwords", () => {
   expect(a).not.toMatch(/[01lIoO]/);
   expect(generatePassword()).not.toBe(a);
 });
+
+test("a password typed for one doctor is gone when the reset dialog opens for another", async () => {
+  backend({ "GET /api/auth/me": me, "GET /api/admin/doctors": () => ok(doctors) });
+  renderAt("/admin/doctors");
+  const user = userEvent.setup();
+
+  const [resetA, resetB] = await screen.findAllByRole("button", { name: "Reset password" });
+  await user.click(resetA);
+  await user.type(within(await screen.findByRole("dialog")).getByLabelText("Password"), "meant-for-aziz");
+  await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
+  await user.click(resetB);
+
+  expect(within(await screen.findByRole("dialog", { name: /Olga Kim/ })).getByLabelText("Password")).toHaveValue("");
+});

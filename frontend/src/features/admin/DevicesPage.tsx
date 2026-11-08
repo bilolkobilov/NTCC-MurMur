@@ -11,7 +11,7 @@ import { SecretDialog } from "../../components/ui/SecretDialog";
 import { EmptyState, ErrorState, PageHeader, SkeletonRows } from "../../components/ui/States";
 import { TextField } from "../../components/ui/TextField";
 import { formatRelative } from "../../lib/format";
-import { OnlineBadge } from "../doctor/shared";
+import { OnlineBadge } from "../../components/device/OnlineBadge";
 
 /** Wi-Fi strength in words (RSSI in dBm): what the admin needs to decide "move the device closer". */
 export function signalWord(rssi: number): "strong" | "ok" | "weak" {
@@ -103,6 +103,7 @@ export function DevicesPage() {
       </div>
 
       <RegisterDialog
+        key={registering ? "register-open" : "register-closed"}
         open={registering}
         doctors={doctors.data ?? []}
         onClose={() => setRegistering(false)}

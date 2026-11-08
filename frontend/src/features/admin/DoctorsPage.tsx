@@ -94,7 +94,9 @@ export function DoctorsPage() {
         )}
       </div>
 
+      {/* key: a closed dialog forgets what was typed (a password must never carry over to the next doctor) */}
       <CreateDoctorDialog
+        key={creating ? "create-open" : "create-closed"}
         open={creating}
         onClose={() => setCreating(false)}
         onCreated={(username, password) => {
@@ -104,6 +106,7 @@ export function DoctorsPage() {
       />
       <BlockDialog doctor={blocking} onClose={() => setBlocking(null)} />
       <ResetPasswordDialog
+        key={resetting?.id ?? "reset-closed"}
         doctor={resetting}
         onClose={() => setResetting(null)}
         onDone={(doctor, password) => {

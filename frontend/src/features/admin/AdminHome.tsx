@@ -7,7 +7,7 @@ import type { ExamStatus } from "../../api/doctor";
 import { StatusMark } from "../../components/exam/StatusMark";
 import { ErrorState, Panel, SkeletonRows } from "../../components/ui/States";
 import { formatNumber, formatRelative } from "../../lib/format";
-import { OnlineBadge } from "../doctor/shared";
+import { OnlineBadge } from "../../components/device/OnlineBadge";
 
 const STATUSES: ExamStatus[] = ["waiting", "recording", "uploaded", "analyzed", "reviewed", "failed"];
 

@@ -10,7 +10,7 @@ import { Alert } from "../../../components/ui/Alert";
 import { Button, ButtonLink } from "../../../components/ui/Button";
 import { EmptyState, ErrorState, PageHeader, SkeletonRows } from "../../../components/ui/States";
 import { formatRelative } from "../../../lib/format";
-import { OnlineBadge } from "../shared";
+import { OnlineBadge } from "../../../components/device/OnlineBadge";
 import { ChestPointPicker } from "./ChestPointPicker";
 import { RECORD_SECONDS } from "./liveState";
 
@@ -150,8 +150,8 @@ function NewExamForm({
                     {!device.online && (
                       <span className="text-caption text-ink-500">
                         {device.last_seen_at
-                          ? t("newExam.lastSeen", { when: formatRelative(device.last_seen_at, i18n.language) })
-                          : t("newExam.neverSeen")}
+                          ? t("device.lastSeen", { when: formatRelative(device.last_seen_at, i18n.language) })
+                          : t("device.never")}
                       </span>
                     )}
                   </span>

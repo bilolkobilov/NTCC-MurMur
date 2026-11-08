@@ -7,7 +7,8 @@ import { StatusMark } from "../../components/exam/StatusMark";
 import { ButtonLink } from "../../components/ui/Button";
 import { EmptyState, ErrorState, Panel, SkeletonRows } from "../../components/ui/States";
 import { formatRelative } from "../../lib/format";
-import { OnlineBadge, PointLabel } from "./shared";
+import { OnlineBadge } from "../../components/device/OnlineBadge";
+import { PointLabel } from "./shared";
 
 /**
  * Doctor home. Focal point: the review queue — the one job the doctor comes here for. Devices and recent exams are
@@ -38,8 +39,8 @@ export function DoctorHome() {
         </h1>
         <div className="mt-5 rounded-card border border-line bg-surface">
           {queue.isPending && <SkeletonRows rows={3} label={t("common.loading")} />}
-          {queue.isError && <ErrorState error={queue.error} onRetry={() => void queue.refetch()} />}
-          {queue.isSuccess && count === 0 && (
+          {queue.isError && !queue.data && <ErrorState error={queue.error} onRetry={() => void queue.refetch()} />}
+          {queue.data && count === 0 && (
             <EmptyState
               title={t("doctorHome.queueEmptyTitle")}
               body={t("doctorHome.queueEmptyBody")}
@@ -48,7 +49,7 @@ export function DoctorHome() {
               }
             />
           )}
-          {queue.isSuccess && count > 0 && (
+          {queue.data && count > 0 && (
             <ul className="divide-y divide-line">
               {queue.data.map((exam) => (
                 <li key={exam.id}>
@@ -75,11 +76,11 @@ export function DoctorHome() {
       <div className="flex flex-col gap-6">
         <Panel title={t("doctorHome.devices")}>
           {devices.isPending && <SkeletonRows rows={2} label={t("common.loading")} />}
-          {devices.isError && <ErrorState error={devices.error} onRetry={() => void devices.refetch()} />}
-          {devices.isSuccess && devices.data.length === 0 && (
+          {devices.isError && !devices.data && <ErrorState error={devices.error} onRetry={() => void devices.refetch()} />}
+          {devices.data && devices.data.length === 0 && (
             <p className="px-4 py-4 text-ink-500">{t("doctorHome.noDevices")}</p>
           )}
-          {devices.isSuccess && devices.data.length > 0 && (
+          {devices.data && devices.data.length > 0 && (
             <ul className="divide-y divide-line">
               {devices.data.map((device) => (
                 <li key={device.id} className="flex items-center justify-between gap-3 px-4 py-3">
@@ -105,11 +106,11 @@ export function DoctorHome() {
 
         <Panel title={t("doctorHome.recent")}>
           {recent.isPending && <SkeletonRows rows={3} label={t("common.loading")} />}
-          {recent.isError && <ErrorState error={recent.error} onRetry={() => void recent.refetch()} />}
-          {recent.isSuccess && recent.data.length === 0 && (
+          {recent.isError && !recent.data && <ErrorState error={recent.error} onRetry={() => void recent.refetch()} />}
+          {recent.data && recent.data.length === 0 && (
             <p className="px-4 py-4 text-ink-500">{t("doctorHome.noRecent")}</p>
           )}
-          {recent.isSuccess && recent.data.length > 0 && (
+          {recent.data && recent.data.length > 0 && (
             <ul className="divide-y divide-line">
               {recent.data.map((exam) => (
                 <li key={exam.id}>

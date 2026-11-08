@@ -237,8 +237,6 @@
     "chooseDevice": "Choose a device.",
     "deviceWentOffline": "This device went offline. Choose another or check its Wi-Fi.",
     "choosePoint": "Choose where the stethoscope is placed.",
-    "lastSeen": "Last seen {{when}}",
-    "neverSeen": "Never connected",
     "allOffline": "All your devices are offline. Turn one on and wait until it shows Online.",
     "noDevicesTitle": "No device to record with",
     "whatHappens": "Keep the stethoscope on the point and the patient still for {{seconds}} s.",

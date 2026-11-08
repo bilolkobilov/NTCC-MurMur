@@ -1,5 +1,5 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { lazy, useState } from "react";
+import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
+import { Fragment, lazy, type ReactNode, useEffect, useState } from "react";
 import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router";
 
 import { ApiError } from "../api/client";
@@ -8,6 +8,7 @@ import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/StatusPages";
 import { HomeRedirect, RequireRole, RequireSession } from "./guards";
+import { session } from "./session";
 
 // Each role's pages load only when that role opens them (a patient's phone never downloads doctor code).
 const DoctorHome = lazy(() => import("../features/doctor/DoctorHome").then((m) => ({ default: m.DoctorHome })));
@@ -105,12 +106,32 @@ export const routes: RouteObject[] = [
   { path: "*", element: <NotFoundPage /> },
 ];
 
+/**
+ * Forget every cached answer when the user changes: on a shared laptop or phone the next person must never see
+ * the previous person's patients, results or recordings, not even for a moment while the page refetches.
+ */
+export function ForgetDataOnUserChange({ children }: { children: ReactNode }) {
+  const client = useQueryClient();
+  const [generation, setGeneration] = useState(0);
+  useEffect(
+    () =>
+      session.onUserChange(() => {
+        client.clear();
+        setGeneration((g) => g + 1); // remount the pages: no component keeps the old user's data on screen
+      }),
+    [client],
+  );
+  return <Fragment key={generation}>{children}</Fragment>;
+}
+
 export function App({ queryClient }: { queryClient?: QueryClient }) {
   const [client] = useState(() => queryClient ?? createQueryClient());
   const [router] = useState(() => createBrowserRouter(routes));
   return (
     <QueryClientProvider client={client}>
-      <RouterProvider router={router} />
+      <ForgetDataOnUserChange>
+        <RouterProvider router={router} />
+      </ForgetDataOnUserChange>
     </QueryClientProvider>
   );
 }

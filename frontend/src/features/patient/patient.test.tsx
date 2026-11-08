@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { MyExam, MyProfile } from "../../api/patient";
@@ -105,4 +105,29 @@ test("Uzbek: dates, point and texts in Uzbek", async () => {
   expect(await screen.findByRole("heading", { name: "8-noyabr 2026 natijasi" })).toBeInTheDocument();
   expect(screen.getByText("koʻkrakning chap tomoni, koʻkrak soʻrgʻichidan pastroq")).toBeInTheDocument();
   await i18n.changeLanguage("en");
+});
+
+test("the next person on a shared phone never sees the previous patient's results, not even for a moment", async () => {
+  // Like the real API: the answer depends on whose token is sent; no token = 401.
+  const token = (init: RequestInit | undefined) => new Headers(init?.headers).get("Authorization");
+  backend({
+    ...common,
+    "GET /api/me/exams": (init) =>
+      token(init) === "Bearer t"
+        ? ok(exams)
+        : token(init) === "Bearer t2"
+          ? ok([{ ...exams[1], id: 99, doctor_note: "Result of patient B." }])
+          : { status: 401, body: { detail: "not authenticated" } },
+  });
+  const router = renderAt("/patient");
+  expect(await screen.findByText(/Come back in one year/)).toBeInTheDocument();
+
+  await act(async () => {
+    session.end("loggedOut");
+    session.start({ token: "t2", role: "patient", mustChangePassword: false });
+    await router.navigate("/patient");
+  });
+
+  expect(screen.queryByText(/Come back in one year/)).not.toBeInTheDocument();
+  expect(await screen.findByText("Result of patient B.")).toBeInTheDocument();
 });

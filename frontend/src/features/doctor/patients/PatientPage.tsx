@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation, useNavigate, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 
 import { errorMessage } from "../../../api/client";
 import { doctorApi, type OneTimeLogin, type Patient } from "../../../api/doctor";
@@ -13,12 +13,12 @@ import { SecretDialog } from "../../../components/ui/SecretDialog";
 import { EmptyState, ErrorState, PageHeader, Panel, SkeletonRows } from "../../../components/ui/States";
 import { TextField } from "../../../components/ui/TextField";
 import { ageFromBirthYear, formatDate, formatDateTime, formatNumber } from "../../../lib/format";
-import { PointLabel, RecordNo } from "../shared";
+import { PointLabel, RecordNo, useOneTimeState } from "../shared";
 
 export function PatientPage() {
   const id = Number(useParams().patientId);
   const { t } = useTranslation();
-  const location = useLocation();
+  const justSaved = useOneTimeState<boolean>("saved");
   const patient = useQuery({ queryKey: ["patient", id], queryFn: () => doctorApi.getPatient(id) });
 
   // Keep showing data we already have if a background refresh fails (e.g. a hotspot hiccup).
@@ -27,7 +27,6 @@ export function PatientPage() {
     return <SkeletonRows rows={4} label={t("common.loading")} />;
   }
   const p = patient.data;
-  const justSaved = (location.state as { saved?: boolean } | null)?.saved;
 
   return (
     <>
@@ -88,8 +87,8 @@ function ExamHistory({ patient }: { patient: Patient }) {
   return (
     <Panel title={t("patient.exams")}>
       {exams.isPending && <SkeletonRows rows={3} label={t("common.loading")} />}
-      {exams.isError && <ErrorState error={exams.error} onRetry={() => void exams.refetch()} />}
-      {exams.isSuccess && exams.data.length === 0 && (
+      {exams.isError && !exams.data && <ErrorState error={exams.error} onRetry={() => void exams.refetch()} />}
+      {exams.data && exams.data.length === 0 && (
         <EmptyState
           title={t("patient.noExamsTitle")}
           body={patient.consent_given_at ? t("patient.noExamsBody") : t("patient.noExamsNeedConsent")}
@@ -102,7 +101,7 @@ function ExamHistory({ patient }: { patient: Patient }) {
           }
         />
       )}
-      {exams.isSuccess && exams.data.length > 0 && (
+      {exams.data && exams.data.length > 0 && (
         <ul className="divide-y divide-line">
           {exams.data.map((exam) => (
             <li key={exam.id}>

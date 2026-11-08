@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router";
 
-import { createQueryClient, routes } from "../app/App";
+import { createQueryClient, ForgetDataOnUserChange, routes } from "../app/App";
 
 export type Reply = { status: number; body?: unknown; headers?: Record<string, string> };
 export type Handler = (init: RequestInit | undefined, url: URL) => Reply;
@@ -27,7 +27,9 @@ export function renderAt(path: string) {
   const router = createMemoryRouter(routes, { initialEntries: [path] });
   render(
     <QueryClientProvider client={createQueryClient()}>
-      <RouterProvider router={router} />
+      <ForgetDataOnUserChange>
+        <RouterProvider router={router} />
+      </ForgetDataOnUserChange>
     </QueryClientProvider>,
   );
   return router;
