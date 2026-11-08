@@ -46,12 +46,16 @@ def upload(
     try:
         parsed_meta = UploadMeta.model_validate_json(meta) if meta else UploadMeta()
     except ValidationError as exc:
-        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, f"invalid meta JSON: {exc.errors()[0]['msg']}")
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT, f"invalid meta JSON: {exc.errors()[0]['msg']}"
+        ) from None
 
     limit = get_settings().max_upload_mb * 1024 * 1024
     data = audio.file.read(limit + 1)
     if len(data) > limit:
-        raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, f"audio is larger than {get_settings().max_upload_mb} MB")
+        raise HTTPException(
+            status.HTTP_413_CONTENT_TOO_LARGE, f"audio is larger than {get_settings().max_upload_mb} MB"
+        )
 
     exam = device_flow.accept_upload(db, device, exam_id, data, parsed_meta.motion_detected)
     background.add_task(analysis.run_analysis, exam.id)

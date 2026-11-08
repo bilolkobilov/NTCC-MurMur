@@ -60,7 +60,7 @@ def read_wav_info(data: bytes) -> tuple[int, float]:
         with wave.open(io.BytesIO(data)) as wav:
             sample_rate = wav.getframerate()
             frames = wav.getnframes()
-    except (wave.Error, EOFError):
+    except wave.Error, EOFError:
         raise BadRequest("audio must be a valid PCM WAV file") from None
     if sample_rate <= 0 or frames <= 0:
         raise BadRequest("audio WAV is empty")
@@ -89,9 +89,7 @@ def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion
             )
         )
         command = db.scalar(
-            select(DeviceCommand).where(
-                DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN
-            )
+            select(DeviceCommand).where(DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN)
         )
         if command is not None:
             command.status = CommandStatus.DONE

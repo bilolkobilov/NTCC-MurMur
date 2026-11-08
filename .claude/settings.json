@@ -10,6 +10,7 @@
       "Bash(git fetch:*)",
       "Bash(git diff:*)",
       "Bash(uv run python -m pytest:*)",
+      "Bash(uv run python -m ruff:*)",
       "Bash(docker compose ps:*)"
     ]
   },

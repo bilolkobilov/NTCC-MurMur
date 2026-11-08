@@ -5,7 +5,6 @@ from typing import Annotated
 from fastapi import APIRouter, Query, status
 
 from app.deps import CurrentAdmin, DbSession
-from app.schemas.common import PathId
 from app.schemas.admin import (
     AuditEntryOut,
     DeviceAssign,
@@ -16,6 +15,7 @@ from app.schemas.admin import (
     DoctorOut,
     StatsOut,
 )
+from app.schemas.common import PathId
 from app.services import audit, devices, doctors, stats
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])

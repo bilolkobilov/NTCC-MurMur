@@ -28,5 +28,5 @@ class Exam(CreatedAtMixin, Base):
     )
 
     patient: Mapped[Patient] = relationship()
-    recording: Mapped["Recording | None"] = relationship(back_populates="exam")  # noqa: F821
-    ai_result: Mapped["AIResult | None"] = relationship(back_populates="exam")  # noqa: F821
+    recording: Mapped[Recording | None] = relationship(back_populates="exam")  # noqa: F821
+    ai_result: Mapped[AIResult | None] = relationship(back_populates="exam")  # noqa: F821

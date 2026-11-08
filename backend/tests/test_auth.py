@@ -71,7 +71,9 @@ def test_requests_without_valid_token_are_rejected(client, db):
         {"sub": str(user.id), "exp": datetime.now(UTC) - timedelta(minutes=1)}, settings.jwt_secret, algorithm="HS256"
     )
     forged = jwt.encode(
-        {"sub": str(user.id), "exp": datetime.now(UTC) + timedelta(minutes=5)}, "an-attacker-guessed-secret-of-32-bytes", algorithm="HS256"
+        {"sub": str(user.id), "exp": datetime.now(UTC) + timedelta(minutes=5)},
+        "an-attacker-guessed-secret-of-32-bytes",
+        algorithm="HS256",
     )
 
     assert client.get("/api/auth/me").status_code == 401
@@ -186,8 +188,12 @@ def test_block_is_per_username(client, db):
     for _ in range(5):
         wrong_login(client, "dr.aziz")
 
-    assert client.post("/api/auth/login", json={"username": "dr.other", "password": DEFAULT_PASSWORD}).status_code == 200
-    assert client.post("/api/auth/login", json={"username": "DR.AZIZ ", "password": DEFAULT_PASSWORD}).status_code == 429
+    assert (
+        client.post("/api/auth/login", json={"username": "dr.other", "password": DEFAULT_PASSWORD}).status_code == 200
+    )
+    assert (
+        client.post("/api/auth/login", json={"username": "DR.AZIZ ", "password": DEFAULT_PASSWORD}).status_code == 429
+    )
 
 
 def test_block_ends_after_the_window(client, db):

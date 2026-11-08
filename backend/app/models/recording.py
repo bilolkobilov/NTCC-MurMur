@@ -17,4 +17,4 @@ class Recording(CreatedAtMixin, Base):
     duration_s: Mapped[float]
     motion_detected: Mapped[bool] = mapped_column(default=False)
 
-    exam: Mapped["Exam"] = relationship(back_populates="recording")  # noqa: F821
+    exam: Mapped[Exam] = relationship(back_populates="recording")  # noqa: F821

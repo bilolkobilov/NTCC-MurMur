@@ -18,7 +18,9 @@ def _fits_bcrypt(value: str) -> str:
 NewPassword = Annotated[str, StringConstraints(min_length=8), AfterValidator(_fits_bcrypt)]
 
 # Login names: letters, digits, dot, dash, underscore.
-Username = Annotated[str, StringConstraints(strip_whitespace=True, min_length=3, max_length=64, pattern=r"^[A-Za-z0-9._-]+$")]
+Username = Annotated[
+    str, StringConstraints(strip_whitespace=True, min_length=3, max_length=64, pattern=r"^[A-Za-z0-9._-]+$")
+]
 
 FullName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 

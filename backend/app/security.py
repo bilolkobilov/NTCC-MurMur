@@ -50,7 +50,7 @@ def decode_access_token(token: str) -> tuple[int, int] | None:
             token, get_settings().jwt_secret, algorithms=[JWT_ALGORITHM], options={"require": ["exp", "sub", "ver"]}
         )
         return int(payload["sub"]), int(payload["ver"])
-    except (jwt.PyJWTError, ValueError, TypeError):
+    except jwt.PyJWTError, ValueError, TypeError:
         return None
 
 

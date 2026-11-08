@@ -1,14 +1,13 @@
 """FastAPI application: middleware, error mapping and routers."""
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
-from sqlalchemy.orm import Session
 
 from app.api import admin, auth, device, doctor, patient
 from app.config import get_settings
-from app.db import get_db
+from app.deps import DbSession
 from app.services.errors import ServiceError
 from app.upload_limit import UploadSizeLimitMiddleware
 
@@ -30,7 +29,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
     @app.get("/api/health", tags=["health"])
-    def health(db: Session = Depends(get_db)) -> dict[str, str]:
+    def health(db: DbSession) -> dict[str, str]:
         db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "ok"}
 

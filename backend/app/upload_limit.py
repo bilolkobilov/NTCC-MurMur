@@ -34,5 +34,7 @@ class UploadSizeLimitMiddleware:
         if length is None:
             return JSONResponse({"detail": "Content-Length header is required for uploads"}, status_code=411)
         if not length.isdigit() or int(length) > max_mb * 1024 * 1024 + MULTIPART_OVERHEAD_BYTES:
-            return JSONResponse({"detail": f"request body is larger than the {max_mb} MB upload limit"}, status_code=413)
+            return JSONResponse(
+                {"detail": f"request body is larger than the {max_mb} MB upload limit"}, status_code=413
+            )
         return None

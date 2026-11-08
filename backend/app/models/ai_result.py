@@ -17,4 +17,4 @@ class AIResult(CreatedAtMixin, Base):
     label: Mapped[str] = mapped_column(String(50))
     score: Mapped[float | None]
 
-    exam: Mapped["Exam"] = relationship(back_populates="ai_result")  # noqa: F821
+    exam: Mapped[Exam] = relationship(back_populates="ai_result")  # noqa: F821

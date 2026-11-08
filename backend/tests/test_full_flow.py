@@ -5,9 +5,8 @@ own password → doctor starts an exam → device heartbeats, polls, records, up
 doctor sees the AI result and reviews → patient sees the reviewed exam (without AI fields) → admin sees counts only.
 """
 
-from tests.helpers import login, make_user, make_wav
-
 from app.models import Role
+from tests.helpers import login, make_user, make_wav
 
 
 def test_full_exam_flow(client, db):
@@ -32,9 +31,9 @@ def test_full_exam_flow(client, db):
         json={"full_name": "Ali Valiyev", "birth_year": 1990, "sex": "male", "height_cm": 175, "weight_kg": 70},
     ).json()["id"]
     assert client.post(f"/api/patients/{patient_id}/consent", headers=doctor).status_code == 200
-    temp_password = client.post(
-        f"/api/patients/{patient_id}/login", headers=doctor, json={"username": "ali.v"}
-    ).json()["temporary_password"]
+    temp_password = client.post(f"/api/patients/{patient_id}/login", headers=doctor, json={"username": "ali.v"}).json()[
+        "temporary_password"
+    ]
 
     # --- patient: first login forces a new password ---
     first_login = client.post("/api/auth/login", json={"username": "ali.v", "password": temp_password}).json()
@@ -59,7 +58,12 @@ def test_full_exam_flow(client, db):
     assert exam["status"] == "waiting"
 
     # --- device: heartbeat, poll, upload ---
-    assert client.post("/api/device/heartbeat", headers=device_key, json={"firmware_version": "0.1", "wifi_rssi": -55}).status_code == 200
+    assert (
+        client.post(
+            "/api/device/heartbeat", headers=device_key, json={"firmware_version": "0.1", "wifi_rssi": -55}
+        ).status_code
+        == 200
+    )
     command = client.get("/api/device/command", headers=device_key).json()
     assert command == {"command": "record", "exam_id": exam["id"], "duration_s": 20}
     assert client.get(f"/api/exams/{exam['id']}", headers=doctor).json()["status"] == "recording"

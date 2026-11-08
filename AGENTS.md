@@ -38,7 +38,8 @@ Bu qoidalar repositorydagi barcha tasklarga tatbiq qilinadi.
 
 ## Ishni tugatish
 
-- Tugadi deyishdan oldin dalil: `cd backend && uv run python -m pytest` natijasi (hammasi yashil, 0 ta test emas).
+- Tugadi deyishdan oldin dalil: `cd backend && uv run python -m pytest` natijasi (hammasi yashil, 0 ta test emas) va
+  `uv run python -m ruff check . ../scripts` + `uv run python -m ruff format --check . ../scripts` toza.
 - Deploy faqat egasi kelishgan bitta paket bilan, oxirida bitta marta.
 
 ---

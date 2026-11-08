@@ -51,7 +51,13 @@ def world(db):
 def test_patient_sees_only_own_reviewed_exams(client, db, world):
     ali, vali = world["ali"], world["vali"]
     reviewed = add_exam(db, ali, world["device_a"], ExamStatus.REVIEWED, note="Ali's note")
-    for status in (ExamStatus.WAITING, ExamStatus.RECORDING, ExamStatus.UPLOADED, ExamStatus.ANALYZED, ExamStatus.FAILED):
+    for status in (
+        ExamStatus.WAITING,
+        ExamStatus.RECORDING,
+        ExamStatus.UPLOADED,
+        ExamStatus.ANALYZED,
+        ExamStatus.FAILED,
+    ):
         add_exam(db, ali, world["device_a"], status)
     add_exam(db, vali, world["device_b"], ExamStatus.REVIEWED, note="Vali's note")
 
@@ -111,7 +117,12 @@ def test_admin_cannot_read_medical_data(client, db, world):
     make_user(db, "admin", Role.ADMIN)
     admin = login(client, "admin")
 
-    for path in (f"/api/exams/{exam.id}", f"/api/exams/{exam.id}/audio", f"/api/patients/{world['ali'].id}", "/api/patients"):
+    for path in (
+        f"/api/exams/{exam.id}",
+        f"/api/exams/{exam.id}/audio",
+        f"/api/patients/{world['ali'].id}",
+        "/api/patients",
+    ):
         assert client.get(path, headers=admin).status_code == 403
 
     everything_admin_can_see = "".join(
@@ -146,5 +157,7 @@ def test_ids_beyond_the_database_range_are_invalid_input_not_server_errors(clien
     assert client.post(f"/api/admin/doctors/{huge}/block", headers=admin).status_code == 422
     assert client.patch(f"/api/admin/devices/{huge}", headers=admin, json={"doctor_id": None}).status_code == 422
     device_body = {"doctor_id": huge}
-    assert client.patch(f"/api/admin/devices/{world['device_a'].id}", headers=admin, json=device_body).status_code == 422
+    assert (
+        client.patch(f"/api/admin/devices/{world['device_a'].id}", headers=admin, json=device_body).status_code == 422
+    )
     assert client.get(f"/api/patients/{huge}").status_code == 401, "auth is still checked first"

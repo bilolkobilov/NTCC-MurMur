@@ -17,9 +17,7 @@ def create_doctor(db: Session, *, username: str, password: str, full_name: str) 
 
 def list_doctors(db: Session) -> list[tuple[User, int]]:
     """Doctors with their patient count (a number only — admin never sees patient data)."""
-    patient_count = (
-        select(Patient.doctor_id, func.count().label("n")).group_by(Patient.doctor_id).subquery()
-    )
+    patient_count = select(Patient.doctor_id, func.count().label("n")).group_by(Patient.doctor_id).subquery()
     rows = db.execute(
         select(User, func.coalesce(patient_count.c.n, 0))
         .outerjoin(patient_count, patient_count.c.doctor_id == User.id)

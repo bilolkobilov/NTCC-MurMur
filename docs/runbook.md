@@ -28,6 +28,8 @@ uv run python -m uvicorn app.main:app --reload   # API on http://localhost:8000,
 ```bash
 cd backend
 uv run python -m pytest                 # uses the separate murmur_test database, created automatically
+uv run python -m ruff check . ../scripts         # lint (unused code, import order, likely bugs)
+uv run python -m ruff format . ../scripts        # auto-format; use --check to only verify
 ```
 
 ## Manual test without hardware (fake device)

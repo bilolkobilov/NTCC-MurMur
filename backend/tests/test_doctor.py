@@ -168,7 +168,12 @@ def test_exam_needs_own_patient_and_own_device(client, db, headers, doctor, othe
     assert start(my_patient.id, their_device.id) == 404
     assert start(my_patient.id, free_device.id) == 404
     assert start(my_patient.id, 9999) == 404
-    assert client.post("/api/exams", headers=headers, json={"patient_id": my_patient.id, "device_id": my_device.id, "point": "XX"}).status_code == 422
+    assert (
+        client.post(
+            "/api/exams", headers=headers, json={"patient_id": my_patient.id, "device_id": my_device.id, "point": "XX"}
+        ).status_code
+        == 422
+    )
 
 
 def make_exam(db, doctor, status=ExamStatus.WAITING):
@@ -215,7 +220,9 @@ def test_review_needs_a_note_and_own_exam(client, db, headers, doctor, other_doc
     mine = make_exam(db, doctor, ExamStatus.ANALYZED)
     theirs = make_exam(db, other_doctor, ExamStatus.ANALYZED)
 
-    empty_note = client.patch(f"/api/exams/{mine.id}/review", headers=headers, json={"note": "", "agrees_with_ai": True})
+    empty_note = client.patch(
+        f"/api/exams/{mine.id}/review", headers=headers, json={"note": "", "agrees_with_ai": True}
+    )
     other = client.patch(f"/api/exams/{theirs.id}/review", headers=headers, json={"note": "x", "agrees_with_ai": False})
 
     assert empty_note.status_code == 422
@@ -298,7 +305,9 @@ def test_parallel_logins_for_one_patient_give_one_login_and_one_409(db, doctor):
     patient = make_patient(db, doctor)
 
     def create_login(username):
-        return lambda session: patients.create_patient_login(session, session.get(type(doctor), doctor.id), patient.id, username)
+        return lambda session: patients.create_patient_login(
+            session, session.get(type(doctor), doctor.id), patient.id, username
+        )
 
     results = _run_in_parallel(create_login("ali.one"), create_login("ali.two"))
 
@@ -316,7 +325,9 @@ def test_parallel_same_username_gives_409_not_500(db, doctor):
     second = make_patient(db, doctor, "Second")
 
     def create_login(patient_id):
-        return lambda session: patients.create_patient_login(session, session.get(type(doctor), doctor.id), patient_id, "same.name")
+        return lambda session: patients.create_patient_login(
+            session, session.get(type(doctor), doctor.id), patient_id, "same.name"
+        )
 
     results = _run_in_parallel(create_login(first.id), create_login(second.id))
 
