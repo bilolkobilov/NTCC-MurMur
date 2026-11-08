@@ -150,8 +150,12 @@ class Standardize(nn.Module):
         return (x - self.mean) / self.std
 
 
-def murmur_head(input_d: int = FEATURE_D) -> nn.Sequential:
-    """Standardize, then the same small MLP as CardioPHON's `train_mlp` (3072 → 256 → 256 → 3)."""
+def murmur_head(arch: str = "mlp", n_classes: int = len(CLASSES), input_d: int = FEATURE_D) -> nn.Sequential:
+    """Standardize, then "mlp" = CardioPHON's `train_mlp` (3072 → 256 → 256 → n) or "linear" (logistic regression)."""
+    if arch == "linear":
+        return nn.Sequential(Standardize(input_d), nn.Linear(input_d, n_classes))
+    if arch != "mlp":
+        raise ValueError(f"unknown head architecture {arch!r}")
     return nn.Sequential(
         Standardize(input_d),
         nn.Linear(input_d, 256),
@@ -160,7 +164,7 @@ def murmur_head(input_d: int = FEATURE_D) -> nn.Sequential:
         nn.Linear(256, 256),
         nn.Dropout(0.5),
         nn.ReLU(),
-        nn.Linear(256, len(CLASSES)),
+        nn.Linear(256, n_classes),
     )
 
 
@@ -186,26 +190,45 @@ class Encoder:
 
     @torch.inference_mode()
     def embed(self, audio: torch.Tensor) -> np.ndarray:
-        """4 kHz mono audio → 3072 numbers."""
+        """4 kHz mono audio → 3072 numbers (the whole recording at once)."""
         return self.model(log_mel(audio)[None, None]).squeeze(0).numpy()
+
+    @torch.inference_mode()
+    def embed_windows(self, audio: torch.Tensor, window_s: float, hop_s: float) -> np.ndarray:
+        """4 kHz mono audio → one row of 3072 numbers per window (window_s long, every hop_s; an uncovered tail
+        longer than half a hop gets a last window ending at the end). Shorter than one window → one row."""
+        image = log_mel(audio)
+        width, step, frames = round(window_s * SAMPLE_RATE / HOP), round(hop_s * SAMPLE_RATE / HOP), image.shape[1]
+        if frames <= width:
+            return self.model(image[None, None]).numpy()
+        starts = list(range(0, frames - width + 1, step))
+        if frames - (starts[-1] + width) > step // 2:  # a tail longer than half a step gets its own window
+            starts.append(frames - width)
+        return self.model(torch.stack([image[:, s : s + width] for s in starts])[:, None]).numpy()
 
 
 # --- the analyzer the server runs after an upload ---
 
-# Our CLASSES → the answer vocabulary the website understands (services/analyzer.py ANSWER_LABELS).
-_ANSWERS = {"present": ("good", "murmur"), "absent": ("good", "absent"), "unknown": ("bad", "unknown")}
-
 
 class CardiophonAnalyzer:
-    """Encoder + murmur head. "unknown" (CirCor: the annotator could not decide) → quality "bad": no answer."""
+    """Encoder + murmur head, configured by murmur_head.json (written by scripts/ai/train_head.py):
+    classes   ("present", "absent") or ("present", "absent", "unknown")
+    arch      head architecture, see `murmur_head`
+    window_s  null = whole recording; else windows of that length (half-overlapping), probabilities averaged
+    threshold P(present) at which "murmur" is said (chosen for ~80 % sensitivity, owner 2026-11-08); null = argmax
+    Answers: murmur / absent (quality good), or unknown (quality bad = "too poor to judge", 3-class heads only).
+    The score is always P(murmur), so the doctor sees one comparable number ("murmur probability")."""
 
     name = "cardiophon-murmur"
 
     def __init__(self, model_dir: Path):
         meta = json.loads((model_dir / "cardiophon" / "murmur_head.json").read_text(encoding="utf-8"))
         self.version: str = meta["model_version"]
+        self.classes: list[str] = meta.get("classes", list(CLASSES))
+        self.window_s: float | None = meta.get("window_s")
+        self.threshold: float | None = meta.get("threshold")
         self.encoder = Encoder(model_dir)
-        self.head = murmur_head()
+        self.head = murmur_head(meta.get("arch", "mlp"), len(self.classes))
         self.head.load_state_dict(
             torch.load(model_dir / "cardiophon" / HEAD_FILE, map_location="cpu", weights_only=True)
         )
@@ -216,7 +239,16 @@ class CardiophonAnalyzer:
         audio, rate = read_wav(data.wav_path)
         audio = resample(audio, rate)
         with self._lock, torch.inference_mode():
-            probs = self.head(torch.from_numpy(self.encoder.embed(audio))[None]).softmax(1)[0]
-        best = int(probs.argmax())
-        quality, label = _ANSWERS[CLASSES[best]]
-        return AnalysisResult(quality=quality, label=label, score=round(float(probs[best]), 4))
+            if self.window_s:
+                rows = self.encoder.embed_windows(audio, self.window_s, self.window_s / 2)
+            else:
+                rows = self.encoder.embed(audio)[None]
+            probs = self.head(torch.from_numpy(rows)).softmax(1).mean(0)
+        p = {name: float(probs[i]) for i, name in enumerate(self.classes)}
+        flagged = p["present"] >= self.threshold if self.threshold is not None else max(p, key=p.get) == "present"
+        score = round(p["present"], 4)
+        if flagged:
+            return AnalysisResult(quality="good", label="murmur", score=score)
+        if p.get("unknown", 0.0) > p["absent"]:
+            return AnalysisResult(quality="bad", label="unknown", score=score)
+        return AnalysisResult(quality="good", label="absent", score=score)

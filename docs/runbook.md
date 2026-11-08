@@ -84,9 +84,12 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
    `curl -L -o models/cardiophon/pretrained_physionet_2022_4kHz.pth https://git.lih.lu/vdespotovic/cardiophon/-/raw/main/heart_sound_classification/checkpoints/pretrained_physionet_2022_4kHz.pth`
 3. CirCor 1.0.3 (471 MB zip, ODC-By) unpacked into `samples/circor/`:
    `https://physionet-open.s3.amazonaws.com/circor-heart-sound/circor-heart-sound-1.0.3.zip` (check `SHA256SUMS.txt`).
-4. Train the murmur head (embeds all 3 163 recordings once, cached): `uv run --group ai python ../scripts/ai/train_head.py`
-5. Measure it on the held-out patients → `docs/specs/ai-results.md`: `uv run --group ai python ../scripts/ai/evaluate.py`
-6. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
+4. (Optional) compare recipes by cross-validation on training patients only → `docs/specs/ai-experiments.md`:
+   `uv run python ../scripts/ai/experiment.py` (~15 min; embeddings cached in `models/cardiophon/`).
+5. Train the chosen head + its threshold: `uv run python ../scripts/ai/train_head.py` (~3 min).
+6. Measure it once on the held-out patients → `docs/specs/ai-results.md`: `uv run python ../scripts/ai/evaluate.py`.
+   On Windows set `PYTHONIOENCODING=utf-8` if the console shows encoding errors.
+7. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
    Bump `MODEL_VERSION` in `train_head.py` on every retrain (it is stored with every result).
 
 ## Database migrations

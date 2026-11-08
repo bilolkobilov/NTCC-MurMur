@@ -56,7 +56,7 @@ def test_answers_use_the_vocabulary_the_website_understands(tmp_path, winner, qu
 
     assert (result.quality, result.label) == (quality, label)
     assert analyzer.gave_answer(result.quality, result.label) is (winner != "unknown")
-    assert 0.9 < result.score <= 1  # softmax of a 5-point lead
+    assert (result.score > 0.9) is (winner == "present")  # the score is P(murmur): high only for "present"
     assert (model.name, model.version) == ("cardiophon-murmur", "9.9.9")
 
 
@@ -90,3 +90,31 @@ def test_ai_model_setting_picks_the_analyzer(tmp_path):
     )
     assert isinstance(analyzer._build(settings), cardiophon.CardiophonAnalyzer)
     assert isinstance(analyzer._build(get_settings().model_copy(update={"ai_model": "dummy"})), analyzer.DummyAnalyzer)
+
+
+@pytest.mark.parametrize(("threshold", "label"), [(0.3, "murmur"), (0.5, "absent")])
+def test_present_absent_head_with_windows_and_a_screening_threshold(tmp_path, threshold, label):
+    """P(present) = 0.4: a screening threshold of 0.3 says "murmur", 0.5 says "absent"."""
+    folder = tmp_path / "models" / "cardiophon"
+    folder.mkdir(parents=True)
+    torch.save(cardiophon.AudioNTT2022().state_dict(), folder / cardiophon.WEIGHTS_FILE)
+    head = cardiophon.murmur_head("linear", 2)
+    with torch.no_grad():
+        head[-1].weight.zero_()
+        head[-1].bias.copy_(torch.log(torch.tensor([0.4, 0.6])))
+    torch.save(head.state_dict(), folder / cardiophon.HEAD_FILE)
+    meta = {"model_version": "1.1.0", "classes": ["present", "absent"], "arch": "linear", "window_s": 4.0}
+    (folder / "murmur_head.json").write_text(json.dumps({**meta, "threshold": threshold}))
+
+    _, result = run(tmp_path / "models", write_wav(tmp_path / "a.wav"))
+
+    assert result.label == label and result.quality == "good"
+    assert result.score == pytest.approx(0.4, abs=1e-4)  # always P(murmur), whatever the answer
+
+
+def test_windows_cover_the_whole_recording():
+    encoder = cardiophon.Encoder.__new__(cardiophon.Encoder)
+    encoder.model = cardiophon.AudioNTT2022().eval()
+    rows = encoder.embed_windows(torch.randn(4000 * 12) * 0.01, 4.0, 2.0)
+    assert rows.shape == (5, 3072)  # 0–4, 2–6, 4–8, 6–10, 8–12 s
+    assert encoder.embed_windows(torch.randn(4000 * 3) * 0.01, 4.0, 2.0).shape == (1, 3072)  # shorter: one row

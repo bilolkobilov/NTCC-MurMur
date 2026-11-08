@@ -103,4 +103,5 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Scripts
 
 - `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference
-- `scripts/ai/` — CirCor labels + patient split (`circor.py`), `train_head.py`, `evaluate.py` (→ `docs/specs/ai-results.md`)
+- `scripts/ai/` — CirCor labels + split (`circor.py`), shared training/metrics (`learn.py`), `experiment.py` (5-fold CV →
+  `docs/specs/ai-experiments.md`), `train_head.py` (final head + threshold), `evaluate.py` (→ `docs/specs/ai-results.md`)

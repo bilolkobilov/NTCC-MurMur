@@ -70,9 +70,10 @@ def test_patients(recs: list[Recording]) -> set[str]:
     return test
 
 
-def embeddings(recs: list[Recording]) -> dict[str, np.ndarray]:
-    """3072 numbers per recording, computed once and cached in models/cardiophon/embeddings.npz."""
-    cache = OUT / "embeddings.npz"
+def embeddings(recs: list[Recording], window_s: float | None = None) -> dict[str, np.ndarray]:
+    """Per recording: 3072 numbers for the whole recording (window_s=None), or one row per window of window_s
+    seconds every window_s / 2 (shape n × 3072). Computed once, cached in models/cardiophon/ (float16 for windows)."""
+    cache = OUT / ("embeddings.npz" if window_s is None else f"embeddings_w{window_s:g}.npz")
     stored = dict(np.load(cache)) if cache.exists() else {}
     missing = [r for r in recs if r.file.name not in stored]
     if missing:
@@ -84,10 +85,14 @@ def embeddings(recs: list[Recording]) -> dict[str, np.ndarray]:
             audio, rate = cardiophon.read_wav(rec.file)
             if rate != cardiophon.SAMPLE_RATE:
                 raise ValueError(f"{rec.file.name}: {rate} Hz")
-            stored[rec.file.name] = encoder.embed(audio)
-            if i % 250 == 0 or i == len(missing):
-                print(f"  embedded {i}/{len(missing)}")
-        np.savez_compressed(cache, **stored)
+            if window_s is None:
+                stored[rec.file.name] = encoder.embed(audio)
+            else:
+                stored[rec.file.name] = encoder.embed_windows(audio, window_s, window_s / 2).astype(np.float16)
+            if i % 500 == 0 or i == len(missing):
+                print(f"  embedded {i}/{len(missing)} ({cache.name})")
+        OUT.mkdir(parents=True, exist_ok=True)
+        np.savez(cache, **stored)
     return stored
 
 
