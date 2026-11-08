@@ -111,8 +111,12 @@ def list_patient_exams(db: Session, doctor: User, patient_id: int) -> list[Exam]
 
 
 def reset_patient_password(db: Session, doctor: User, patient_id: int) -> tuple[User, str]:
-    """New one-time password for the patient's login (shown once; must be changed). Old sessions end."""
-    patient = _own_patient(db, doctor, patient_id)
+    """New one-time password for the patient's login (shown once; must be changed). Old sessions end.
+
+    The patient row is locked, so parallel resets run one after another: the response that arrives last holds
+    the password that works. The web page must still disable the button while a reset is running.
+    """
+    patient = _own_patient(db, doctor, patient_id, for_update=True)
     if patient.user is None:
         raise Conflict("patient has no login yet")
     temp_password = generate_temp_password()
