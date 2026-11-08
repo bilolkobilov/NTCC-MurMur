@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MurMur style directions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Golos+Text:wght@400;500;600&family=Unbounded:wght@500;700&family=Onest:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e9ec; font-family: system-ui, sans-serif; color: #111; -webkit-font-smoothing: antialiased; }
+  .intro { max-width: 1240px; margin: 32px auto 8px; padding: 0 24px; }
+  .intro h1 { font-size: 22px; margin: 0 0 4px; }
+  .intro p { margin: 0; color: #555; font-size: 14px; }
+  .direction { max-width: 1240px; margin: 28px auto 56px; padding: 0 24px; }
+  .label { display: flex; align-items: baseline; gap: 12px; margin-bottom: 10px; }
+  .label b { font-size: 18px; }
+  .label span { color: #555; font-size: 14px; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; }
+  .screen { border-radius: 14px; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 12px 32px rgba(0,0,0,.10); }
+  .phone { border-radius: 34px; padding: 10px; background: #111; box-shadow: 0 12px 32px rgba(0,0,0,.18); }
+  .phone .inner { border-radius: 26px; overflow: hidden; min-height: 560px; }
+  .topbar { display: flex; align-items: center; gap: 28px; padding: 14px 24px; }
+  .wordmark { display: flex; align-items: center; gap: 8px; font-size: 18px; }
+  .nav { display: flex; gap: 20px; font-size: 14px; }
+  .lang { margin-left: auto; display: flex; gap: 2px; font-size: 12px; }
+  .lang a { padding: 4px 8px; border-radius: 6px; text-decoration: none; color: inherit; }
+  .body { padding: 22px 24px 26px; }
+  .crumb { font-size: 13px; margin-bottom: 6px; }
+  .title-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .title-row h2 { margin: 0; font-size: 26px; letter-spacing: -0.01em; }
+  .pill { font-size: 12.5px; padding: 4px 10px; border-radius: 999px; display: inline-flex; gap: 6px; align-items: center; }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 18px; margin-top: 18px; }
+  .card { border-radius: 12px; padding: 16px 18px; }
+  .wave-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .play { width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; cursor: pointer; }
+  .seg { margin-left: auto; display: flex; border-radius: 8px; padding: 2px; font-size: 12.5px; }
+  .seg span { padding: 5px 10px; border-radius: 6px; }
+  .num { font-variant-numeric: tabular-nums; }
+  svg.wave { width: 100%; height: 170px; display: block; border-radius: 8px; }
+  .ruler { display: flex; justify-content: space-between; font-size: 11px; margin-top: 6px; }
+  .ai-label { font-size: 22px; margin: 6px 0 2px; }
+  .meter { height: 8px; border-radius: 4px; margin: 10px 0 4px; overflow: hidden; }
+  .meter i { display: block; height: 100%; width: 87%; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 13px; margin-top: 12px; }
+  .note { font-size: 12px; margin-top: 12px; line-height: 1.5; }
+  .review { display: grid; grid-template-columns: 170px minmax(0, 1fr) auto; gap: 18px; align-items: start; margin-top: 18px; }
+  .choice { display: flex; gap: 8px; }
+  .choice span { flex: 1; text-align: center; padding: 9px 0; border-radius: 8px; font-size: 13.5px; }
+  textarea { width: 100%; height: 76px; border-radius: 8px; padding: 10px 12px; font: inherit; font-size: 14px; resize: none; }
+  .btn { border: 0; border-radius: 8px; padding: 11px 18px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+  .chest { width: 150px; height: 170px; }
+  .p-head { padding: 22px 18px 10px; }
+  .p-card { margin: 10px 14px; border-radius: 14px; padding: 14px 16px; }
+  .p-card small { display: block; font-size: 12px; margin-bottom: 4px; }
+  @media (max-width: 980px) { .stage { grid-template-columns: 1fr; } .grid, .review { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="intro">
+  <h1>MurMur — three style directions</h1>
+  <p>Same screen in each: the doctor's exam result (laptop) and the patient's result (phone). Only the style differs. Text in English; the real site switches uz / ru / en.</p>
+</div>
+
+<!-- ============ A. CHART PAPER ============ -->
+<section class="direction" id="a">
+  <div class="label"><b>A · Chart paper</b><span>From the world of ECG/PCG printouts: millimetre grid, ink navy, signal crimson. Fonts: IBM Plex Sans + Plex Mono.</span></div>
+  <div class="stage">
+    <div class="screen" style="background:#fff; color:#14213D; font-family:'IBM Plex Sans',sans-serif;">
+      <div class="topbar" style="border-bottom:1px solid #E6EAF0;">
+        <div class="wordmark" style="font-weight:600;"><svg width="26" height="18" viewBox="0 0 26 18"><path d="M1 9h6l2-6 3 12 3-9 2 3h8" fill="none" stroke="#C1121F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>MurMur</div>
+        <div class="nav"><span style="color:#5B6B85">Home</span><span style="font-weight:600">Patients</span><span style="color:#5B6B85">Devices</span></div>
+        <div class="lang"><a style="background:#14213D;color:#fff">UZ</a><a>RU</a><a>EN</a></div>
+      </div>
+      <div class="body">
+        <div class="crumb" style="color:#5B6B85">Patients / Ali Valiyev · 35 y, male</div>
+        <div class="title-row"><h2 style="font-weight:600">Exam 12 · Mitral point</h2>
+          <span class="pill" style="background:#FFF4E5;color:#8A4B08;">● Analysed — waiting for your review</span></div>
+        <div class="grid">
+          <div class="card" style="border:1px solid #E6EAF0;">
+            <div class="wave-head">
+              <button class="play" style="background:#14213D;color:#fff" aria-label="Play">▶</button>
+              <span class="num" style="font-family:'IBM Plex Mono',monospace;font-size:14px;">00:07.4 / 00:20.0</span>
+              <div class="seg" style="background:#F1F3F7;"><span style="background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.08)">Waveform</span><span style="color:#5B6B85">Spectrogram</span></div>
+            </div>
+            <svg class="wave" data-style="a" viewBox="0 0 800 170" preserveAspectRatio="none"></svg>
+            <div class="ruler num" style="font-family:'IBM Plex Mono',monospace;color:#8A97AD"><span>0 s</span><span>5 s</span><span>10 s</span><span>15 s</span><span>20 s</span></div>
+          </div>
+          <div class="card" style="border:1px solid #E6EAF0;">
+            <div style="font-size:12px;color:#5B6B85;letter-spacing:.02em;">AI second opinion</div>
+            <div class="ai-label" style="font-weight:600;color:#C1121F;">Murmur detected</div>
+            <div class="meter" style="background:#F1F3F7;"><i style="background:#C1121F"></i></div>
+            <div class="num" style="font-family:'IBM Plex Mono',monospace;font-size:13px;">confidence 87 %</div>
+            <div class="kv"><span style="color:#5B6B85">Quality</span><span>Good · 20.0 s · no movement</span><span style="color:#5B6B85">Model</span><span style="font-family:'IBM Plex Mono',monospace;">ast-murmur 1.0.2</span></div>
+            <div class="note" style="color:#5B6B85;">Screening aid, not a diagnosis. Your conclusion is final.</div>
+          </div>
+        </div>
+        <div class="review">
+          <svg class="chest" data-chest="a" viewBox="0 0 150 170"></svg>
+          <div>
+            <div style="font-size:13px;color:#5B6B85;margin-bottom:6px;">Your conclusion</div>
+            <div class="choice" style="margin-bottom:10px;"><span style="background:#14213D;color:#fff">Agree with AI</span><span style="border:1px solid #D5DBE5">Disagree</span></div>
+            <textarea style="border:1px solid #D5DBE5;color:#14213D;">Grade II/VI systolic murmur at apex. Refer for echocardiography.</textarea>
+          </div>
+          <button class="btn" style="background:#C1121F;color:#fff;margin-top:24px;">Confirm review</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone"><div class="inner" style="background:#F7F9FB;color:#14213D;font-family:'IBM Plex Sans',sans-serif;">
+      <div class="p-head"><div style="font-size:12px;color:#5B6B85">MurMur · Ali Valiyev</div><div style="font-size:22px;font-weight:600;margin-top:4px">Your results</div></div>
+      <div class="p-card" style="background:#fff;border:1px solid #E6EAF0;">
+        <small style="color:#5B6B85" class="num">8 Nov 2026 · Mitral point</small>
+        <div style="font-weight:600;margin-bottom:6px">Dr. Aziz Karimov</div>
+        <div style="font-size:14px;line-height:1.55">Grade II/VI systolic murmur at apex. Refer for echocardiography.</div>
+      </div>
+      <div class="p-card" style="background:#fff;border:1px solid #E6EAF0;opacity:.75">
+        <small style="color:#5B6B85" class="num">2 Oct 2026 · Aortic point</small>
+        <div style="font-size:14px">Normal heart sounds.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ B. LAPIS ============ -->
+<section class="direction" id="b">
+  <div class="label"><b>B · Lapis</b><span>From Tashkent and Samarkand tilework: lapis blue, turquoise, ochre; the four listening points drawn as girih stars. Fonts: Golos Text + Unbounded (logo, big numbers).</span></div>
+  <div class="stage">
+    <div class="screen" style="background:#fff; color:#0B1B3F; font-family:'Golos Text',sans-serif;">
+      <div class="topbar" style="background:#1E3A8A;color:#fff;">
+        <div class="wordmark" style="font-family:'Unbounded',sans-serif;font-weight:700;letter-spacing:.02em;">MURMUR</div>
+        <div class="nav"><span style="opacity:.7">Home</span><span style="font-weight:600;border-bottom:2px solid #F2C14E;padding-bottom:2px">Patients</span><span style="opacity:.7">Devices</span></div>
+        <div class="lang"><a style="background:#fff;color:#1E3A8A">UZ</a><a>RU</a><a>EN</a></div>
+      </div>
+      <div class="body" style="background:#F5F8FD;">
+        <div class="crumb" style="color:#4B5D84">Patients / Ali Valiyev · 35 y, male</div>
+        <div class="title-row"><h2 style="font-weight:600">Exam 12 · Mitral point</h2>
+          <span class="pill" style="background:#FDF1D8;color:#7A5410;">Analysed — waiting for your review</span></div>
+        <div class="grid">
+          <div class="card" style="background:#fff;border:1px solid #DDE5F2;">
+            <div class="wave-head">
+              <button class="play" style="background:#0E8C9A;color:#fff" aria-label="Play">▶</button>
+              <span class="num" style="font-family:'Unbounded',sans-serif;font-size:13px;">00:07 / 00:20</span>
+              <div class="seg" style="background:#EEF3FA;"><span style="background:#1E3A8A;color:#fff">Waveform</span><span style="color:#4B5D84">Spectrogram</span></div>
+            </div>
+            <svg class="wave" data-style="b" viewBox="0 0 800 170" preserveAspectRatio="none"></svg>
+            <div class="ruler num" style="color:#7D8BAA"><span>0 s</span><span>5 s</span><span>10 s</span><span>15 s</span><span>20 s</span></div>
+          </div>
+          <div class="card" style="background:#1E3A8A;color:#fff;">
+            <div style="font-size:12px;opacity:.75">AI second opinion</div>
+            <div class="ai-label" style="font-weight:600;">Murmur detected</div>
+            <div style="font-family:'Unbounded',sans-serif;font-size:34px;font-weight:500;margin:6px 0" class="num">87<span style="font-size:16px"> %</span></div>
+            <div class="kv"><span style="opacity:.7">Quality</span><span>Good · 20 s · still</span><span style="opacity:.7">Model</span><span>ast-murmur 1.0.2</span></div>
+            <div class="note" style="opacity:.8">Screening aid, not a diagnosis. Your conclusion is final.</div>
+          </div>
+        </div>
+        <div class="review">
+          <svg class="chest" data-chest="b" viewBox="0 0 150 170"></svg>
+          <div>
+            <div style="font-size:13px;color:#4B5D84;margin-bottom:6px;">Your conclusion</div>
+            <div class="choice" style="margin-bottom:10px;"><span style="background:#0E8C9A;color:#fff">Agree with AI</span><span style="background:#fff;border:1px solid #CBD6EA">Disagree</span></div>
+            <textarea style="border:1px solid #CBD6EA;background:#fff;color:#0B1B3F;">Grade II/VI systolic murmur at apex. Refer for echocardiography.</textarea>
+          </div>
+          <button class="btn" style="background:#1E3A8A;color:#fff;margin-top:24px;">Confirm review</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone"><div class="inner" style="background:#F5F8FD;color:#0B1B3F;font-family:'Golos Text',sans-serif;">
+      <div class="p-head" style="background:#1E3A8A;color:#fff;"><div style="font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700">MURMUR</div><div style="font-size:22px;font-weight:600;margin-top:10px">Your results</div></div>
+      <div class="p-card" style="background:#fff;border:1px solid #DDE5F2;">
+        <small style="color:#4B5D84" class="num">8 Nov 2026 · Mitral point</small>
+        <div style="font-weight:600;margin-bottom:6px">Dr. Aziz Karimov</div>
+        <div style="font-size:14px;line-height:1.55">Grade II/VI systolic murmur at apex. Refer for echocardiography.</div>
+      </div>
+      <div class="p-card" style="background:#fff;border:1px solid #DDE5F2;opacity:.75">
+        <small style="color:#4B5D84" class="num">2 Oct 2026 · Aortic point</small>
+        <div style="font-size:14px">Normal heart sounds.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<!-- ============ C. NIGHT WARD ============ -->
+<section class="direction" id="c">
+  <div class="label"><b>C · Night ward</b><span>From a dimmed ward at night: plum-black surfaces, amber trace (no blue light). Fonts: Onest + JetBrains Mono. Note: dark pages wash out on most projectors.</span></div>
+  <div class="stage">
+    <div class="screen" style="background:#17121F; color:#EDE6F5; font-family:'Onest',sans-serif;">
+      <div class="topbar" style="border-bottom:1px solid #2C2338;">
+        <div class="wordmark" style="font-weight:600;"><svg width="26" height="18" viewBox="0 0 26 18"><path d="M1 9h6l2-6 3 12 3-9 2 3h8" fill="none" stroke="#F5A524" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>MurMur</div>
+        <div class="nav"><span style="color:#9C8FB3">Home</span><span style="font-weight:600">Patients</span><span style="color:#9C8FB3">Devices</span></div>
+        <div class="lang"><a style="background:#F5A524;color:#17121F">UZ</a><a>RU</a><a>EN</a></div>
+      </div>
+      <div class="body">
+        <div class="crumb" style="color:#9C8FB3">Patients / Ali Valiyev · 35 y, male</div>
+        <div class="title-row"><h2 style="font-weight:600">Exam 12 · Mitral point</h2>
+          <span class="pill" style="background:#3A2A10;color:#F5C26B;">Analysed — waiting for your review</span></div>
+        <div class="grid">
+          <div class="card" style="background:#221A2E;">
+            <div class="wave-head">
+              <button class="play" style="background:#F5A524;color:#17121F" aria-label="Play">▶</button>
+              <span class="num" style="font-family:'JetBrains Mono',monospace;font-size:13px;">00:07.4 / 00:20.0</span>
+              <div class="seg" style="background:#17121F;"><span style="background:#2F2540">Waveform</span><span style="color:#9C8FB3">Spectrogram</span></div>
+            </div>
+            <svg class="wave" data-style="c" viewBox="0 0 800 170" preserveAspectRatio="none"></svg>
+            <div class="ruler num" style="font-family:'JetBrains Mono',monospace;color:#7A6E90"><span>0 s</span><span>5 s</span><span>10 s</span><span>15 s</span><span>20 s</span></div>
+          </div>
+          <div class="card" style="background:#221A2E;">
+            <div style="font-size:12px;color:#9C8FB3">AI second opinion</div>
+            <div class="ai-label" style="font-weight:600;color:#F5A524;">Murmur detected</div>
+            <div class="meter" style="background:#17121F;"><i style="background:#F5A524"></i></div>
+            <div class="num" style="font-family:'JetBrains Mono',monospace;font-size:13px;">confidence 87 %</div>
+            <div class="kv"><span style="color:#9C8FB3">Quality</span><span>Good · 20.0 s · still</span><span style="color:#9C8FB3">Model</span><span style="font-family:'JetBrains Mono',monospace;">ast-murmur 1.0.2</span></div>
+            <div class="note" style="color:#9C8FB3;">Screening aid, not a diagnosis. Your conclusion is final.</div>
+          </div>
+        </div>
+        <div class="review">
+          <svg class="chest" data-chest="c" viewBox="0 0 150 170"></svg>
+          <div>
+            <div style="font-size:13px;color:#9C8FB3;margin-bottom:6px;">Your conclusion</div>
+            <div class="choice" style="margin-bottom:10px;"><span style="background:#F5A524;color:#17121F">Agree with AI</span><span style="border:1px solid #3A2F4A">Disagree</span></div>
+            <textarea style="border:1px solid #3A2F4A;background:#1B1525;color:#EDE6F5;">Grade II/VI systolic murmur at apex. Refer for echocardiography.</textarea>
+          </div>
+          <button class="btn" style="background:#F5A524;color:#17121F;margin-top:24px;">Confirm review</button>
+        </div>
+      </div>
+    </div>
+    <div class="phone"><div class="inner" style="background:#17121F;color:#EDE6F5;font-family:'Onest',sans-serif;">
+      <div class="p-head"><div style="font-size:12px;color:#9C8FB3">MurMur · Ali Valiyev</div><div style="font-size:22px;font-weight:600;margin-top:4px">Your results</div></div>
+      <div class="p-card" style="background:#221A2E;">
+        <small style="color:#9C8FB3" class="num">8 Nov 2026 · Mitral point</small>
+        <div style="font-weight:600;margin-bottom:6px">Dr. Aziz Karimov</div>
+        <div style="font-size:14px;line-height:1.55">Grade II/VI systolic murmur at apex. Refer for echocardiography.</div>
+      </div>
+      <div class="p-card" style="background:#221A2E;opacity:.7">
+        <small style="color:#9C8FB3" class="num">2 Oct 2026 · Aortic point</small>
+        <div style="font-size:14px">Normal heart sounds.</div>
+      </div>
+    </div></div>
+  </div>
+</section>
+
+<script>
+  const STYLES = {
+    a: { bg: '#fff', minor: '#F8DDE1', major: '#EFB3BC', line: '#C1121F', played: '#C1121F', rest: '#C1121F', restOpacity: .35 },
+    b: { bg: '#F5F8FD', minor: null, major: '#E1E8F4', line: '#1E3A8A', played: '#0E8C9A', rest: '#1E3A8A', restOpacity: .3 },
+    c: { bg: '#17121F', minor: null, major: '#2C2338', line: '#F5A524', played: '#F5A524', rest: '#9C8FB3', restOpacity: .45 },
+  };
+  function heart(t) {
+    const beat = 60 / 72, tb = t % beat;
+    let v = 0;
+    for (const [start, f, amp] of [[0, 45, 1], [0.32, 65, 0.7]]) {
+      const d = tb - start;
+      if (d >= 0 && d < 0.13) v += amp * Math.sin(2 * Math.PI * f * d) * Math.exp(-d * 28);
+    }
+    const m = tb - 0.08;
+    if (m > 0 && m < 0.22) v += 0.18 * Math.sin(2 * Math.PI * 140 * m) * Math.sin(Math.PI * m / 0.22);
+    return v + (Math.sin(t * 913) * 0.02);
+  }
+  document.querySelectorAll('svg.wave').forEach(svg => {
+    const s = STYLES[svg.dataset.style], W = 800, H = 170, mid = H / 2, played = 0.37;
+    let out = `<rect width="${W}" height="${H}" fill="${s.bg}"/>`;
+    if (s.minor) for (let x = 0; x <= W; x += 8) out += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${s.minor}" stroke-width="0.6"/>`;
+    if (s.minor) for (let y = 0; y <= H; y += 8) out += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${s.minor}" stroke-width="0.6"/>`;
+    for (let x = 0; x <= W; x += 40) out += `<line x1="${x}" y1="0" x2="${x}" y2="${H}" stroke="${s.major}" stroke-width="1"/>`;
+    for (let y = 2; y <= H; y += 40) out += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${s.major}" stroke-width="1"/>`;
+    let a = '', b = '';
+    for (let i = 0; i <= 1600; i++) {
+      const x = i / 2, t = (i / 1600) * 20, y = mid - heart(t) * 68;
+      (x / W <= played ? (a += (a ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)) : (b += (b ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)));
+    }
+    out += `<path d="${b}" fill="none" stroke="${s.rest}" stroke-opacity="${s.restOpacity}" stroke-width="1.2"/>`;
+    out += `<path d="${a}" fill="none" stroke="${s.played}" stroke-width="1.4"/>`;
+    out += `<line x1="${W * played}" y1="0" x2="${W * played}" y2="${H}" stroke="${s.line}" stroke-width="2"/>`;
+    svg.innerHTML = out;
+  });
+  const CHEST = {
+    a: { body: '#F1F3F7', edge: '#C9D1DE', dot: '#D5DBE5', active: '#C1121F', text: '#14213D' },
+    b: { body: '#E7EEF9', edge: '#B9C8E3', dot: '#B9C8E3', active: '#0E8C9A', text: '#0B1B3F' },
+    c: { body: '#221A2E', edge: '#3A2F4A', dot: '#4A3D5E', active: '#F5A524', text: '#EDE6F5' },
+  };
+  function star(cx, cy, r, fill) {
+    let p = '';
+    for (let i = 0; i < 16; i++) { const ang = Math.PI / 8 * i, rr = i % 2 ? r * 0.55 : r; p += (i ? 'L' : 'M') + (cx + rr * Math.sin(ang)).toFixed(1) + ' ' + (cy - rr * Math.cos(ang)).toFixed(1); }
+    return `<path d="${p}Z" fill="${fill}"/>`;
+  }
+  document.querySelectorAll('svg.chest').forEach(svg => {
+    const k = svg.dataset.chest, c = CHEST[k];
+    const pts = { AV: [62, 62], PV: [90, 62], TV: [68, 102], MV: [98, 116] };
+    let out = `<path d="M30 20 Q75 5 120 20 L132 150 Q75 165 18 150 Z" fill="${c.body}" stroke="${c.edge}"/>`;
+    for (const [name, [x, y]] of Object.entries(pts)) {
+      const on = name === 'MV';
+      out += k === 'b' ? star(x, y, on ? 11 : 8, on ? c.active : c.dot) : `<circle cx="${x}" cy="${y}" r="${on ? 9 : 6}" fill="${on ? c.active : c.dot}"/>`;
+      out += `<text x="${x}" y="${y + (on ? 24 : 20)}" text-anchor="middle" font-size="11" font-weight="${on ? 600 : 400}" fill="${c.text}">${name}</text>`;
+    }
+    svg.innerHTML = out;
+  });
+</script>
+</body>
+</html>

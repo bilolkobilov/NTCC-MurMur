@@ -58,6 +58,9 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Docs
 
+- `docs/context.md` — who MurMur is for, where it runs (offline laptop demo), languages, constraints
+- `docs/specs/` — feature specs; `mockups/` holds static HTML mockups for design decisions
+
 - `docs/PLAN.md` — full MVP plan in Uzbek (hardware, AI, roles, weekly plan)
 - `docs/map.md` — this file
 - `docs/runbook.md` — how to run and test
