@@ -335,6 +335,7 @@ wheels = [
 name = "murmur-backend"
 version = "0.1.0"
 source = { virtual = "." }
+default-groups = ["ai", "dev"]
 dependencies = [
     { name = "alembic" },
     { name = "bcrypt" },

@@ -11,6 +11,7 @@ import tempfile
 os.environ["POSTGRES_DB"] = "murmur_test"
 os.environ["RECORDINGS_DIR"] = tempfile.mkdtemp(prefix="murmur-test-recordings-")
 os.environ["BCRYPT_ROUNDS"] = "4"  # fast hashing in tests; production uses the default 12
+os.environ["AI_MODEL"] = "dummy"  # tests never depend on the downloaded model (tests/test_ai.py builds its own)
 
 from pathlib import Path  # noqa: E402
 

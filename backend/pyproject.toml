@@ -23,7 +23,7 @@ dev = [
 ]
 
 # The real AI model (docs/specs/2026-11-08-ai-model.md). Optional: without it the server uses the dummy analyzer.
-# Install with `uv sync --group ai`. CPU-only PyTorch (no CUDA download).
+# Installed by default (see default-groups); `uv sync --no-group ai` for a server without AI. CPU-only PyTorch.
 ai = [
     "numpy>=2.3",
     "torch>=2.15.0",
@@ -39,6 +39,8 @@ torch = { index = "pytorch-cpu" }
 
 [tool.uv]
 package = false
+# The demo laptop runs the real AI (owner, 2026-11-08): a plain `uv sync` must not remove PyTorch.
+default-groups = ["dev", "ai"]
 # Windows Smart App Control blocks SQLAlchemy's compiled (Cython) DLLs, so we build it as pure Python.
 no-binary-package = ["sqlalchemy"]
 

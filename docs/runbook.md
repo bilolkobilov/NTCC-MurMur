@@ -78,7 +78,8 @@ cite it if results are shown in the report.
 
 Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `docs/specs/2026-11-08-ai-model.md`.
 
-1. Install PyTorch (CPU) and numpy: `cd backend && uv sync --group ai` (first `import torch` takes ~20 s once).
+1. PyTorch (CPU) and numpy come with `cd backend && uv sync` (group `ai`, default since 2026-11-08; first
+   `import torch` takes ~20 s once). A server without AI: `uv sync --no-group ai` and `AI_MODEL=dummy`.
 2. Encoder weights (CardioPHON, used with citation; never committed) into `models/cardiophon/`:
    `curl -L -o models/cardiophon/pretrained_physionet_2022_4kHz.pth https://git.lih.lu/vdespotovic/cardiophon/-/raw/main/heart_sound_classification/checkpoints/pretrained_physionet_2022_4kHz.pth`
 3. CirCor 1.0.3 (471 MB zip, ODC-By) unpacked into `samples/circor/`:
