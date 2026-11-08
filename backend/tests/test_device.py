@@ -454,3 +454,58 @@ def test_quality_reads_8_16_24_32_bit_pcm(tmp_path, width):
 
     assert stats.peak == pytest.approx(0.5, abs=0.01)
     assert stats.clipped_fraction == 0
+
+
+# --- lock order: polling vs cancel / delete must not deadlock ---
+
+
+def _in_thread(target):
+    import threading
+
+    result: dict = {}
+
+    def run():
+        try:
+            result["value"] = target()
+        except Exception as exc:  # reported by the test
+            result["error"] = exc
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    return thread, result
+
+
+def test_poll_during_cancel_does_not_deadlock(client, db, doctor, device_and_key, exam, monkeypatch):
+    """Cancel holds the exam lock and then closes the command; a poll arriving in between must just wait."""
+    import time
+
+    from app.db import SessionLocal
+    from app.services import device_flow, exam_flow, exams
+
+    real_mark_failed = exam_flow.mark_failed
+
+    def slow_mark_failed(e, reason):  # runs after cancel took the exam lock, before it touches the command
+        time.sleep(0.6)
+        real_mark_failed(e, reason)
+
+    monkeypatch.setattr(exam_flow, "mark_failed", slow_mark_failed)
+
+    def cancel():
+        with SessionLocal() as session:
+            return exams.cancel_exam(session, session.get(type(doctor), doctor.id), exam.id).status
+
+    def poll():
+        with SessionLocal() as session:
+            device = session.get(Device, device_and_key[0].id)
+            return device_flow.take_next_command(session, device)
+
+    cancel_thread, cancel_result = _in_thread(cancel)
+    time.sleep(0.2)
+    poll_thread, poll_result = _in_thread(poll)
+    cancel_thread.join(10)
+    poll_thread.join(10)
+
+    assert "error" not in cancel_result, cancel_result
+    assert "error" not in poll_result, poll_result
+    assert cancel_result["value"] == ExamStatus.FAILED
+    assert poll_result["value"] is None, "the cancelled exam's command must not be handed out"

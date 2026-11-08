@@ -24,26 +24,35 @@ def heartbeat(db: Session, device: Device, firmware_version: str | None, wifi_rs
 def take_next_command(db: Session, device: Device) -> DeviceCommand | None:
     """Oldest pending command for this device; marks it taken and moves its exam to 'recording'.
 
-    Row lock with SKIP LOCKED: two quick polls can never take the same command twice.
+    Lock order is always EXAM, then its COMMAND — the same order as upload, cancel and patient delete — so these
+    can never deadlock each other. After the exam lock is held the command is re-read: a parallel poll may have
+    taken it meanwhile (then we move on), so a command is never handed out twice.
     A command whose exam is no longer 'waiting' (e.g. the exam was cancelled) is closed and skipped,
     so it can never block the commands behind it.
     """
     device.last_seen_at = datetime.now(UTC)  # polling also proves the device is alive
     while True:
-        command = db.scalar(
-            select(DeviceCommand)
+        candidate = db.execute(
+            select(DeviceCommand.id, DeviceCommand.exam_id)
             .where(DeviceCommand.device_id == device.id, DeviceCommand.status == CommandStatus.PENDING)
             .order_by(DeviceCommand.id)
             .limit(1)
-            .with_for_update(skip_locked=True)
-        )
-        if command is None:
+        ).first()
+        if candidate is None:
             db.commit()
             return None
+        exam = db.get(Exam, candidate.exam_id, with_for_update=True, populate_existing=True)
+        command = db.scalar(
+            select(DeviceCommand)
+            .where(DeviceCommand.id == candidate.id, DeviceCommand.status == CommandStatus.PENDING)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        if command is None:  # taken by a parallel poll (or deleted) while we waited for the exam lock
+            continue
         command.status = CommandStatus.TAKEN
         command.taken_at = datetime.now(UTC)
-        exam = db.get(Exam, command.exam_id, with_for_update=True)
-        if exam.status == ExamStatus.WAITING:
+        if exam is not None and exam.status == ExamStatus.WAITING:
             exam_flow.mark_recording(exam)
             db.commit()
             return command
