@@ -26,10 +26,12 @@ def get_current_user_allow_password_change(
     """Valid token + active account. Allows users who still must change their temporary password."""
     if credentials is None:
         raise _unauthorized("not authenticated")
-    user_id = decode_access_token(credentials.credentials)
-    user = db.get(User, user_id) if user_id is not None else None
+    decoded = decode_access_token(credentials.credentials)
+    user = db.get(User, decoded[0]) if decoded is not None else None
     if user is None:
         raise _unauthorized("invalid or expired token")
+    if user.token_version != decoded[1]:
+        raise _unauthorized("token is no longer valid, log in again")
     if not user.is_active:
         raise _unauthorized("account is blocked")
     return user

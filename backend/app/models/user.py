@@ -17,3 +17,5 @@ class User(CreatedAtMixin, Base):
     full_name: Mapped[str] = mapped_column(String(200))
     is_active: Mapped[bool] = mapped_column(default=True)
     must_change_password: Mapped[bool] = mapped_column(default=False)
+    # Goes up on every password change; tokens carry it, so older tokens stop working at once.
+    token_version: Mapped[int] = mapped_column(default=0, server_default="0")

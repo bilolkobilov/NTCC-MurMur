@@ -20,20 +20,26 @@ def login(body: LoginRequest, db: DbSession) -> TokenResponse:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "wrong username or password")
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "account is blocked")
-    return TokenResponse(
-        access_token=create_access_token(user.id, user.role.value),
-        role=user.role,
-        must_change_password=user.must_change_password,
-    )
+    return _token_response(user)
 
 
-@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@router.post("/change-password")
 def change_password(
     body: ChangePasswordRequest,
     db: DbSession,
     user: Annotated[User, Depends(get_current_user_allow_password_change)],
-) -> None:
+) -> TokenResponse:
+    """All earlier tokens of this user stop working; the response carries a fresh one."""
     users.change_password(db, user, body.current_password, body.new_password)
+    return _token_response(user)
+
+
+def _token_response(user: User) -> TokenResponse:
+    return TokenResponse(
+        access_token=create_access_token(user.id, user.role.value, user.token_version),
+        role=user.role,
+        must_change_password=user.must_change_password,
+    )
 
 
 @router.get("/me")

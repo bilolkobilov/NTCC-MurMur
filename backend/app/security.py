@@ -30,24 +30,27 @@ def generate_temp_password() -> str:
     return secrets.token_urlsafe(9)
 
 
-def create_access_token(user_id: int, role: str) -> str:
+def create_access_token(user_id: int, role: str, token_version: int) -> str:
     settings = get_settings()
     now = datetime.now(UTC)
     payload = {
         "sub": str(user_id),
         "role": role,
+        "ver": token_version,
         "iat": now,
         "exp": now + timedelta(minutes=settings.jwt_expire_minutes),
     }
     return jwt.encode(payload, settings.jwt_secret, algorithm=JWT_ALGORITHM)
 
 
-def decode_access_token(token: str) -> int | None:
-    """Return the user id from a valid token, or None if it is invalid or expired."""
+def decode_access_token(token: str) -> tuple[int, int] | None:
+    """Return (user id, token version) from a valid token, or None if it is invalid or expired."""
     try:
-        payload = jwt.decode(token, get_settings().jwt_secret, algorithms=[JWT_ALGORITHM], options={"require": ["exp", "sub"]})
-        return int(payload["sub"])
-    except (jwt.PyJWTError, ValueError):
+        payload = jwt.decode(
+            token, get_settings().jwt_secret, algorithms=[JWT_ALGORITHM], options={"require": ["exp", "sub", "ver"]}
+        )
+        return int(payload["sub"]), int(payload["ver"])
+    except (jwt.PyJWTError, ValueError, TypeError):
         return None
 
 

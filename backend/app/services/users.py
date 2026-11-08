@@ -56,4 +56,5 @@ def change_password(db: Session, user: User, current_password: str, new_password
         raise BadRequest("new password must be different")
     user.password_hash = hash_password(new_password)
     user.must_change_password = False
+    user.token_version += 1  # every token issued before this moment stops working
     db.commit()

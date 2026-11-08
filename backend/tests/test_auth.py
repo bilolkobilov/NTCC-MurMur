@@ -90,9 +90,39 @@ def test_change_password(client, db):
         json={"current_password": DEFAULT_PASSWORD, "new_password": "brand-new-pass"},
     )
 
-    assert response.status_code == 204
+    assert response.status_code == 200
     assert client.post("/api/auth/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD}).status_code == 401
     login(client, "dr.aziz", "brand-new-pass")
+
+
+def test_password_change_kills_all_older_tokens(client, db):
+    """A token stolen before the change (e.g. with a leaked password) must stop working at once."""
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    stolen = login(client, "dr.aziz")
+    own = login(client, "dr.aziz")
+
+    response = client.post(
+        "/api/auth/change-password",
+        headers=own,
+        json={"current_password": DEFAULT_PASSWORD, "new_password": "brand-new-pass"},
+    )
+    fresh = {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+    assert client.get("/api/auth/me", headers=stolen).status_code == 401
+    assert client.get("/api/auth/me", headers=own).status_code == 401
+    assert client.get("/api/auth/me", headers=fresh).status_code == 200
+    assert client.get("/api/auth/me", headers=login(client, "dr.aziz", "brand-new-pass")).status_code == 200
+
+
+def test_token_without_version_is_rejected(client, db):
+    user = make_user(db, "dr.aziz", Role.DOCTOR)
+    old_style = jwt.encode(
+        {"sub": str(user.id), "exp": datetime.now(UTC) + timedelta(minutes=5)},
+        get_settings().jwt_secret,
+        algorithm="HS256",
+    )
+
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {old_style}"}).status_code == 401
 
 
 def test_change_password_rejects_wrong_current_short_or_same_password(client, db):
@@ -125,5 +155,8 @@ def test_temporary_password_must_be_changed_before_anything_else(client, db):
         headers=headers,
         json={"current_password": DEFAULT_PASSWORD, "new_password": "my-own-password"},
     )
-    assert changed.status_code == 204
-    assert client.get("/api/auth/me", headers=headers).status_code == 200
+    assert changed.status_code == 200
+    assert changed.json()["must_change_password"] is False
+    new_headers = {"Authorization": f"Bearer {changed.json()['access_token']}"}
+    assert client.get("/api/auth/me", headers=new_headers).status_code == 200
+    assert client.get("/api/auth/me", headers=headers).status_code == 401, "the temporary-password token is dead"
