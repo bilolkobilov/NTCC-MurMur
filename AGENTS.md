@@ -35,7 +35,8 @@ Bu qoidalar repositorydagi barcha tasklarga tatbiq qilinadi.
 - `frontend/` — React + Vite web app (admin / doctor / patient, uz / ru / en); FastAPI serves its build in demo mode.
 - `backend/app/services/ai/` + `scripts/ai/` — the CardioPHON murmur model and its training / evaluation scripts;
   `models/` and `samples/circor/` hold downloaded weights and data (gitignored).
-- `docker-compose.yml` — PostgreSQL only. Firmware (ESP32-S3) comes in a later stage.
+- `firmware/murmur/` — ESP32-S3 Arduino firmware (mic + Wi-Fi + device API); secrets in gitignored `secrets.h`.
+- `docker-compose.yml` — PostgreSQL only.
 - Layered, not flattened: routers stay thin, business rules live in `services/`. "Small" means fewer features, not fewer layers.
 - Yangi narsa faqat hozir kerak bo'lsa quriladi ("biz enterprise emasmiz") — eng kichik variant.
 
@@ -65,7 +66,7 @@ see results on a website. Research prototype and screening aid, NOT a medical de
 - Frontend: React 19 + Vite, TypeScript ~5.9, Tailwind 4, TanStack Query, react-i18next, Vitest, ESLint
   (`frontend/`, owner-approved spec `docs/specs/2026-11-08-web-frontend.md`).
 - AI: PyTorch CPU + numpy in the backend's `ai` dependency group (owner, 2026-11-08).
-- Firmware (Arduino, ESP32-S3) is NOT part of the current stage.
+- Firmware: Arduino-ESP32 3.x (built-in ESP_I2S, WiFi, HTTPClient), compiled with arduino-cli; MPU6050 and ECG later.
 
 ## Roles and access rules (must be enforced AND covered by tests)
 - **No public signup.** The first admin is created with a CLI command using values from env.

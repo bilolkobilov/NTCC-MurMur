@@ -1,7 +1,8 @@
 {
   "permissions": {
     "deny": [
-      "Read(./.env)"
+      "Read(./.env)",
+      "Read(./firmware/murmur/secrets.h)"
     ],
     "allow": [
       "Bash(git status:*)",

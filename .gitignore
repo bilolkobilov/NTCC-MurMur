@@ -21,3 +21,6 @@ frontend/dist/
 
 # AI model files (downloaded at setup, never committed — docs/runbook.md)
 models/
+
+# device secrets (Wi-Fi, device key) - copy secrets.example.h
+firmware/murmur/secrets.h

@@ -93,6 +93,20 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 7. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
    Bump `MODEL_VERSION` in `train_head.py` on every retrain (it is stored with every result).
 
+## Device firmware (ESP32-S3)
+
+Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. Not yet flashed on real hardware.
+
+1. Tools (once): arduino-cli 1.5.1 in `%LOCALAPPDATA%\Programsrduino-cli` (from GitHub releases, SHA-256 checked),
+   then `arduino-cli config init --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`,
+   `arduino-cli core update-index`, `arduino-cli core install esp32:esp32` (3.3.12, ~1 GB). Arduino IDE works too.
+2. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h` and fill Wi-Fi, server address
+   (`http://<laptop-ip-on-hotspot>:8000`) and the device key from Admin → Devices. `secrets.h` is gitignored.
+3. Compile: `arduino-cli compile --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc" firmware/murmur`
+4. Flash: add `--upload -p COM<n>` (the board's USB port); serial log: `arduino-cli monitor -p COM<n> -c baudrate=115200`.
+5. First real check: the device shows *Online* in Admin → Devices; then a doctor starts an exam. Tune `MIC_GAIN_SHIFT`
+   in `config.h` if the server answers "almost silent" (raise gain: smaller number) or "clipped" (bigger number).
+
 ## Database migrations
 
 ```bash
