@@ -19,6 +19,7 @@ docker compose up -d db                 # PostgreSQL 16, waits for "healthy"
 cd backend
 uv sync                                 # install dependencies into backend/.venv
 uv run python -m alembic upgrade head   # create / update tables
+uv run python -m app.cli create-admin   # first admin from FIRST_ADMIN_* keys; safe to run again
 uv run python -m uvicorn app.main:app --reload   # API on http://localhost:8000, docs at /docs
 ```
 

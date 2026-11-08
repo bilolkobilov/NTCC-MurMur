@@ -1,12 +1,15 @@
-"""FastAPI application: middleware and routers."""
+"""FastAPI application: middleware, error mapping and routers."""
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.api import auth
 from app.config import get_settings
 from app.db import get_db
+from app.services.errors import ServiceError
 
 
 def create_app() -> FastAPI:
@@ -20,11 +23,16 @@ def create_app() -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.exception_handler(ServiceError)
+    def service_error(_: Request, exc: ServiceError) -> JSONResponse:
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
     @app.get("/api/health", tags=["health"])
     def health(db: Session = Depends(get_db)) -> dict[str, str]:
         db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "ok"}
 
+    app.include_router(auth.router)
     return app
 
 

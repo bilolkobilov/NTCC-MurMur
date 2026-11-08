@@ -20,6 +20,7 @@ class Settings(BaseSettings):
 
     jwt_secret: str
     jwt_expire_minutes: int = 60
+    bcrypt_rounds: int = 12  # tests lower this to stay fast
 
     first_admin_username: str = "admin"
     first_admin_password: str | None = None
