@@ -7,6 +7,7 @@ from pydantic import ValidationError
 
 from app.config import get_settings
 from app.deps import CurrentDevice, DbSession
+from app.schemas.common import PathId
 from app.schemas.device import CommandOut, Heartbeat, UploadAccepted, UploadMeta
 from app.services import analysis, device_flow
 
@@ -34,7 +35,7 @@ def poll_command(db: DbSession, device: CurrentDevice) -> CommandOut | None:
 
 @router.post("/upload/{exam_id}", status_code=status.HTTP_202_ACCEPTED)
 def upload(
-    exam_id: int,
+    exam_id: PathId,
     audio: Annotated[UploadFile, File(description="WAV recording")],
     db: DbSession,
     device: CurrentDevice,

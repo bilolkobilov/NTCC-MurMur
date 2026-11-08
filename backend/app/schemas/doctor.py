@@ -3,7 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import AuscultationPoint, ExamStatus, Sex
-from app.schemas.common import FullName, Username
+from app.schemas.common import FullName, RefId, Username
 
 
 class PatientCreate(BaseModel):
@@ -39,8 +39,8 @@ class PatientLoginCreated(BaseModel):
 
 
 class ExamCreate(BaseModel):
-    patient_id: int
-    device_id: int
+    patient_id: RefId
+    device_id: RefId
     point: AuscultationPoint
 
 

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Query, status
 
 from app.deps import CurrentAdmin, DbSession
 from app.models import Device
+from app.schemas.common import PathId
 from app.schemas.admin import (
     AuditEntryOut,
     DeviceAssign,
@@ -53,12 +54,12 @@ def list_doctors(db: DbSession, _: CurrentAdmin) -> list[DoctorOut]:
 
 
 @router.post("/doctors/{doctor_id}/block")
-def block_doctor(doctor_id: int, db: DbSession, _: CurrentAdmin) -> DoctorOut:
+def block_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorOut:
     return DoctorOut.model_validate(doctors.set_doctor_active(db, doctor_id, active=False))
 
 
 @router.post("/doctors/{doctor_id}/unblock")
-def unblock_doctor(doctor_id: int, db: DbSession, _: CurrentAdmin) -> DoctorOut:
+def unblock_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorOut:
     return DoctorOut.model_validate(doctors.set_doctor_active(db, doctor_id, active=True))
 
 
@@ -77,7 +78,7 @@ def list_devices(db: DbSession, _: CurrentAdmin) -> list[DeviceOut]:
 
 
 @router.patch("/devices/{device_id}")
-def assign_device(device_id: int, body: DeviceAssign, db: DbSession, _: CurrentAdmin) -> DeviceOut:
+def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, _: CurrentAdmin) -> DeviceOut:
     return _device_out(devices.assign_device(db, device_id, body.doctor_id))
 
 

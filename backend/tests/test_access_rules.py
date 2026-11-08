@@ -130,3 +130,21 @@ def test_blocked_doctors_patients_can_still_see_their_results(client, db, world)
     db.commit()
 
     assert len(client.get("/api/me/exams", headers=login(client, "ali")).json()) == 1
+
+
+def test_ids_beyond_the_database_range_are_invalid_input_not_server_errors(client, db, world):
+    """Ids are 32-bit in PostgreSQL; a bigger number must be a 422, never a 500."""
+    huge = 99_999_999_999
+    make_user(db, "admin", Role.ADMIN)
+    doctor = login(client, "dr.a")
+    admin = login(client, "admin")
+
+    assert client.get(f"/api/patients/{huge}", headers=doctor).status_code == 422
+    assert client.get(f"/api/exams/{huge}", headers=doctor).status_code == 422
+    exam_body = {"patient_id": huge, "device_id": world["device_a"].id, "point": "MV"}
+    assert client.post("/api/exams", headers=doctor, json=exam_body).status_code == 422
+    assert client.post(f"/api/admin/doctors/{huge}/block", headers=admin).status_code == 422
+    assert client.patch(f"/api/admin/devices/{huge}", headers=admin, json={"doctor_id": None}).status_code == 422
+    device_body = {"doctor_id": huge}
+    assert client.patch(f"/api/admin/devices/{world['device_a'].id}", headers=admin, json=device_body).status_code == 422
+    assert client.get(f"/api/patients/{huge}").status_code == 401, "auth is still checked first"

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.common import FullName, NewPassword, Username
+from app.schemas.common import FullName, NewPassword, RefId, Username
 
 
 class DoctorCreate(BaseModel):
@@ -25,11 +25,11 @@ class DoctorOut(BaseModel):
 class DeviceCreate(BaseModel):
     name: str = Field(min_length=1, max_length=100)
     serial: str = Field(min_length=1, max_length=64)
-    doctor_id: int | None = None
+    doctor_id: RefId | None = None
 
 
 class DeviceAssign(BaseModel):
-    doctor_id: int | None
+    doctor_id: RefId | None
 
 
 class DeviceOut(BaseModel):
