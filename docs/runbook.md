@@ -30,6 +30,22 @@ cd backend
 uv run python -m pytest                 # uses the separate murmur_test database, created automatically
 ```
 
+## Manual test without hardware (fake device)
+
+1. Start the API (above). As admin, register a device assigned to a doctor; copy the one-time `api_key`.
+2. In a second terminal, give the key through an env var (not a command argument) and start the fake device:
+
+```powershell
+$env:MURMUR_DEVICE_KEY="<the key>"
+py scripts/fake_device.py --samples samples/        # or --wav path\to\file.wav; add --once --fast for one quick run
+```
+
+3. As the doctor, start an exam on that device (`POST /api/exams`). The fake device picks up the command, waits the
+   recording time, uploads the next WAV, and the exam moves to `analyzed`.
+
+Sample WAVs go in `samples/` (gitignored). Heart sounds from the CirCor DigiScope dataset (PhysioNet, ODC-BY 1.0):
+cite it if results are shown in the report.
+
 ## Database migrations
 
 ```bash

@@ -61,6 +61,6 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
 
-## Not built yet (move a line up when it exists)
+## Scripts
 
-- scripts/fake_device.py — simulated device for a manual end-to-end run with sample WAVs
+- `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference
