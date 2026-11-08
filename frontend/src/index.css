@@ -1,0 +1,57 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+/* Uzbek oʻ/gʻ: IBM Plex Sans draws U+02BB as wide as a letter ("O ʻ zbekiston"). Only that character (and U+02BC)
+   comes from Noto Sans, whose glyph is narrow; everything else stays IBM Plex Sans. Measured in task 0. */
+@font-face {
+  font-family: "Uzbek Okina";
+  src: url("@fontsource/noto-sans/files/noto-sans-latin-400-normal.woff2") format("woff2");
+  font-weight: 400;
+  unicode-range: U+02BB-02BC;
+}
+@font-face {
+  font-family: "Uzbek Okina";
+  src: url("@fontsource/noto-sans/files/noto-sans-latin-500-normal.woff2") format("woff2");
+  font-weight: 500;
+  unicode-range: U+02BB-02BC;
+}
+@font-face {
+  font-family: "Uzbek Okina";
+  src: url("@fontsource/noto-sans/files/noto-sans-latin-600-normal.woff2") format("woff2");
+  font-weight: 600;
+  unicode-range: U+02BB-02BC;
+}
+
+/* Visual system A "Chart paper" — docs/specs/2026-11-08-web-frontend.md §12 */
+@theme {
+  --color-ink-900: #14213d;
+  --color-ink-700: #33415c;
+  --color-ink-500: #5b6b85;
+  --color-ink-300: #8a97ad;
+  --color-line: #e6eaf0;
+  --color-line-strong: #d5dbe5;
+  --color-canvas: #f7f9fb;
+  --color-surface: #ffffff;
+  --color-grid-minor: #f8dde1;
+  --color-grid-major: #efb3bc;
+  --color-signal: #c1121f;
+  --color-finding: #9a3412;
+  --color-finding-bg: #fff4e5;
+  --color-clear: #0f766e;
+  --color-clear-bg: #e7f6f3;
+  --color-danger: #b91c1c;
+
+  --font-sans: "Uzbek Okina", "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+:root {
+  -webkit-font-smoothing: antialiased;
+  color: var(--color-ink-900);
+  background: var(--color-canvas);
+  font-family: var(--font-sans);
+}

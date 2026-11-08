@@ -14,3 +14,7 @@ samples/
 # claude code local files
 .claude/worktrees/
 .claude/settings.local.json
+
+# frontend
+node_modules/
+frontend/dist/

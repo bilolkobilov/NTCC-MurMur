@@ -66,6 +66,13 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
 
+## Frontend
+
+- `frontend/package.json` — React 19 + Vite 8 + TypeScript 5.9; scripts: dev, build, test (Vitest), lint (ESLint)
+- `frontend/vite.config.ts` — Tailwind plugin, `/api` proxy to :8000 in dev, Vitest (jsdom) config
+- `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
+- `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
+
 ## Scripts
 
 - `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference

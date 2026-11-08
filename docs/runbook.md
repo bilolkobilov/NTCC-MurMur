@@ -32,6 +32,20 @@ uv run python -m ruff check . ../scripts         # lint (unused code, import ord
 uv run python -m ruff format . ../scripts        # auto-format; use --check to only verify
 ```
 
+## Frontend (development)
+
+```bash
+cd frontend
+npm install
+npm run dev        # http://localhost:5173, /api is proxied to the backend on :8000
+npm test           # Vitest
+npm run lint       # ESLint
+npm run build      # type-check + production build into frontend/dist
+```
+
+TypeScript is pinned to ~5.9 and linting uses ESLint on purpose: TypeScript 7 / oxlint use native binaries that
+Smart App Control blocks or that ESLint cannot use (see docs/decisions/2026-11.md).
+
 ## Manual test without hardware (fake device)
 
 1. Start the API (above). As admin, register a device assigned to a doctor; copy the one-time `api_key`.
