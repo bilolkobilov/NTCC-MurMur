@@ -26,9 +26,3 @@ export function NotFoundPage() {
   const { t } = useTranslation();
   return <StatusPage title={t("pages.notFoundTitle")} />;
 }
-
-/** Honest placeholder for a page that a later task builds — never a fake screen. */
-export function NotBuiltPage() {
-  const { t } = useTranslation();
-  return <StatusPage title={t("pages.notBuiltTitle")} body={t("pages.notBuiltBody")} />;
-}

@@ -6,7 +6,7 @@ import { ApiError } from "../api/client";
 import { AppShell } from "../components/layout/AppShell";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
-import { NotBuiltPage, NotFoundPage } from "../pages/StatusPages";
+import { NotFoundPage } from "../pages/StatusPages";
 import { HomeRedirect, RequireRole, RequireSession } from "./guards";
 
 // Each role's pages load only when that role opens them (a patient's phone never downloads doctor code).
@@ -24,6 +24,10 @@ const NewExamPage = lazy(() =>
   import("../features/doctor/exam/NewExamPage").then((m) => ({ default: m.NewExamPage })),
 );
 const ExamPage = lazy(() => import("../features/doctor/exam/ExamPage").then((m) => ({ default: m.ExamPage })));
+const AdminHome = lazy(() => import("../features/admin/AdminHome").then((m) => ({ default: m.AdminHome })));
+const DoctorsPage = lazy(() => import("../features/admin/DoctorsPage").then((m) => ({ default: m.DoctorsPage })));
+const DevicesPage = lazy(() => import("../features/admin/DevicesPage").then((m) => ({ default: m.DevicesPage })));
+const AuditPage = lazy(() => import("../features/admin/AuditPage").then((m) => ({ default: m.AuditPage })));
 const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
 const ResultPage = lazy(() => import("../features/patient/ResultPage").then((m) => ({ default: m.ResultPage })));
 
@@ -40,7 +44,7 @@ export function createQueryClient(): QueryClient {
   });
 }
 
-/** A data router (needed for "unsaved changes" blocking). Pages that later tasks build show NotBuiltPage. */
+/** A data router (needed for "unsaved changes" blocking). */
 export const routes: RouteObject[] = [
   { path: "/", element: <HomeRedirect /> },
   { path: "/login", element: <LoginPage /> },
@@ -67,7 +71,7 @@ export const routes: RouteObject[] = [
       { path: "patients/:patientId/edit", element: <PatientFormPage /> },
       { path: "patients/:patientId/exam", element: <NewExamPage /> },
       { path: "exams/:examId", element: <ExamPage /> },
-      { path: "*", element: <NotBuiltPage /> },
+      { path: "*", element: <NotFoundPage /> },
     ],
   },
   {
@@ -77,7 +81,13 @@ export const routes: RouteObject[] = [
         <AppShell />
       </RequireRole>
     ),
-    children: [{ path: "*", element: <NotBuiltPage /> }, { index: true, element: <NotBuiltPage /> }],
+    children: [
+      { index: true, element: <AdminHome /> },
+      { path: "doctors", element: <DoctorsPage /> },
+      { path: "devices", element: <DevicesPage /> },
+      { path: "audit", element: <AuditPage /> },
+      { path: "*", element: <NotFoundPage /> },
+    ],
   },
   {
     path: "/patient",

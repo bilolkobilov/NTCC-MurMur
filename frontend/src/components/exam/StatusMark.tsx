@@ -19,7 +19,8 @@ const STYLE: Record<ExamStatus, { stroke: string; text: string; dash?: string; b
   failed: { stroke: "var(--color-danger)", text: "text-danger", broken: true },
 };
 
-export function StatusMark({ status, compact = false }: { status: ExamStatus; compact?: boolean }) {
+/** `label` replaces the default word, e.g. the admin's neutral "Awaiting the doctor's review". */
+export function StatusMark({ status, compact = false, label }: { status: ExamStatus; compact?: boolean; label?: string }) {
   const { t } = useTranslation();
   const style = STYLE[status];
   return (
@@ -33,7 +34,7 @@ export function StatusMark({ status, compact = false }: { status: ExamStatus; co
           <path d={TRACE} stroke={style.stroke} strokeWidth="1.5" fill="none" strokeLinejoin="round" />
         )}
       </svg>
-      <span className={compact ? "sr-only" : undefined}>{t(`exam.status.${status}`)}</span>
+      <span className={compact ? "sr-only" : undefined}>{label ?? t(`exam.status.${status}`)}</span>
     </span>
   );
 }

@@ -89,7 +89,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/ui/` — Button (busy = double-click guard), TextField, Alert
 - `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
 - `frontend/src/components/layout/` — AppShell (header, role nav, account menu), AuthLayout (login frame)
-- `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found / not built yet)
+- `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found)
 - `frontend/src/api/doctor.ts` — doctor endpoints + types (patients, exams list, devices, logins)
 - `frontend/src/lib/format.ts` — dates (Asia/Tashkent), relative time, numbers per language, age
 - `frontend/src/components/ui/` — also Dialog (Radix), SecretDialog (one-time secrets), States (empty/error/skeleton/panel)
@@ -99,6 +99,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,
   saved conclusion), HeartStrip (wavesurfer on chart paper, close-up, spectrogram), `aiOutcome.ts`
+- `frontend/src/api/admin.ts`, `frontend/src/features/admin/` — AdminHome (counts, devices, AI model), DoctorsPage,
+  DevicesPage (key shown once, assign, rotate), AuditPage (pages of 50, action filter in the URL)
 - `frontend/src/api/patient.ts`, `frontend/src/features/patient/` — patient phone pages: PatientHome (reviewed results),
   ResultPage (doctor's conclusion + where listened); never any AI field
 - `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests
