@@ -261,6 +261,7 @@ DOCTOR_ENDPOINTS = [
     ("get", "/api/devices"),
     ("post", "/api/patients/1/reset-password"),
     ("post", "/api/exams/1/cancel"),
+    ("patch", "/api/patients/1"),
 ]
 
 
@@ -416,3 +417,44 @@ def test_patient_password_reset_needs_own_patient_with_a_login(client, db, heade
 
     assert client.post(f"/api/patients/{no_login.id}/reset-password", headers=headers).status_code == 409
     assert client.post(f"/api/patients/{theirs.id}/reset-password", headers=headers).status_code == 404
+
+
+# --- edit patient ---
+
+
+def test_doctor_fixes_patient_data(client, db, headers, doctor):
+    patient = make_patient(db, doctor, "Ali Valiev")
+    client.post(f"/api/patients/{patient.id}/login", headers=headers, json={"username": "ali.v"})
+
+    response = client.patch(
+        f"/api/patients/{patient.id}",
+        headers=headers,
+        json={"full_name": "Ali Valiyev", "weight_kg": 72.5, "height_cm": None},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert (body["full_name"], body["weight_kg"], body["height_cm"], body["birth_year"]) == (
+        "Ali Valiyev",
+        72.5,
+        None,
+        1990,
+    )
+    db.expire_all()
+    from app.models import User
+
+    assert db.scalar(select(User).where(User.username == "ali.v")).full_name == "Ali Valiyev"
+    assert ("patient.update", patient.id) in audit_actions(db)
+
+
+def test_patient_update_rejects_clearing_required_fields_and_bad_values(client, db, headers, doctor):
+    patient = make_patient(db, doctor)
+
+    for body in ({"full_name": None}, {"birth_year": None}, {"sex": None}, {"birth_year": 1800}, {"sex": "x"}):
+        assert client.patch(f"/api/patients/{patient.id}", headers=headers, json=body).status_code == 422, body
+
+
+def test_cannot_edit_another_doctors_patient(client, db, headers, other_doctor):
+    theirs = make_patient(db, other_doctor)
+
+    assert client.patch(f"/api/patients/{theirs.id}", headers=headers, json={"full_name": "X"}).status_code == 404

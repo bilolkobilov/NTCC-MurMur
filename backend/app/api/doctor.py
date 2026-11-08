@@ -16,6 +16,7 @@ from app.schemas.doctor import (
     PatientLoginCreate,
     PatientLoginCreated,
     PatientOut,
+    PatientUpdate,
 )
 from app.services import devices, exams, patients
 
@@ -42,6 +43,11 @@ def list_patients(db: DbSession, doctor: CurrentDoctor) -> list[PatientOut]:
 @router.get("/patients/{patient_id}")
 def get_patient(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> PatientOut:
     return _patient_out(patients.read_patient(db, doctor, patient_id))
+
+
+@router.patch("/patients/{patient_id}")
+def update_patient(patient_id: PathId, body: PatientUpdate, db: DbSession, doctor: CurrentDoctor) -> PatientOut:
+    return _patient_out(patients.update_patient(db, doctor, patient_id, body.model_dump(exclude_unset=True)))
 
 
 @router.post("/patients/{patient_id}/consent")

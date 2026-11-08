@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models import AuscultationPoint, ExamStatus, Sex
 from app.schemas.common import FullName, RefId, Username
@@ -13,6 +13,23 @@ class PatientCreate(BaseModel):
     height_cm: float | None = Field(default=None, gt=0, lt=300)
     weight_kg: float | None = Field(default=None, gt=0, lt=500)
     consent_given: bool = False
+
+
+class PatientUpdate(BaseModel):
+    """Fix typos in a patient's data. Send only the fields to change; height/weight may be set to null."""
+
+    full_name: FullName | None = None
+    birth_year: int | None = Field(default=None, ge=1900, le=2100)
+    sex: Sex | None = None
+    height_cm: float | None = Field(default=None, gt=0, lt=300)
+    weight_kg: float | None = Field(default=None, gt=0, lt=500)
+
+    @model_validator(mode="after")
+    def required_fields_not_cleared(self):
+        for name in ("full_name", "birth_year", "sex"):
+            if name in self.model_fields_set and getattr(self, name) is None:
+                raise ValueError(f"{name} cannot be empty")
+        return self
 
 
 class PatientOut(BaseModel):

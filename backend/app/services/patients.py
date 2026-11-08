@@ -107,3 +107,15 @@ def reset_patient_password(db: Session, doctor: User, patient_id: int) -> tuple[
     temp_password = generate_temp_password()
     set_password(db, patient.user, temp_password, must_change=True)
     return patient.user, temp_password
+
+
+def update_patient(db: Session, doctor: User, patient_id: int, changes: dict) -> Patient:
+    """Apply the given field changes; the patient's login keeps the same display name."""
+    patient = _own_patient(db, doctor, patient_id, for_update=True)
+    for field, value in changes.items():
+        setattr(patient, field, value)
+    if "full_name" in changes and patient.user is not None:
+        patient.user.full_name = changes["full_name"]
+    db.commit()
+    audit.record(db, doctor, "patient.update", "patient", patient.id)
+    return patient
