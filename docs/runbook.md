@@ -41,6 +41,7 @@ npm run dev        # http://localhost:5173, /api is proxied to the backend on :8
 npm test           # Vitest
 npm run lint       # ESLint
 npm run build      # type-check + production build into frontend/dist
+npm run check:offline   # after build: fails if anything would load from the internet
 ```
 
 TypeScript is pinned to ~5.9 and linting uses ESLint on purpose: TypeScript 7 / oxlint use native binaries that

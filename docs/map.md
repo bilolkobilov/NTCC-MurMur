@@ -73,6 +73,18 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/vite.config.ts` — Tailwind plugin, `/api` proxy to :8000 in dev, Vitest (jsdom) config
 - `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
 - `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
+- `frontend/scripts/check-offline.mjs` — `npm run check:offline`: fails if the build would load anything from the internet
+- `frontend/src/main.tsx` — entry: CSS, i18n, `<App/>`
+- `frontend/src/app/App.tsx` — routes per role, QueryClient (retries only network/5xx)
+- `frontend/src/app/session.ts` — token + role in sessionStorage; `useSession()`; why the session ended
+- `frontend/src/app/guards.tsx` — `RequireRole`, `RequireSession`, `HomeRedirect`, safe `?next=`
+- `frontend/src/api/client.ts` — `api()`: Bearer token, 401 → session expired, 403 → change password; `errorMessage()`
+- `frontend/src/api/auth.ts` — login, change password, me
+- `frontend/src/i18n/` — uz/ru/en JSON, auto-detect (`detect.ts`), `changeLanguage()`; test checks key parity and `ʻ`
+- `frontend/src/components/ui/` — Button (busy = double-click guard), TextField, Alert
+- `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
+- `frontend/src/components/layout/` — AppShell (header, role nav, account menu), AuthLayout (login frame)
+- `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found / not built yet)
 
 ## Scripts
 

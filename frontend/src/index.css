@@ -49,6 +49,21 @@
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
+/* Millimetre chart paper: small square 8 px, big square 40 px (= 0.2 s at 200 px/s). The product's signature. */
+.chart-grid {
+  background-color: var(--color-surface);
+  background-image:
+    linear-gradient(to right, var(--color-grid-major) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-major) 1px, transparent 1px),
+    linear-gradient(to right, var(--color-grid-minor) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-grid-minor) 1px, transparent 1px);
+  background-size:
+    40px 40px,
+    40px 40px,
+    8px 8px,
+    8px 8px;
+}
+
 :root {
   -webkit-font-smoothing: antialiased;
   color: var(--color-ink-900);

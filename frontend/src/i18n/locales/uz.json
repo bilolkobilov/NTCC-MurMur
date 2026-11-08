@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "MurMur",
+    "tagline": "Yurak tovushlari skriningi",
+    "disclaimer": "Tadqiqot prototipi. Tibbiy buyum emas.",
+    "pitch": "Yurak tovushini 20 soniya yozib oling, tinglang va koʻring, sunʼiy intellektdan ikkinchi fikr oling, xulosangizni yozing."
+  },
+  "language": {
+    "label": "Til",
+    "uz": "Oʻzbekcha",
+    "ru": "Русский",
+    "en": "English"
+  },
+  "nav": {
+    "doctorHome": "Bosh sahifa",
+    "patients": "Bemorlar",
+    "adminOverview": "Umumiy holat",
+    "doctors": "Shifokorlar",
+    "devices": "Qurilmalar",
+    "audit": "Kirishlar jurnali",
+    "myResults": "Natijalaringiz",
+    "account": "Hisob",
+    "changePassword": "Parolni almashtirish",
+    "logOut": "Chiqish"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "doctor": "Shifokor",
+    "patient": "Bemor"
+  },
+  "login": {
+    "title": "Kirish",
+    "username": "Foydalanuvchi nomi",
+    "password": "Parol",
+    "submit": "Kirish",
+    "submitting": "Kirilmoqda…",
+    "noSignup": "Hisoblarni administrator yoki shifokoringiz yaratadi.",
+    "sessionEnded": "Seans tugadi. Davom etish uchun qaytadan kiring.",
+    "loggedOut": "Tizimdan chiqdingiz."
+  },
+  "changePassword": {
+    "title": "Parolni almashtirish",
+    "firstTimeTitle": "Oʻz parolingizni tanlang",
+    "firstTimeHint": "Siz bir martalik parol bilan kirdingiz. Davom etishdan oldin faqat oʻzingiz biladigan parol tanlang.",
+    "current": "Joriy parol",
+    "currentOneTime": "Bir martalik parol",
+    "new": "Yangi parol",
+    "repeat": "Yangi parolni takrorlang",
+    "rules": "Kamida 8 ta belgi.",
+    "submit": "Parolni saqlash",
+    "submitting": "Saqlanmoqda…",
+    "saved": "Parol saqlandi. Boshqa qurilmalardagi seanslar yopildi.",
+    "mismatch": "Ikkala yangi parol bir xil emas.",
+    "tooShort": "Kamida 8 ta belgidan foydalaning.",
+    "tooLong": "Parol juda uzun. Qisqaroq parol tanlang."
+  },
+  "errors": {
+    "wrongCredentials": "Foydalanuvchi nomi yoki parol notoʻgʻri.",
+    "blocked": "Bu hisob bloklangan. Administratorga murojaat qiling.",
+    "tooManyAttempts": "Notoʻgʻri parol juda koʻp kiritildi. {{minutes}} daqiqadan keyin qayta urinib koʻring.",
+    "currentPasswordWrong": "Joriy parol notoʻgʻri.",
+    "passwordSame": "Yangi parol joriy paroldan farq qilishi kerak.",
+    "invalidInput": "Baʼzi maydonlar notoʻgʻri toʻldirilgan.",
+    "notFound": "Topilmadi. Ehtimol, oʻchirilgan.",
+    "conflict": "Kimdir buni hozirgina oʻzgartirdi. Sahifada eng soʻnggi holat koʻrsatilmoqda.",
+    "forbidden": "Hisobingiz bu amalni bajara olmaydi.",
+    "network": "MurMur serveri bilan aloqa yoʻq. Wi-Fi ni tekshirib, qayta urinib koʻring.",
+    "server": "Serverda xatolik yuz berdi. Birozdan keyin qayta urinib koʻring.",
+    "unknown": "Nimadir notoʻgʻri ketdi. Qayta urinib koʻring."
+  },
+  "pages": {
+    "notAvailableTitle": "Hisobingiz uchun mavjud emas",
+    "notAvailableBody": "Bu sahifa boshqa rolga tegishli.",
+    "goHome": "Bosh sahifangizga oʻtish",
+    "notFoundTitle": "Sahifa topilmadi",
+    "notBuiltTitle": "Bu sahifa hali tayyor emas",
+    "notBuiltBody": "U rejaning keyingi bosqichlaridan birida qoʻshiladi."
+  }
+}

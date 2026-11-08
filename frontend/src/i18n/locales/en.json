@@ -1,0 +1,79 @@
+{
+  "app": {
+    "name": "MurMur",
+    "tagline": "Heart-sound screening",
+    "disclaimer": "Research prototype. Not a medical device.",
+    "pitch": "Record 20 seconds of heart sound, hear and see it, get an AI second opinion, write your conclusion."
+  },
+  "language": {
+    "label": "Language",
+    "uz": "Oʻzbekcha",
+    "ru": "Русский",
+    "en": "English"
+  },
+  "nav": {
+    "doctorHome": "Home",
+    "patients": "Patients",
+    "adminOverview": "Overview",
+    "doctors": "Doctors",
+    "devices": "Devices",
+    "audit": "Audit log",
+    "myResults": "Your results",
+    "account": "Account",
+    "changePassword": "Change password",
+    "logOut": "Log out"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "doctor": "Doctor",
+    "patient": "Patient"
+  },
+  "login": {
+    "title": "Log in",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Log in",
+    "submitting": "Logging in…",
+    "noSignup": "Accounts are created by your administrator or doctor.",
+    "sessionEnded": "Your session ended. Log in again to continue.",
+    "loggedOut": "You logged out."
+  },
+  "changePassword": {
+    "title": "Change password",
+    "firstTimeTitle": "Choose your own password",
+    "firstTimeHint": "You logged in with a one-time password. Choose a password only you know before you continue.",
+    "current": "Current password",
+    "currentOneTime": "One-time password",
+    "new": "New password",
+    "repeat": "Repeat new password",
+    "rules": "At least 8 characters.",
+    "submit": "Save password",
+    "submitting": "Saving…",
+    "saved": "Password saved. Other devices were logged out.",
+    "mismatch": "The two new passwords are different.",
+    "tooShort": "Use at least 8 characters.",
+    "tooLong": "That password is too long. Use a shorter one."
+  },
+  "errors": {
+    "wrongCredentials": "Wrong username or password.",
+    "blocked": "This account is blocked. Contact your administrator.",
+    "tooManyAttempts": "Too many wrong passwords. Try again in {{minutes}} min.",
+    "currentPasswordWrong": "The current password is wrong.",
+    "passwordSame": "The new password must be different from the current one.",
+    "invalidInput": "Some fields are not filled in correctly.",
+    "notFound": "This was not found. It may have been deleted.",
+    "conflict": "Someone changed this a moment ago. The page shows the latest state.",
+    "forbidden": "Your account cannot do this.",
+    "network": "No connection to the MurMur server. Check the Wi-Fi and try again.",
+    "server": "The server had a problem. Try again in a moment.",
+    "unknown": "Something went wrong. Try again."
+  },
+  "pages": {
+    "notAvailableTitle": "Not available for your account",
+    "notAvailableBody": "This page belongs to another role.",
+    "goHome": "Go to your home page",
+    "notFoundTitle": "Page not found",
+    "notBuiltTitle": "This page is not built yet",
+    "notBuiltBody": "It arrives in a later step of the plan."
+  }
+}
