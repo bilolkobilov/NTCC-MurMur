@@ -19,6 +19,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 - `backend/pyproject.toml` — dependencies (uv), pytest config, pure-Python SQLAlchemy setting
 - `backend/app/main.py` — `create_app()`: CORS, routers, `/api/health`
+- `backend/app/upload_limit.py` — ASGI middleware: rejects big/unsized device uploads from Content-Length
 - `backend/app/config.py` — `Settings` from env / `.env`; builds the database URL
 - `backend/app/db.py` — engine, `SessionLocal`, `Base` (constraint naming), `CreatedAtMixin`, `get_db` dependency
 - `backend/app/security.py` — bcrypt passwords, JWT tokens, device API key generation + SHA-256 hash

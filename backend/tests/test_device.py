@@ -273,3 +273,37 @@ def test_failed_save_leaves_no_orphan_file(client, db, key, exam, monkeypatch):
     db.expire_all()
     assert db.get(Exam, exam.id).status == ExamStatus.RECORDING
     assert db.scalar(select(Recording)) is None
+
+
+def test_oversized_upload_is_rejected_before_the_body_is_read(client, db, key, exam, monkeypatch):
+    from app.services import device_flow
+
+    client.get("/api/device/command", headers=key)
+    monkeypatch.setattr(get_settings(), "max_upload_mb", 0)
+    monkeypatch.setattr(device_flow, "accept_upload", lambda *a, **k: pytest.fail("handler must not run"))
+
+    response = upload(client, key, exam.id, make_wav(seconds=30))  # ~240 KB > 0 MB + 64 KB overhead
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == "request body is larger than the 0 MB upload limit"
+
+
+def test_upload_without_content_length_is_rejected(client, key, exam):
+    client.get("/api/device/command", headers=key)
+
+    def chunked_body():
+        yield b"--x\r\n"
+
+    response = client.post(
+        f"/api/device/upload/{exam.id}",
+        headers={**key, "Content-Type": "multipart/form-data; boundary=x"},
+        content=chunked_body(),
+    )
+
+    assert response.status_code == 411
+
+
+def test_size_limit_applies_only_to_uploads(client, key, monkeypatch):
+    monkeypatch.setattr(get_settings(), "max_upload_mb", 0)
+
+    assert client.post("/api/device/heartbeat", headers=key, json={"wifi_rssi": -50}).status_code == 200

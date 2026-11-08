@@ -88,6 +88,9 @@ user), `exams`, `recordings`, `ai_results`, `device_commands`, `audit_logs`. Fie
   a device is "online" if seen in the last 30 s.
 - `GET /api/device/command` — device polls every 1–2 s; returns the pending command (e.g. record 20 s for exam X) or nothing.
 - `POST /api/device/upload/{exam_id}` — multipart: `audio` (WAV) + `meta` (JSON: sample rate, motion flag, etc.).
+  The upload request must carry `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 64 KB get 413 before
+  they are read (`app/upload_limit.py`). A retried upload of an already uploaded exam gets 409 — firmware treats
+  409 as "already done".
 - Save WAV as `storage/recordings/<uuid>.wav`. File names never contain patient names.
 - After upload, run analysis as a FastAPI BackgroundTask through an `Analyzer` interface.
   For now only a `DummyAnalyzer` exists (quality=`unknown`, label=`not_analyzed`). Real models come later.

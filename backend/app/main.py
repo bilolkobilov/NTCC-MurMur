@@ -10,6 +10,7 @@ from app.api import admin, auth, device, doctor, patient
 from app.config import get_settings
 from app.db import get_db
 from app.services.errors import ServiceError
+from app.upload_limit import UploadSizeLimitMiddleware
 
 
 def create_app() -> FastAPI:
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    app.add_middleware(UploadSizeLimitMiddleware)
 
     @app.exception_handler(ServiceError)
     def service_error(_: Request, exc: ServiceError) -> JSONResponse:
