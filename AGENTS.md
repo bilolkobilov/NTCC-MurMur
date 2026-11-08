@@ -32,7 +32,10 @@ Bu qoidalar repositorydagi barcha tasklarga tatbiq qilinadi.
 
 - `backend/` — FastAPI app (`app/`: `api/` routers, `schemas/`, `models/`, `services/`), Alembic, pytest tests.
 - `scripts/fake_device.py` — simulated device while there is no hardware; `samples/` — sample WAVs (gitignored).
-- `docker-compose.yml` — PostgreSQL only. Frontend and firmware come in later stages.
+- `frontend/` — React + Vite web app (admin / doctor / patient, uz / ru / en); FastAPI serves its build in demo mode.
+- `backend/app/services/ai/` + `scripts/ai/` — the CardioPHON murmur model and its training / evaluation scripts;
+  `models/` and `samples/circor/` hold downloaded weights and data (gitignored).
+- `docker-compose.yml` — PostgreSQL only. Firmware (ESP32-S3) comes in a later stage.
 - Layered, not flattened: routers stay thin, business rules live in `services/`. "Small" means fewer features, not fewer layers.
 - Yangi narsa faqat hozir kerak bo'lsa quriladi ("biz enterprise emasmiz") — eng kichik variant.
 
@@ -40,6 +43,7 @@ Bu qoidalar repositorydagi barcha tasklarga tatbiq qilinadi.
 
 - Tugadi deyishdan oldin dalil: `cd backend && uv run python -m pytest` natijasi (hammasi yashil, 0 ta test emas) va
   `uv run python -m ruff check . ../scripts` + `uv run python -m ruff format --check . ../scripts` toza.
+- Frontend o'zgarsa: `cd frontend && npx tsc -b && npm run lint && npm test && npm run build && npm run check:offline` toza.
 - Deploy faqat egasi kelishgan bitta paket bilan, oxirida bitta marta.
 
 ---
@@ -58,7 +62,10 @@ see results on a website. Research prototype and screening aid, NOT a medical de
 - Database: PostgreSQL 16 via Docker Compose, from day one. No SQLite anywhere, including tests.
 - Tests: pytest + FastAPI TestClient against a separate Postgres test database (`murmur_test`)
 - Package manager: uv
-- Frontend (React + Vite) and firmware (Arduino, ESP32-S3) are NOT part of the current stage.
+- Frontend: React 19 + Vite, TypeScript ~5.9, Tailwind 4, TanStack Query, react-i18next, Vitest, ESLint
+  (`frontend/`, owner-approved spec `docs/specs/2026-11-08-web-frontend.md`).
+- AI: PyTorch CPU + numpy in the backend's `ai` dependency group (owner, 2026-11-08).
+- Firmware (Arduino, ESP32-S3) is NOT part of the current stage.
 
 ## Roles and access rules (must be enforced AND covered by tests)
 - **No public signup.** The first admin is created with a CLI command using values from env.
@@ -95,19 +102,24 @@ user), `exams`, `recordings`, `ai_results`, `device_commands`, `audit_logs`. Fie
 - Save WAV as `storage/recordings/<uuid>.wav`. File names never contain patient names.
 - After upload, run analysis as a FastAPI BackgroundTask: first the plain quality rules (`services/quality.py`:
   too short / almost silent / clipped / motion → exam `failed` with a "re-record" reason), then the `Analyzer`.
-  For now only a `DummyAnalyzer` exists (quality=`unknown`, label=`not_analyzed`). Real models come later.
+  `AI_MODEL=cardiophon` runs the CardioPHON murmur model (`services/ai/cardiophon.py`, version in
+  `models/cardiophon/murmur_head.json`); `dummy` (default, and the fallback when files are missing) says nothing.
+  Answer vocabulary: label `murmur` / `absent` = an answer, quality `bad` = too poor to judge (`analyzer.py`).
 
 ## Security
 - bcrypt for passwords; device API keys stored hashed; short-lived JWT access tokens.
 - Role checks via FastAPI dependencies, never ad-hoc inside handlers.
-- Write an `audit_logs` row whenever a doctor or patient reads patient data.
+- Write an `audit_logs` row whenever a doctor or patient reads or changes patient data. Changes are logged every
+  time; the same read by the same user of the same record is logged once per 5 minutes (`audit.record_read`) —
+  pages poll (owner, 2026-11-08).
 - Uploads: accept WAV only, enforce a size limit.
 - Secrets only in `.env` (gitignored); commit `.env.example`. CORS origins from env.
 
 ## Working rules
 - Write tests together with each feature. Run `pytest` and keep it green before calling a task done.
-- Do NOT build any UI or visual design. No frontend code until explicitly asked.
-- Do NOT add real AI model code yet — only the `Analyzer` interface and the dummy.
+- UI follows the approved design system `.interface-design/system.md`; every text in uz / ru / en (`docs/glossary.md`
+  for medical terms).
+- AI results are measured only on held-out patients (`scripts/ai/`); never tune on the test patients.
 - No microservices, no Celery/Redis, no Kubernetes.
 - Ask before adding dependencies outside the stack above.
 - Small, focused commits with clear messages.

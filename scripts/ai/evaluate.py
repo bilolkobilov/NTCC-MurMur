@@ -16,9 +16,15 @@ import torch
 from app.services.ai import cardiophon
 
 RESULTS = circor.REPO / "docs" / "specs" / "ai-results.md"
-# 1.0.0 on the same test patients (whole recording, 3 answers, argmax), recounted with learn.py's definitions from
-# its confusion matrix: present 57/31/12, absent 63/328/77 (present/absent/unknown).
-V100 = {"sensitivity": 57 / 100, "specificity": (328 + 77) / 468, "no_answer": (12 + 77) / 568}
+# 1.0.0 was measured once (2026-11-08) on this exact split and its head no longer exists, so its numbers are recorded
+# here, recounted with learn.py's definitions from its confusion matrix: present 57/31/12, absent 63/328/77
+# (present/absent/unknown). Shown only while the split is the same one (same hash), never next to another test set.
+V100 = {
+    "split_sha256": "3d8946a8d3da4aca20cf509d52b48c7085759e3c959b613611a2a9a276cad23f",
+    "sensitivity": 57 / 100,
+    "specificity": (328 + 77) / 468,
+    "no_answer": (12 + 77) / 568,
+}
 
 
 def main() -> None:
@@ -64,8 +70,14 @@ def main() -> None:
         f"{argmax['specificity']:.1%} | {argmax['no_answer']:.1%} | |",
         f"| {meta['model_version']} cross-validation (training patients) | {cv['sensitivity']:.1%} | "
         f"{cv['specificity']:.1%} | {cv['no_answer']:.1%} | {cv['auc']:.3f} |",
-        f"| 1.0.0 on test (whole recording, 3 answers) | {V100['sensitivity']:.1%} | {V100['specificity']:.1%} | "
-        f"{V100['no_answer']:.1%} | |",
+        *(
+            [
+                f"| 1.0.0 on test (whole recording, 3 answers) | {V100['sensitivity']:.1%} | "
+                f"{V100['specificity']:.1%} | {V100['no_answer']:.1%} | |"
+            ]
+            if meta["split_sha256"] == V100["split_sha256"]
+            else []
+        ),
         "",
         f"On test: {at['n_present']} murmur and {at['n_absent']} normal recordings.",
         "",

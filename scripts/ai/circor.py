@@ -7,6 +7,7 @@ Labels per recording (we record one point per exam; CirCor labels the patient an
 """
 
 import csv
+import hashlib
 import json
 import random
 import sys
@@ -70,11 +71,23 @@ def test_patients(recs: list[Recording]) -> set[str]:
     return test
 
 
+FINGERPRINT_KEY = "__fingerprint__"
+
+
+def fingerprint() -> str:
+    """What the cached embeddings depend on: the encoder weights and the code that turns audio into numbers."""
+    digest = hashlib.sha256((MODEL_DIR / "cardiophon" / cardiophon.WEIGHTS_FILE).read_bytes())
+    digest.update(Path(cardiophon.__file__).read_bytes())
+    return digest.hexdigest()
+
+
 def embeddings(recs: list[Recording], window_s: float | None = None) -> dict[str, np.ndarray]:
     """Per recording: 3072 numbers for the whole recording (window_s=None), or one row per window of window_s
     seconds every window_s / 2 (shape n × 3072). Computed once, cached in models/cardiophon/ (float16 for windows)."""
     cache = OUT / ("embeddings.npz" if window_s is None else f"embeddings_w{window_s:g}.npz")
     stored = dict(np.load(cache)) if cache.exists() else {}
+    if str(stored.pop(FINGERPRINT_KEY, "")) != fingerprint():
+        stored = {}  # other weights or other front-end / window code: every embedding must be computed again
     missing = [r for r in recs if r.file.name not in stored]
     if missing:
         import torch
@@ -92,7 +105,7 @@ def embeddings(recs: list[Recording], window_s: float | None = None) -> dict[str
             if i % 500 == 0 or i == len(missing):
                 print(f"  embedded {i}/{len(missing)} ({cache.name})")
         OUT.mkdir(parents=True, exist_ok=True)
-        np.savez(cache, **stored)
+        np.savez(cache, **stored, **{FINGERPRINT_KEY: np.array(fingerprint())})
     return stored
 
 
