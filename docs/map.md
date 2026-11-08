@@ -45,6 +45,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (plug real models here)
 - `backend/app/api/patient.py` — `/api/me`, `/api/me/exams` (reviewed only, no AI fields)
 - `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
+- `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
 - `backend/app/models/` — one file per table (8 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini

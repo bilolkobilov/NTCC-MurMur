@@ -93,7 +93,8 @@ user), `exams`, `recordings`, `ai_results`, `device_commands`, `audit_logs`. Fie
   they are read (`app/upload_limit.py`). A retried upload of an already uploaded exam gets 409 — firmware treats
   409 as "already done".
 - Save WAV as `storage/recordings/<uuid>.wav`. File names never contain patient names.
-- After upload, run analysis as a FastAPI BackgroundTask through an `Analyzer` interface.
+- After upload, run analysis as a FastAPI BackgroundTask: first the plain quality rules (`services/quality.py`:
+  too short / almost silent / clipped / motion → exam `failed` with a "re-record" reason), then the `Analyzer`.
   For now only a `DummyAnalyzer` exists (quality=`unknown`, label=`not_analyzed`). Real models come later.
 
 ## Security

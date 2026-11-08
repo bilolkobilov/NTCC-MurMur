@@ -68,10 +68,13 @@ def make_patient(db: Session, doctor: User, full_name: str = "Ali Valiyev", *, c
     return patient
 
 
-def make_wav(seconds: float = 2.0, sample_rate: int = 4000) -> bytes:
+def make_wav(seconds: float = 12.0, sample_rate: int = 4000, amplitude: int = 8000) -> bytes:
     """A small mono 16-bit PCM WAV with a 60 Hz tone (heart sounds are low-frequency)."""
     frames = int(seconds * sample_rate)
-    samples = (int(8000 * math.sin(2 * math.pi * 60 * i / sample_rate)) for i in range(frames))
+    # amplitude above 32767 is clipped, like an overdriven microphone
+    samples = (
+        max(-32768, min(32767, int(amplitude * math.sin(2 * math.pi * 60 * i / sample_rate)))) for i in range(frames)
+    )
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:
         wav.setnchannels(1)

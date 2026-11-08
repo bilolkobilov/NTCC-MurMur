@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     recordings_dir: Path = Path("storage/recordings")
     max_upload_mb: int = 10
+    min_recording_seconds: int = 10  # shorter recordings are rejected as "re-record"
 
     @property
     def database_url(self) -> URL:

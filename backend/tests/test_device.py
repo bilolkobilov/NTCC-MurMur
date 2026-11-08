@@ -115,7 +115,7 @@ def test_device_only_gets_its_own_commands(client, db, doctor, exam):
 def test_upload_saves_wav_and_runs_dummy_analysis(client, db, key, exam):
     client.get("/api/device/command", headers=key)
 
-    response = upload(client, key, exam.id, make_wav(seconds=2, sample_rate=4000), {"motion_detected": True})
+    response = upload(client, key, exam.id, make_wav(seconds=12, sample_rate=4000), {"motion_detected": False})
 
     assert response.status_code == 202
     assert response.json() == {"exam_id": exam.id, "status": "uploaded"}
@@ -124,8 +124,8 @@ def test_upload_saves_wav_and_runs_dummy_analysis(client, db, key, exam):
     assert re.fullmatch(r"[0-9a-f]{32}\.wav", recording.file_name), "file name must be random, never a patient name"
     assert storage.recording_path(recording.file_name).read_bytes()[:4] == b"RIFF"
     assert recording.sample_rate == 4000
-    assert recording.duration_s == pytest.approx(2.0)
-    assert recording.motion_detected is True
+    assert recording.duration_s == pytest.approx(12.0)
+    assert recording.motion_detected is False
     command = db.scalar(select(DeviceCommand).where(DeviceCommand.exam_id == exam.id))
     assert command.status == CommandStatus.DONE
     # the background task already ran (TestClient runs it before returning)
@@ -388,3 +388,69 @@ def test_cannot_cancel_another_doctors_exam(client, db, exam):
     make_user(db, "dr.other", Role.DOCTOR)
 
     assert client.post(f"/api/exams/{exam.id}/cancel", headers=login(client, "dr.other")).status_code == 404
+
+
+# --- recording quality rules (run before the analyzer) ---
+
+
+@pytest.mark.parametrize(
+    ("wav", "meta", "reason"),
+    [
+        (lambda: make_wav(seconds=6), {}, "re-record: too short (6.0 s, need at least 10 s)"),
+        (lambda: make_wav(amplitude=100), {}, "re-record: almost silent (is the stethoscope touching the chest?)"),
+        (lambda: make_wav(amplitude=40000), {}, "re-record: too loud"),
+        (lambda: make_wav(), {"motion_detected": True}, "re-record: movement detected during recording"),
+    ],
+    ids=["short", "silent", "clipped", "motion"],
+)
+def test_bad_recording_is_not_analyzed_and_asks_to_re_record(client, db, key, exam, monkeypatch, wav, meta, reason):
+    called = []
+    monkeypatch.setattr(analysis.analyzer_module, "get_analyzer", lambda: called.append(1))
+    client.get("/api/device/command", headers=key)
+
+    assert upload(client, key, exam.id, wav(), meta).status_code == 202
+
+    db.expire_all()
+    failed = db.get(Exam, exam.id)
+    assert failed.status == ExamStatus.FAILED
+    assert failed.failure_reason.startswith(reason), failed.failure_reason
+    assert called == [], "the analyzer must not see a bad recording"
+    assert db.scalar(select(Recording).where(Recording.exam_id == exam.id)) is not None, "audio kept for the doctor"
+
+
+def test_several_problems_are_all_reported(client, db, key, exam):
+    client.get("/api/device/command", headers=key)
+
+    upload(client, key, exam.id, make_wav(seconds=5, amplitude=50), {"motion_detected": True})
+
+    db.expire_all()
+    reason = db.get(Exam, exam.id).failure_reason
+    assert "too short" in reason and "almost silent" in reason and "movement" in reason
+
+
+@pytest.mark.parametrize("width", [1, 2, 3, 4])
+def test_quality_reads_8_16_24_32_bit_pcm(tmp_path, width):
+    import wave
+
+    from app.services import quality
+
+    full = {1: 127, 2: 32767, 3: 2**23 - 1, 4: 2**31 - 1}[width]
+    half = full // 2
+    frames = []
+    for i in range(4000):
+        value = half if i % 2 else -half
+        if width == 1:
+            frames.append(bytes([value + 128]))
+        else:
+            frames.append(value.to_bytes(width, "little", signed=True))
+    path = tmp_path / "x.wav"
+    with wave.open(str(path), "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(width)
+        w.setframerate(4000)
+        w.writeframes(b"".join(frames))
+
+    stats = quality.measure(path, 1.0)
+
+    assert stats.peak == pytest.approx(0.5, abs=0.01)
+    assert stats.clipped_fraction == 0

@@ -71,7 +71,7 @@ def test_full_exam_flow(client, db):
     uploaded = client.post(
         f"/api/device/upload/{exam['id']}",
         headers=device_key,
-        files={"audio": ("rec.wav", make_wav(seconds=3), "audio/wav")},
+        files={"audio": ("rec.wav", make_wav(seconds=12), "audio/wav")},
         data={"meta": '{"motion_detected": false, "sample_rate": 4000}'},
     )
     assert uploaded.status_code == 202
@@ -79,7 +79,7 @@ def test_full_exam_flow(client, db):
     # --- doctor: sees analysis result, listens, reviews ---
     analyzed = client.get(f"/api/exams/{exam['id']}", headers=doctor).json()
     assert analyzed["status"] == "analyzed"
-    assert analyzed["recording"]["duration_s"] == 3.0
+    assert analyzed["recording"]["duration_s"] == 12.0
     assert analyzed["ai_result"]["model_name"] == "dummy"
     assert analyzed["ai_result"]["label"] == "not_analyzed"
     assert client.get(f"/api/exams/{exam['id']}/audio", headers=doctor).content[:4] == b"RIFF"

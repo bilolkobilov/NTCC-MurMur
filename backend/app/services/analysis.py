@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal
 from app.models import AIResult, Exam, ExamStatus
 from app.services import analyzer as analyzer_module
-from app.services import exam_flow, storage
+from app.services import exam_flow, quality, storage
 
 log = logging.getLogger(__name__)
 
@@ -22,11 +22,25 @@ def run_analysis(exam_id: int) -> None:
             log.warning("analysis skipped for exam %s: not in 'uploaded' state", exam_id)
             return
         recording = exam.recording
+        wav_path = storage.recording_path(recording.file_name)
+
+        # 1. quality rules first: a bad recording is never shown to the AI (PLAN.md 5.1)
+        try:
+            bad = quality.problems(quality.measure(wav_path, recording.duration_s), recording.motion_detected)
+        except Exception as exc:
+            log.exception("quality check failed for exam %s", exam_id)
+            _fail(db, exam_id, f"quality check error: {type(exc).__name__}")
+            return
+        if bad:
+            _fail(db, exam_id, "re-record: " + "; ".join(bad))
+            return
+
+        # 2. the analyzer
         model = analyzer_module.get_analyzer()
         try:
             result = model.analyze(
                 analyzer_module.AnalysisInput(
-                    wav_path=storage.recording_path(recording.file_name),
+                    wav_path=wav_path,
                     sample_rate=recording.sample_rate,
                     duration_s=recording.duration_s,
                     motion_detected=recording.motion_detected,
