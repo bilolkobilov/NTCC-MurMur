@@ -1,6 +1,6 @@
 # Spec: MurMur web frontend (admin, doctor, patient)
 
-Status: **draft — waiting for owner approval** · 2026-11-08 · Context: `docs/context.md` · Backend: Stage 1 done.
+Status: **owner answers recorded, plan waiting for approval** · 2026-11-08 · Context: `docs/context.md` · Backend: Stage 1 done.
 
 ## 1. Problem and outcome
 
@@ -95,10 +95,11 @@ Recommendation: A, because version 1 is one laptop without internet — one proc
 **D4 — Session**
 ```
 Token in sessionStorage (dies with the tab), sent as Bearer header. On 401: go to login, then back to the same page.
-Open question Q2: JWT lifetime (now 60 min) — a demo rehearsal or a clinic morning is longer.
+JWT lifetime: **8 hours** (owner, Q2). Blocking a user or changing a password still ends sessions at once.
 ```
-**D5 — Languages**: react-i18next, one JSON per language (`uz`, `ru`, `en`), language switch in the header,
-remembered per browser. Dates/numbers via `Intl` in Asia/Tashkent. A test fails if any key is missing in any language.
+**D5 — Languages**: react-i18next, one JSON per language (`uz`, `ru`, `en`), language switch in the header.
+First visit: **auto-detect** from the browser's language list (first of uz/ru/en found; otherwise Uzbek); a language
+the user picks is remembered per browser and wins over detection (owner, Q3). Dates/numbers via `Intl` in Asia/Tashkent. A test fails if any key is missing in any language.
 
 **Dependencies (all free, MIT/Apache):** react, react-dom, react-router, @tanstack/react-query, react-i18next + i18next,
 wavesurfer.js, tailwindcss, @radix-ui/* (dialog, select, dropdown, toast), clsx; dev: vite, typescript, vitest,
@@ -158,15 +159,15 @@ ECG graph (stage 2 hardware), PDF report (PLAN: optional), real-time audio strea
 the waveform (only if the chosen AI model returns them), dark mode as a separate theme, push notifications,
 sharing results outside the system, offline-first/PWA install, multi-point guided exam (one point per exam for now).
 
-## 10. Open questions (with my recommendation)
+## 10. Owner answers (2026-11-08)
 
-- **Q1 Visual style** — I will show 3 directions as mockups; you pick one. *Recommendation: decide from the mockups.*
-- **Q2 Session length** — JWT now lasts 60 min, then re-login. *Recommendation: 8 hours (one working day); blocked
-  users and password changes still cut sessions at once.*
-- **Q3 Default language** on the login page. *Recommendation: Uzbek; English one tap away for the commission.*
-- **Q4 Translation check** — who reviews the Russian/Uzbek medical words? *Recommendation: one doctor or a medical
-  student, one 30-minute pass before the demo.*
-- **Q5 Chest diagram** for picking AV/PV/TV/MV — *Recommendation: yes; it explains the CirCor points to the commission at a glance.*
+- **Q1 Style: A · Chart paper** (see §12).
+- **Q2 Session: 8 hours.**
+- **Q3 Language: auto-detect** from the browser, fallback Uzbek; the user's own pick is remembered.
+- **Q4 Translation check: Claude checks it** (owner: "o'zing tekshir"). Claude builds `docs/glossary.md` (every medical
+  term in uz/ru/en with its source) and marks low-confidence Uzbek terms. *Risk recorded:* Claude is not a native
+  medical speaker; Uzbek medical terminology is less standardized than Russian.
+- **Q5 Chest diagram: yes** — the AV/PV/TV/MV point is picked on a chest drawing.
 
 ## 11. Self-critique
 
@@ -182,3 +183,37 @@ sharing results outside the system, offline-first/PWA install, multi-point guide
 - *80/20 version:* doctor flow + patient result page in one language would be ~40 % of the work. Not proposed as the
   final scope because the owner asked for all four demo parts and three languages; instead the **build order** is
   80/20: (1) doctor live exam + result, (2) patient phone view, (3) admin, (4) languages polish + full e2e run.
+
+## 12. Visual system — direction A "Chart paper" (chosen)
+
+Derived from the subject's own world: the printed ECG/phonocardiogram strip (millimetre grid, ink, signal trace).
+
+**Colour tokens**
+
+| Token | Hex | Use |
+| --- | --- | --- |
+| `ink-900` | `#14213D` | Text, primary buttons, active nav |
+| `ink-700` / `ink-500` / `ink-300` | `#33415C` / `#5B6B85` / `#8A97AD` | Secondary text, labels, axis numbers |
+| `line` / `line-strong` | `#E6EAF0` / `#D5DBE5` | Hairlines, input borders |
+| `canvas` / `surface` | `#F7F9FB` / `#FFFFFF` | Page / cards |
+| `grid-minor` / `grid-major` | `#F8DDE1` / `#EFB3BC` | Millimetre grid behind every trace |
+| `signal` | `#C1121F` | The heart-sound trace and the logo mark **only** |
+| `finding` | `#9A3412` on `#FFF4E5` | AI "murmur detected", "waiting for your review" |
+| `clear` | `#0F766E` on `#E7F6F3` | AI "no murmur", status "reviewed" |
+| `danger` | `#B91C1C` | Failed exams, destructive actions (always with an icon and words) |
+
+**Pass-2 change (critique of the mockup):** the mockup used crimson for both the trace and the "Confirm review" button
+and "Murmur detected". Research says red must stay reserved, and a murmur is a finding, not an emergency. So:
+crimson = the signal only; the one primary button per screen is ink navy; AI findings use the amber-brown `finding`.
+
+**Type**: IBM Plex Sans (UI, headings at 600 with −1 % tracking), IBM Plex Mono (times, confidence, model version,
+serials — `tabular-nums`). Both bundled locally (OFL), Latin Extended + Cyrillic. Task 0 checks that `oʻ gʻ` (U+02BB)
+render; fallback is a font with that glyph, never a different apostrophe.
+
+**Layout concept**: "a chart strip on the desk" — the trace is the spine of the exam screen; patient, AI opinion and
+the doctor's conclusion are annotations around it. Dense where scanned (tables, lists), generous where a decision is
+made (review form).
+
+**Signature (the one bold thing)**: the millimetre-grid trace with a real time scale (one big square = 0.2 s). During
+recording, a sweep line crosses the empty grid in exactly 20 s — the only orchestrated animation in the product
+(respects `prefers-reduced-motion`: then a plain countdown).
