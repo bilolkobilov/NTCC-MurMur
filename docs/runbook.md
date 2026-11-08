@@ -18,6 +18,7 @@ How to run, configure, test and deploy. Facts only, key names never values.
 docker compose up -d db                 # PostgreSQL 16, waits for "healthy"
 cd backend
 uv sync                                 # install dependencies into backend/.venv
+uv run python -m alembic upgrade head   # create / update tables
 uv run python -m uvicorn app.main:app --reload   # API on http://localhost:8000, docs at /docs
 ```
 
@@ -27,6 +28,17 @@ uv run python -m uvicorn app.main:app --reload   # API on http://localhost:8000,
 cd backend
 uv run python -m pytest                 # uses the separate murmur_test database, created automatically
 ```
+
+## Database migrations
+
+```bash
+cd backend
+uv run python -m alembic revision --autogenerate -m "what changed" --rev-id 0002   # after changing a model; review the file
+uv run python -m alembic upgrade head      # apply
+uv run python -m alembic downgrade -1      # roll back the last migration
+```
+
+`tests/test_migrations.py` fails if a model was changed without a migration.
 
 ## Deploy and rollback
 
