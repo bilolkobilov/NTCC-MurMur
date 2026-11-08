@@ -350,3 +350,29 @@ def test_doctor_lists_only_own_devices_with_online_status(client, db, headers, d
 
     assert [(d["serial"], d["online"]) for d in listed] == [("MM-MINE", True)]
     assert "api_key" not in str(listed) and "api_key_hash" not in str(listed)
+
+
+def test_exam_detail_poll_uses_few_queries(client, db, headers, doctor):
+    """The exam page polls every ~2 s: token user + exam (with recording and AI result) + audit insert."""
+    from sqlalchemy import event
+
+    from app.db import engine
+    from app.models import AIResult
+
+    exam = make_exam(db, doctor, ExamStatus.ANALYZED)
+    db.add(Recording(exam_id=exam.id, file_name="a" * 32 + ".wav", size_bytes=1, sample_rate=4000, duration_s=1))
+    db.add(AIResult(exam_id=exam.id, model_name="dummy", model_version="0", quality="unknown", label="x"))
+    db.commit()
+    statements: list[str] = []
+
+    def count(conn, cursor, statement, *args):
+        statements.append(statement.split()[0])
+
+    event.listen(engine, "before_cursor_execute", count)
+    try:
+        response = client.get(f"/api/exams/{exam.id}", headers=headers)
+    finally:
+        event.remove(engine, "before_cursor_execute", count)
+
+    assert response.json()["recording"] and response.json()["ai_result"]
+    assert statements.count("SELECT") <= 2, statements

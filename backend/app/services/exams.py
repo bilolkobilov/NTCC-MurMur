@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models import AuscultationPoint, Device, Exam, User
 from app.services import audit, exam_flow, storage
@@ -18,7 +18,8 @@ def _own_device(db: Session, doctor: User, device_id: int) -> Device:
 
 
 def _own_exam(db: Session, doctor: User, exam_id: int) -> Exam:
-    exam = db.get(Exam, exam_id)
+    # Recording and AI result come in the same query: the exam page polls this every ~2 s.
+    exam = db.get(Exam, exam_id, options=[joinedload(Exam.recording), joinedload(Exam.ai_result)])
     if exam is None or exam.doctor_id != doctor.id:
         raise NotFound("exam not found")
     return exam
