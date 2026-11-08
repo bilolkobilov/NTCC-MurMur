@@ -44,8 +44,8 @@ function AiCard({ outcome, patientId }: { outcome: AiOutcome; patientId: number 
     outcome.kind === "murmur" ? "text-finding" : outcome.kind === "clear" ? "text-clear" : "text-ink-900";
   return (
     <section aria-labelledby="ai-title" className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 sm:p-6">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="ai-title" className="text-label font-semibold tracking-wide text-ink-500 uppercase">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <h2 id="ai-title" className="text-label font-semibold tracking-wide whitespace-nowrap text-ink-500 uppercase">
           {t("result.aiTitle")}
         </h2>
         {outcome.model && (
