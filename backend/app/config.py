@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     first_admin_username: str = "admin"
     first_admin_password: str | None = None
 
+    # Docker demo only (docker-compose.yml): `app.cli seed-demo` creates a doctor + a device with this key.
+    demo_device_key: str | None = None
+    demo_doctor_password: str = "demo-doctor-1"
+
     app_timezone: str = "Asia/Tashkent"  # what "today" means in admin stats
     cors_origins: str = ""
     recordings_dir: Path = Path("storage/recordings")

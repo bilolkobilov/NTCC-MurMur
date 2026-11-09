@@ -1,0 +1,41 @@
+# Build context = repo root:  docker build -f backend/Dockerfile.demo .   (docker-compose.demo.yml does this)
+# DEMO image (production: backend/Dockerfile).
+# Baked in: demo/ (AI weights + one sample WAV) and scripts/fake_device.py, so nothing else must be downloaded.
+# Not baked in: models/ and samples/ (the full dev data), storage/, .env.
+
+# --- 1. web app -> frontend/dist
+FROM node:24-slim AS web
+WORKDIR /build/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build && npm run check:offline
+
+# --- 2. Python dependencies (incl. the `ai` group: CPU PyTorch), into /app/.venv
+FROM python:3.14-slim AS deps
+COPY --from=ghcr.io/astral-sh/uv:0.11 /uv /usr/local/bin/uv
+ENV UV_LINK_MODE=copy UV_COMPILE_BYTECODE=1 UV_PROJECT_ENVIRONMENT=/app/.venv
+WORKDIR /app/backend
+COPY backend/pyproject.toml backend/uv.lock ./
+RUN uv sync --frozen --no-dev --group ai
+
+# --- 3. runtime
+# Layout mirrors the repo, so app/config.py's REPO_ROOT (= /app) finds frontend/dist, storage/ and models/.
+FROM python:3.14-slim
+ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+RUN useradd --system --create-home --uid 1000 murmur
+WORKDIR /app/backend
+COPY --from=deps /app/.venv /app/.venv
+COPY backend/app ./app
+COPY backend/alembic ./alembic
+COPY backend/alembic.ini ./
+COPY --from=web /build/frontend/dist /app/frontend/dist
+COPY demo /app/demo
+COPY scripts/fake_device.py /app/scripts/fake_device.py
+# Created here so the named volume mounted on it is writable by the non-root user.
+RUN mkdir -p /app/storage/recordings && chown -R murmur:murmur /app/storage
+USER murmur
+EXPOSE 8000
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=4)"]
+CMD ["sh", "-c", "python -m alembic upgrade head && python -m app.cli create-admin && python -m app.cli seed-demo && exec python -m uvicorn app.main:app --host 0.0.0.0 --port 8000"]

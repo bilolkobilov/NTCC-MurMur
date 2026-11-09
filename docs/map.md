@@ -14,7 +14,12 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `.claude/settings.json` — permissions + hook that blocks reading secret files
 - `.claude/secret-files.txt` — list of real secret files (`.env`)
 - `.claude/hooks/block-secrets.mjs` — the hook itself
-- `docker-compose.yml` — PostgreSQL 16 (`db` service), values from `.env`
+- `docker-compose.yml` + `backend/Dockerfile` — PRODUCTION: `db` + `api` (backend, web app, AI weights mounted from
+  `models/`); secrets required from `.env`, no demo data
+- `docker-compose.demo.yml` + `backend/Dockerfile.demo` — DEMO (own project name `murmur-demo`): adds the `device`
+  (fake device) service and bakes in `demo/`; works with no `.env`
+- `.dockerignore` — keeps `.env`, `models/`, `samples/`, `storage/` out of the images
+- `demo/` — what the demo image ships: `cardiophon/` (AI weights) and `sample_av.wav` (one CirCor recording)
 - `.env.example` — every config key, no real values
 
 ## Backend

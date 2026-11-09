@@ -1,15 +1,15 @@
 # AI results: CardioPHON encoder + our murmur head
 
-Generated 2026-11-08 by `scripts/ai/evaluate.py`. Model `cardiophon-murmur 1.1.0` (trained 2026-11-08T16:19:53+00:00): 4 s windows, present/absent, MLP, threshold 0.186 chosen by cross-validation for ~80 % sensitivity (owner: catch more murmurs).
+Generated 2026-11-09 by `scripts/ai/evaluate.py`. Model `cardiophon-murmur 1.1.0` (trained 2026-11-09T12:40:11+00:00): 4 s windows, present/absent, MLP, threshold 0.183 chosen by cross-validation for ~80 % sensitivity (owner: catch more murmurs).
 Specs: `docs/specs/2026-11-08-ai-model.md` §10, experiments: `docs/specs/ai-experiments.md`.
 
 Test set: **189 CirCor patients never used for training or for any choice** (604 recordings, seed 2026, split hash `3d8946a8d3da`). Recording level.
 
 | | Sensitivity (murmurs found) | Specificity (normals not flagged) | No answer | AUC |
 | --- | --- | --- | --- | --- |
-| **1.1.0 on test (production threshold)** | **88.0%** | **66.7%** | 0.0% | 0.892 |
+| **1.1.0 on test (production threshold)** | **88.0%** | **67.3%** | 0.0% | 0.893 |
 | 1.1.0 on test, most-likely answer (no threshold) | 65.0% | 96.6% | 0.0% | |
-| 1.1.0 cross-validation (training patients) | 80.2% | 73.4% | 0.0% | 0.854 |
+| 1.1.0 cross-validation (training patients) | 80.2% | 72.8% | 0.0% | 0.854 |
 | 1.0.0 on test (whole recording, 3 answers) | 57.0% | 86.5% | 15.7% | |
 
 On test: 100 murmur and 468 normal recordings.
@@ -17,8 +17,8 @@ On test: 100 murmur and 468 normal recordings.
 | truth \ model | murmur | no murmur |
 | --- | --- | --- |
 | present | 88 | 12 |
-| absent | 156 | 312 |
-| unknown | 18 | 18 |
+| absent | 153 | 315 |
+| unknown | 19 | 17 |
 
 ## Read this before quoting the numbers
 

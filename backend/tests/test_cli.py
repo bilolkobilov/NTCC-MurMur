@@ -3,8 +3,8 @@ from sqlalchemy import func, select
 
 from app import cli
 from app.config import get_settings
-from app.models import Role, User
-from app.security import verify_password
+from app.models import Device, Role, User
+from app.security import hash_api_key, verify_password
 
 
 @pytest.fixture
@@ -49,3 +49,25 @@ def test_admin_created_by_cli_can_log_in(admin_env, client):
 
     assert response.status_code == 200
     assert response.json()["role"] == "admin"
+
+
+def test_seed_demo_creates_doctor_and_device_with_known_key(db, monkeypatch):
+    settings = get_settings()
+    monkeypatch.setattr(settings, "demo_device_key", "demo-key-for-test")
+
+    assert cli.main(["seed-demo"]) == 0
+    assert cli.main(["seed-demo"]) == 0  # second run changes nothing
+
+    doctor = db.scalar(select(User).where(User.username == "doctor"))
+    assert doctor.role == Role.DOCTOR
+    device = db.scalar(select(Device))
+    assert device.doctor_id == doctor.id
+    assert device.api_key_hash == hash_api_key("demo-key-for-test")
+    assert db.scalar(select(func.count()).select_from(Device)) == 1
+
+
+def test_seed_demo_skipped_without_key(db, monkeypatch):
+    monkeypatch.setattr(get_settings(), "demo_device_key", None)
+
+    assert cli.main(["seed-demo"]) == 0
+    assert db.scalar(select(func.count()).select_from(User)) == 0

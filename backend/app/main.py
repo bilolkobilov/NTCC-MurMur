@@ -1,5 +1,6 @@
 """FastAPI application: middleware, error mapping, routers and (when built) the web app itself."""
 
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -28,6 +29,9 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     settings = get_settings()
+    # uvicorn only configures its own loggers; without this the app's INFO lines ("AI model loaded: …") are dropped.
+    logging.basicConfig(format="%(levelname)s:     [%(name)s] %(message)s")
+    logging.getLogger("app").setLevel(logging.INFO)
     app = FastAPI(title="MurMur API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(
         CORSMiddleware,

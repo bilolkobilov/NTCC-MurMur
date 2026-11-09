@@ -1,0 +1,36 @@
+{
+  "arch": "mlp",
+  "classes": [
+    "present",
+    "absent"
+  ],
+  "cross_validation": {
+    "auc": 0.8543159771503642,
+    "n_absent": 1923,
+    "n_present": 399,
+    "no_answer": 0.0,
+    "sensitivity": 0.8020050125313283,
+    "specificity": 0.7275091003640146
+  },
+  "model_name": "cardiophon-murmur",
+  "model_version": "1.1.0",
+  "recipe": {
+    "arch": "mlp",
+    "batch": 32,
+    "classes": [
+      "present",
+      "absent"
+    ],
+    "epochs": 20,
+    "lr": 0.0001,
+    "name": "4 s windows, present/absent, MLP",
+    "step_lr": true,
+    "weight_decay": 0.0,
+    "window_s": 4.0
+  },
+  "split_sha256": "3d8946a8d3da4aca20cf509d52b48c7085759e3c959b613611a2a9a276cad23f",
+  "threshold": 0.183428,
+  "train_recordings": 2442,
+  "trained_at": "2026-11-09T12:40:11+00:00",
+  "window_s": 4.0
+}
