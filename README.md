@@ -8,6 +8,10 @@ laptop), and a local AI murmur model (CardioPHON encoder + our head, `cardiophon
 [docs/specs/ai-results.md](docs/specs/ai-results.md)). The ESP32 firmware comes next; until then
 `scripts/fake_device.py` plays the device with CirCor recordings. Full plan in Uzbek: [docs/PLAN.md](docs/PLAN.md).
 
+Source: <https://github.com/bilolkobilov/NTCC-MurMur> (private). Not in Git on purpose: `.env`, AI weights
+(`models/`), CirCor recordings (`samples/`), device secrets (`firmware/murmur/secrets.h`) — see
+[docs/runbook.md](docs/runbook.md).
+
 ## Requirements
 
 - Docker Desktop (runs PostgreSQL 16)

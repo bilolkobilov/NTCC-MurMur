@@ -118,6 +118,11 @@ uv run python -m alembic downgrade -1      # roll back the last migration
 
 `tests/test_migrations.py` fails if a model was changed without a migration.
 
+## Source code
+
+Private GitHub repo: https://github.com/bilolkobilov/NTCC-MurMur (branch `main`). After `git clone`, follow
+"Setup" and "AI model": weights (`models/`), CirCor (`samples/`), `.env` and `firmware/murmur/secrets.h` are not in Git.
+
 ## Deploy and rollback
 
 Not documented — ask the owner. (Plan: version 1 runs on a laptop + hotspot, version 2 on a server with HTTPS.)
