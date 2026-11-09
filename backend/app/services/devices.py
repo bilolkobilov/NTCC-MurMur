@@ -21,12 +21,16 @@ def _check_assignable_doctor(db: Session, doctor_id: int | None) -> None:
         raise BadRequest("doctor is blocked")
 
 
-def create_device(db: Session, *, name: str, serial: str, doctor_id: int | None) -> tuple[Device, str]:
-    """Returns the device and its plain API key. The key is never stored and cannot be shown again."""
+def create_device(
+    db: Session, *, name: str, serial: str, doctor_id: int | None, api_key: str | None = None
+) -> tuple[Device, str]:
+    """Returns the device and its plain API key. The key is never stored and cannot be shown again.
+
+    `api_key` is only passed by the demo seed (app.cli), which needs a key the fake device already knows."""
     if db.scalar(select(Device.id).where(Device.serial == serial)) is not None:
         raise Conflict("serial already exists")
     _check_assignable_doctor(db, doctor_id)
-    api_key = generate_api_key()
+    api_key = api_key or generate_api_key()
     device = Device(name=name, serial=serial, doctor_id=doctor_id, api_key_hash=hash_api_key(api_key))
     db.add(device)
     try:

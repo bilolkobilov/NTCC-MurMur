@@ -12,6 +12,29 @@ Source: <https://github.com/bilolkobilov/NTCC-MurMur> (private). Not in Git on p
 (`models/`), CirCor recordings (`samples/`), device secrets (`firmware/murmur/secrets.h`) — see
 [docs/runbook.md](docs/runbook.md).
 
+## Docker demo (nothing to install or download)
+
+Needs only Docker. The `demo/` folder already holds the pretrained AI weights and one sample heart sound, and the
+`device` service is a simulated IoT device, so the whole chain works out of the box:
+
+```bash
+docker compose -f docker-compose.demo.yml up --build       # first build takes a few minutes (web app + CPU PyTorch)
+```
+
+Open <http://localhost:8000> (port busy? `API_PORT=8010 docker compose -f docker-compose.demo.yml up --build`).
+
+| Login | Username | Password |
+| --- | --- | --- |
+| Admin | `admin` | `admin-demo-1` |
+| Doctor | `doctor` | `doctor-demo-1` |
+
+As the doctor: add a patient (tick consent) → new exam on "Demo device" → within seconds the device uploads
+`demo/sample_av.wav` and the AI result appears. The demo values are fixed in `docker-compose.demo.yml` and a `.env` file does not affect them. `docker compose -f docker-compose.demo.yml down -v` also deletes the demo data.
+
+**Production** is the separate `docker-compose.yml` + `backend/Dockerfile`: no demo data or fake device, every secret
+must be set in `.env` (compose refuses to start otherwise), AI weights are mounted from `./models`, and the
+database port is bound to 127.0.0.1 only. Run `docker compose up -d --build`.
+
 ## Requirements
 
 - Docker Desktop (runs PostgreSQL 16)

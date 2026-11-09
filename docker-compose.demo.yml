@@ -1,0 +1,71 @@
+# DEMO stack (production: docker-compose.yml). One command runs everything, no .env and no downloads needed:
+#
+#     docker compose -f docker-compose.demo.yml up --build        ->  http://localhost:8000   (logins: README, "Docker demo")
+#
+# Services: db (PostgreSQL 16), api (backend + web app + CardioPHON AI model), device (simulated IoT device that
+# uploads demo/sample_av.wav). The values below are fixed DEMO values and ignore any .env file (only API_PORT can be
+# overridden). Never expose this stack to anyone else.
+# Own project name: the demo never shares containers or volumes with the production/dev stack.
+name: murmur-demo
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: murmur
+      POSTGRES_PASSWORD: murmur-demo
+      POSTGRES_DB: murmur
+    # Published for local development (`uvicorn` on the host). If 5433 is taken: POSTGRES_PORT=5434 docker compose up
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: murmur-demo
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.demo
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: murmur
+      POSTGRES_PASSWORD: murmur-demo
+      POSTGRES_DB: murmur
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
+      JWT_SECRET: demo-only-secret-change-me-0123456789abcdef
+      FIRST_ADMIN_USERNAME: admin
+      FIRST_ADMIN_PASSWORD: admin-demo-1
+      DEMO_DEVICE_KEY: demo-device-key-0000000000000000000000000
+      DEMO_DOCTOR_PASSWORD: doctor-demo-1
+      AI_MODEL: cardiophon
+      AI_MODEL_DIR: /app/demo
+      RECORDINGS_DIR: /app/storage/recordings
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - recordings:/app/storage/recordings
+
+  device:
+    image: murmur-demo
+    restart: unless-stopped
+    environment:
+      MURMUR_DEVICE_KEY: demo-device-key-0000000000000000000000000
+    # --fast: the "20 s recording" takes half a second. Drop it for the real timing.
+    command: ["python", "/app/scripts/fake_device.py", "--server", "http://api:8000", "--wav", "/app/demo/sample_av.wav", "--fast"]
+    depends_on:
+      api:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+  recordings:
