@@ -1,284 +1,284 @@
-# MurMur — MVP plani va tizim arxitekturasi
+# MurMur — MVP plan and system architecture
 
 Nov 8, 2026 · @Bilol Kobilov
 
-## Qisqa xulosa
+## Summary
 
-MVP oddiy: qurilma 20 soniya yurak tovushini yozadi, serverdagi o'zimizning AI model uni tekshiradi, doktor natijani saytda ko'radi. Hech narsa noldan ixtiro qilinmaydi: faqat tayyor kutubxonalar va ochiq modellar ishlatiladi.
+The MVP is simple: the device records 20 seconds of heart sound, our own AI model on the server analyzes it, and the doctor sees the result on a website. Nothing is invented from scratch: only ready-made libraries and open models are used.
 
-| Qism | Nima ishlatamiz | Izoh |
+| Part | What we use | Notes |
 | --- | --- | --- |
-| Qurilma | ESP32-S3 + ICS-43434 mikrofon + MPU6050 | ADS1292R (ECG) 2-bosqichda, faqat grafik uchun |
-| Qurilma kodi | Arduino IDE (C++) | Hammasi uchun tayyor kutubxona bor |
-| Backend | Python, FastAPI | Qurilma, sayt va AI shu yerda uchrashadi |
-| Baza | PostgreSQL (boshidanoq, Docker'da) | WAV fayllar diskda, bazada faqat yo'li |
-| Frontend | React (Vite), wavesurfer.js, Recharts | wavesurfer: tovush to'lqini va eshitish; Recharts: ECG grafigi |
-| AI | Local, o'z serverimizda | Sifat tekshiruvi + murmur modeli (5-bo'lim) |
-| Aloqa | Wi-Fi + oddiy HTTP | Qurilma serverdan "buyruq bormi?" deb o'zi so'raydi |
-| Joylashtirish | 1-versiya: noutbuk + hotspot. 2-versiya: server + domen + HTTPS | Kod bir xil, faqat manzil o'zgaradi |
+| Device | ESP32-S3 + ICS-43434 microphone + MPU6050 | ADS1292R (ECG) in phase 2, for the graph only |
+| Device code | Arduino IDE (C++) | A ready-made library exists for everything |
+| Backend | Python, FastAPI | The device, the website and the AI meet here |
+| Database | PostgreSQL (from day one, in Docker) | WAV files on disk, only the path in the database |
+| Frontend | React (Vite), wavesurfer.js, Recharts | wavesurfer: sound waveform and playback; Recharts: ECG graph |
+| AI | Local, on our own server | Quality check + murmur model (section 5) |
+| Communication | Wi-Fi + plain HTTP | The device asks the server "is there a command?" by itself |
+| Deployment | Version 1: laptop + hotspot. Version 2: server + domain + HTTPS | Same code, only the address changes |
 
-Asosiy qarorlar:
+Key decisions:
 
-- Mobil ilova qilinmaydi, faqat web sayt. Telefondan ham sayt ochiladi.
-- AI tashqi kompaniyaga (ChatGPT va h.k.) hech narsa yubormaydi.
-- Natija tashxis emas, "screening": "shubhali, shifokorga ko'rining" darajasida.
-- PPT'dagi murakkab qismlar (fusion, baseline, self-calibration) "future work" ga o'tadi.
+- No mobile app, web site only. The site can also be opened from a phone.
+- The AI sends nothing to outside companies (ChatGPT etc.).
+- The result is not a diagnosis, it is "screening": at the level of "suspicious, see a doctor".
+- The complex parts of the PPT (fusion, baseline, self-calibration) move to "future work".
 
-## Tizim qanday ishlaydi
+## How the system works
 
-Tizim uch qismdan iborat: qurilma, server va sayt. Qurilma faqat server bilan gaplashadi, doktor va admin esa faqat sayt bilan ishlaydi.
+The system has three parts: the device, the server and the website. The device talks only to the server; the doctor and the admin work only with the website.
 
-&#91;embedded content: MurMur tizimi · 3 qism\]
+[embedded content: MurMur system · 3 parts]
 
-Qurilma yozuvni serverga yuboradi va serverdan buyruq oladi. AI server ichida ishlaydi, sayt natijani API orqali oladi. ECG (punktir) 2-bosqichda qo'shiladi.
+The device sends the recording to the server and gets commands from the server. The AI runs inside the server, and the website gets the result through the API. ECG (dashed) is added in phase 2.
 
-- **1-versiya (local):** noutbuk hotspot yoqadi, qurilma unga ulanadi. Server va sayt noutbukda ishlaydi, internet kerak emas.
-- **2-versiya (server):** server internetda (domen + HTTPS). Qurilma istalgan internetli Wi-Fi'ga ulanadi, Wi-Fi nomi va paroli WiFiManager orqali kiritiladi. Kodda faqat server manzili o'zgaradi.
+- **Version 1 (local):** the laptop turns on a hotspot and the device connects to it. The server and the website run on the laptop, no internet is needed.
+- **Version 2 (server):** the server is on the internet (domain + HTTPS). The device connects to any Wi-Fi with internet; the Wi-Fi name and password are entered through WiFiManager. Only the server address changes in the code.
 
-## Rollar: Admin, Doktor va Bemor
+## Roles: Admin, Doctor and Patient
 
-Uch rol bor. Saytda ochiq ro'yxatdan o'tish bo'lmaydi: doktor akkauntini admin, bemor akkauntini doktor yaratadi.
+There are three roles. There is no open registration on the site: the admin creates the doctor account, the doctor creates the patient account.
 
 ### Admin
 
-- **Qurilmalar:** qo'shish (nomi, seriya raqami), doktorga biriktirish, holati (online/offline, oxirgi signal vaqti), Wi-Fi signal kuchi, dastur versiyasi.
-- **Doktorlar:** akkaunt yaratish, bloklash, parolni tiklash.
-- **Tizim holati:** bugungi tekshiruvlar soni, xatolar (yaroqsiz yozuvlar, yuklanmay qolgan fayllar), ishlayotgan AI model versiyasi.
-- **Audit log:** kim, qaysi bemorning ma'lumotini, qachon ochgani.
+- **Devices:** add (name, serial number), assign to a doctor, status (online/offline, last signal time), Wi-Fi signal strength, software version.
+- **Doctors:** create an account, block, reset the password.
+- **System status:** number of exams today, errors (unusable recordings, files that failed to upload), running AI model version.
+- **Audit log:** who opened which patient's data, and when.
 
-Admin bemorlarning tibbiy natijalarini ko'rmaydi, faqat sonlarni ko'radi. Bu data xavfsizligi uchun plyus.
+The admin does not see patients' medical results, only counts. This is a plus for data security.
 
-### Doktor
+### Doctor
 
-- **Bemorlar:** qo'shish (ism, tug'ilgan yil, jins, bo'y, vazn) va "rozilik olindi" belgisi. Bemorga login yaratiladi: vaqtinchalik parol doktorga bir marta ko'rsatiladi, bemor birinchi kirishda uni almashtiradi. Bo'y, vazn va yosh CardioPHON modeliga ham kerak bo'ladi.
-- **Yangi tekshiruv:** pastdagi jarayon.
-- **Natija sahifasi:** tovush to'lqini, eshitish tugmasi, AI natijasi va foizi, ogohlantirishlar.
-- **Bemor tarixi:** oldingi tekshiruvlar ro'yxati.
-- **Hisobot (ixtiyoriy):** natijani PDF qilib yuklab olish.
+- **Patients:** add (name, birth year, sex, height, weight) and a "consent obtained" mark. A login is created for the patient: the temporary password is shown to the doctor once, and the patient changes it on first login. Height, weight and age are also needed by the CardioPHON model.
+- **New exam:** the process below.
+- **Result page:** sound waveform, play button, AI result and percentage, warnings.
+- **Patient history:** list of previous exams.
+- **Report (optional):** download the result as a PDF.
 
-Doktor faqat o'z bemorlarini ko'radi.
+The doctor sees only their own patients.
 
-### Bemor
+### Patient
 
-- O'z profili va tekshiruvlari ro'yxatini ko'radi.
-- Natijani faqat doktor ko'rib chiqib "tasdiqlangan" deb belgilagandan keyin, doktor izohi bilan birga ko'radi.
-- Boshqa bemorlarning ma'lumotlarini ko'ra olmaydi.
+- Sees their own profile and the list of their exams.
+- Sees a result only after the doctor has reviewed it and marked it "confirmed", together with the doctor's note.
+- Cannot see other patients' data.
 
-Xom AI natijasi bemorga to'g'ridan-to'g'ri ko'rsatilmaydi: izohsiz "anormal" so'zi bemorni bekorga qo'rqitadi.
+The raw AI result is not shown directly to the patient: the word "abnormal" without explanation would scare the patient for no reason.
 
-### Tekshiruv jarayoni
+### Exam process
 
-1. Doktor bemorni tanlaydi va "Yangi tekshiruv" ni bosadi.
-2. Qurilmani va ko'krakdagi nuqtani tanlaydi: AV, PV, TV yoki MV (CirCor'dagi 4 nuqta).
-3. "Yozishni boshlash" ni bosadi. Server shu qurilma uchun buyruq saqlab qo'yadi.
-4. Qurilma har 1–2 soniyada serverdan "buyruq bormi?" deb so'raydi, buyruqni oladi va 20 soniya yozadi. Qurilmadagi chiroq yonib turadi.
-5. Qurilma WAV fayl va harakat (MPU6050) ma'lumotini serverga yuboradi.
-6. Server avval sifatni tekshiradi. Yomon bo'lsa, doktorga "qayta yozing" chiqadi. Yaxshi bo'lsa, AI modelga beradi.
-7. Doktor ekranida natija chiqadi.
-8. Doktor o'z xulosasini yozadi: "AI bilan roziman / rozi emasman" va izoh. Yakuniy qarorni doim odam qiladi.
+1. The doctor selects a patient and presses "New exam".
+2. They select the device and the point on the chest: AV, PV, TV or MV (the 4 points in CirCor).
+3. They press "Start recording". The server stores a command for that device.
+4. The device asks the server "is there a command?" every 1–2 seconds, gets the command and records for 20 seconds. A light on the device stays on.
+5. The device sends the WAV file and the motion data (MPU6050) to the server.
+6. The server checks quality first. If it is bad, the doctor sees "record again". If it is good, it is passed to the AI model.
+7. The result appears on the doctor's screen.
+8. The doctor writes their own conclusion: "I agree / disagree with the AI" and a note. The final decision is always made by a human.
 
-## Ma'lumotlar bazasi va API
+## Database and API
 
-Bazada 8 ta jadval yetarli. Qurilma o'z kaliti (API key) bilan, sayt foydalanuvchilari esa login (JWT token) bilan kiradi.
+Eight tables are enough. The device logs in with its own key (API key), and website users log in with a login (JWT token).
 
-### Jadvallar
+### Tables
 
-| Jadval | Asosiy maydonlar |
+| Table | Main fields |
 | --- | --- |
-| users | id, ism, email, parol xeshi, rol (admin/doctor/patient), faolmi |
-| devices | id, nomi, seriya, API key xeshi, biriktirilgan doktor, oxirgi signal vaqti, Wi-Fi kuchi, dastur versiyasi |
-| patients | id, doktor, bemor logini (users), ism, tug'ilgan yil, jins, bo'y, vazn, rozilik olingan vaqt |
-| exams | id, bemor, doktor, qurilma, nuqta (AV/PV/TV/MV), holat, doktor izohi, doktor roziligi |
-| recordings | id, tekshiruv, fayl yo'li, sample rate, davomiyligi, harakat bo'lganmi |
-| ai\_results | id, tekshiruv, model nomi, model versiyasi, sifat (yaxshi/yomon), natija, foiz |
-| device\_commands | id, qurilma, tekshiruv, buyruq (record), soniya, holat (kutyapti/olindi/bajarildi) |
-| audit\_logs | id, foydalanuvchi, harakat, qaysi obyekt, vaqt |
+| users | id, name, email, password hash, role (admin/doctor/patient), active |
+| devices | id, name, serial, API key hash, assigned doctor, last signal time, Wi-Fi strength, software version |
+| patients | id, doctor, patient login (users), name, birth year, sex, height, weight, time consent was obtained |
+| exams | id, patient, doctor, device, point (AV/PV/TV/MV), status, doctor's note, doctor's agreement |
+| recordings | id, exam, file path, sample rate, duration, whether there was motion |
+| ai\_results | id, exam, model name, model version, quality (good/bad), result, percentage |
+| device\_commands | id, device, exam, command (record), seconds, status (waiting/received/done) |
+| audit\_logs | id, user, action, which object, time |
 
-Tekshiruv holatlari ketma-ket o'zgaradi: kutyapti → yozilyapti → yuklandi → tahlil qilindi → doktor tasdiqladi (yoki xato).
+Exam statuses change in sequence: waiting → recording → uploaded → analyzed → doctor confirmed (or error).
 
 ### API
 
-| Kim uchun | Manzil | Nima qiladi |
+| For | Address | What it does |
 | --- | --- | --- |
-| Qurilma | POST /api/device/heartbeat | Har 10 soniyada "men tirikman" + Wi-Fi kuchi, versiya |
-| Qurilma | GET /api/device/command | Bajarilmagan buyruq bormi, so'raydi |
-| Qurilma | POST /api/device/upload/{exam\_id} | WAV fayl + JSON (harakat, keyin ECG) yuboradi |
-| Sayt | POST /api/auth/login | Kirish, JWT token oladi |
-| Doktor | GET, POST /api/patients | Bemorlar ro'yxati va yangi bemor |
-| Doktor | POST /api/exams | Yangi tekshiruv va qurilmaga buyruq |
-| Doktor | GET /api/exams/{id} | Holat va natija (sayt har 2 soniyada so'raydi) |
-| Doktor | GET /api/exams/{id}/audio | Yozuvni eshitish uchun WAV |
-| Doktor | PATCH /api/exams/{id} | Doktor izohi va xulosasi |
-| Admin | /api/admin/devices, /users, /stats, /audit | Qurilmalar, doktorlar, statistika, audit log |
+| Device | POST /api/device/heartbeat | "I'm alive" every 10 seconds + Wi-Fi strength, version |
+| Device | GET /api/device/command | Asks whether there is an unfulfilled command |
+| Device | POST /api/device/upload/{exam\_id} | Sends the WAV file + JSON (motion, later ECG) |
+| Website | POST /api/auth/login | Log in, get a JWT token |
+| Doctor | GET, POST /api/patients | List of patients and a new patient |
+| Doctor | POST /api/exams | New exam and a command to the device |
+| Doctor | GET /api/exams/{id} | Status and result (the website polls every 2 seconds) |
+| Doctor | GET /api/exams/{id}/audio | WAV for listening to the recording |
+| Doctor | PATCH /api/exams/{id} | Doctor's note and conclusion |
+| Admin | /api/admin/devices, /users, /stats, /audit | Devices, doctors, statistics, audit log |
 
-Bemor uchun: GET /api/me va GET /api/me/exams — faqat o'z ma'lumotlari va tasdiqlangan natijalari.
+For the patient: GET /api/me and GET /api/me/exams — only their own data and confirmed results.
 
-Fayl yuklangach, AI tahlili backend'da fon vazifasi sifatida ishlaydi (FastAPI BackgroundTasks). Shu sabab qurilma javobni kutib turmaydi.
+After the file is uploaded, the AI analysis runs in the backend as a background task (FastAPI BackgroundTasks). This is why the device does not wait for the response.
 
-## AI: qaysi model va qayerda
+## AI: which model and where
 
-AI local ishlaydi: 1-versiyada noutbukda, 2-versiyada o'z serverimizda. Internetdagi AI xizmatlariga hech qanday ma'lumot ketmaydi. Tahlil ikki bosqichda bo'ladi: avval yozuv sifati tekshiriladi, keyin natija chiqariladi.
+The AI runs locally: on the laptop in version 1, on our own server in version 2. No data goes to AI services on the internet. The analysis has two stages: first the recording quality is checked, then the result is produced.
 
-### 1. Sifat tekshiruvi
+### 1. Quality check
 
-- **Oddiy qoidalar:** ovoz juda past yoki juda baland (to'lib ketgan), yozuv paytida MPU6050 harakat sezgan bo'lsa, yozuv rad etiladi.
-- **CardioPHON sifat modeli:** yozuvni "yaroqli / yaroqsiz" deb baholaydi, maqolada aniqligi taxminan 93%. U 1 kHz'li tovush bilan ishlaydi.
+- **Plain rules:** the recording is rejected if the sound is too quiet or too loud (clipped), or if the MPU6050 sensed motion during recording.
+- **CardioPHON quality model:** rates the recording as "usable / unusable"; the paper reports about 93% accuracy. It works with 1 kHz audio.
 
-Yozuv yaroqsiz bo'lsa, AI natija bermaydi, doktorga "qayta yozing" chiqadi.
+If the recording is unusable, the AI gives no result and the doctor sees "record again".
 
-### 2. Natija modeli (sinovdan keyin bittasi tanlanadi)
+### 2. Result model (one is chosen after testing)
 
-| Model | Nima deydi | Kiradigan ma'lumot | Plyus | Minus |
+| Model | What it says | Input | Plus | Minus |
 | --- | --- | --- | --- | --- |
-| [AST heart murmur classifier](https://huggingface.co/rajnish612/ast-heart-murmur-classifier) | Murmur / Absent / Unknown | Tovush, 16 kHz | 5 qator kod bilan ishlaydi | Aniqligi e'lon qilinmagan, kam ishlatilgan |
-| [CardioPHON](https://git.lih.lu/vdespotovic/cardiophon) | Normal / Anormal | Tovush 4 kHz + yosh, jins, bo'y, vazn | Maqolada isbotlangan, PPT'da \[1\] manba | Aniqligi taxminan 62%; sog'lomlarning yarmidan ko'pini "anormal" deydi; oxirgi qatlamni o'qitish kerak bo'lishi mumkin |
+| [AST heart murmur classifier](https://huggingface.co/rajnish612/ast-heart-murmur-classifier) | Murmur / Absent / Unknown | Sound, 16 kHz | Works with 5 lines of code | Accuracy not published, little used |
+| [CardioPHON](https://git.lih.lu/vdespotovic/cardiophon) | Normal / Abnormal | Sound 4 kHz + age, sex, height, weight | Proven in a paper, source \[1\] in the PPT | Accuracy about 62%; calls more than half of healthy people "abnormal"; the last layer may need to be trained |
 
-Qanday tanlaymiz: CirCor'dan 100 ta yozuv olinadi (har bemordan faqat bittasi, murmur bor va yo'q aralash). Ikkala model shu yozuvlarda ishga tushiriladi va aniqlik, sezgirlik (sensitivity), o'ziga xoslik (specificity) hisoblanadi. Qaysi biri yaxshi chiqsa, o'sha qo'yiladi. Bu solishtirish ISR qismi uchun tayyor natija bo'ladi.
+How we choose: 100 recordings are taken from CirCor (only one per patient, a mix of murmur and no murmur). Both models are run on these recordings, and accuracy, sensitivity and specificity are calculated. Whichever does better is used. This comparison will be a ready result for the ISR part.
 
-Har bir natija bilan birga model nomi va versiyasi saqlanadi. Keyin model almashtirilsa, eski natijalar qaysi modeldan chiqqani ko'rinib turadi.
+The model name and version are stored with every result. If the model is replaced later, old results still show which model they came from.
 
-### Cheklovlar (komissiyaga ochiq aytiladi)
+### Limitations (stated openly to the committee)
 
-- CirCor Braziliyadagi bolalar yozuvlari. Kattalarda aniqlik pasayishi mumkin.
-- Modellar klinik stetoskop yozuvlarida o'rgatilgan. Arzon mikrofonda aniqlik tushishi kutiladi (PPT'dagi \[6\] manba aynan shuni ko'rsatadi).
-- Bu tashxis emas, faqat screening va doktorga yordam.
+- CirCor is recordings of children in Brazil. Accuracy may drop for adults.
+- The models were trained on clinical stethoscope recordings. Accuracy is expected to drop with a cheap microphone (source \[6\] in the PPT shows exactly this).
+- This is not a diagnosis, only screening and help for the doctor.
 
-Server uchun GPU shart emas: bitta 20 soniyalik yozuvni oddiy protsessor ham bir necha soniyada tahlil qiladi.
+The server does not need a GPU: an ordinary CPU analyzes a single 20-second recording in a few seconds.
 
-## Data xavfsizligi: NTCC savollari va javoblari
+## Data security: NTCC questions and answers
 
-Asosiy javob: hamma ma'lumot o'z serverimizda qoladi, AI ham o'sha yerda ishlaydi, uchinchi tomonga hech narsa ketmaydi. Quyida komissiya beradigan ehtimoliy savollar va tayyor javoblar.
+Main answer: all data stays on our own server, the AI runs there too, and nothing goes to third parties. Below are the questions the committee is likely to ask, with prepared answers.
 
-| Savol | Javob |
+| Question | Answer |
 | --- | --- |
-| Ma'lumot qayerda saqlanadi? | 1-versiyada noutbukda, 2-versiyada o'z serverimizda. Bulutli AI xizmatlariga yuborilmaydi. |
-| AI ma'lumotni tashqariga yuboradimi? | Yo'q. Model fayli serverda turadi va o'sha yerda ishlaydi. |
-| Bemor ma'lumotini kim ko'radi? | Uni qo'shgan doktor va bemorning o'zi (faqat tasdiqlangan natijalarni). Admin faqat statistikani ko'radi. Har bir ochish audit log'ga yoziladi. |
-| Ma'lumot qanday himoyalangan? | 2-versiyada HTTPS (Let's Encrypt). Parollar bcrypt bilan xeshlanadi. Sayt JWT token, qurilma esa o'z API kaliti bilan kiradi. Har bir rol faqat o'ziga ruxsat berilgan sahifani ochadi. |
-| Yozuv faylida bemor ismi bormi? | Yo'q. Fayl nomi tasodifiy ID. Ism va boshqa shaxsiy ma'lumotlar alohida jadvalda (psevdonimlash). |
-| Bemordan rozilik olinadimi? | Ha, yozma rozilik. Tizimda "rozilik olindi" belgisi bo'lmasa, tekshiruv boshlanmaydi. Hozir faqat jamoa a'zolari va ixtiyoriy ko'ngillilar sinaladi; haqiqiy bemorlardan oldin ethics approval olinadi. |
-| Ma'lumotni o'chirish mumkinmi? | Ha. Bemor so'rasa, uning barcha yozuvlari va natijalari o'chiriladi. |
-| Zaxira nusxa bormi? | 2-versiyada baza va fayllarning kunlik zaxira nusxasi olinadi. |
-| Qonunga mosmi? | O'zbekistonning "Shaxsga doir ma'lumotlar to'g'risida"gi qonuni (ZRU-547) amal qiladi. 2026-yil martdagi o'zgarishdan keyin serverni faqat O'zbekistonda saqlash talabi asosan biometrik va genetik ma'lumotlarga qoldi ([kun.uz](https://kun.uz/en/news/2026/08/04/uzbekistan-approves-49-countries-for-simplified-personal-data-transfers)). Baribir eng xavfsiz yo'l: 2-versiya serverini O'zbekistondagi hostingda joylashtirish. |
-| Bu tibbiy qurilmami? | Yo'q, tadqiqot prototipi. Haqiqiy tibbiy qurilma rasmiy ruxsat oladi (masalan, PPT'dagi \[11\] manba: Eko'ning FDA ruxsati). |
-| Elektr xavfsizligi-chi? | ECG elektrodlari odamga ulanganda qurilma faqat power bank yoki batareyadan ishlaydi, rozetkadagi noutbukka USB orqali ulanmaydi. |
+| Where is the data stored? | On the laptop in version 1, on our own server in version 2. It is not sent to cloud AI services. |
+| Does the AI send data outside? | No. The model file sits on the server and runs there. |
+| Who sees patient data? | The doctor who added the patient, and the patient (confirmed results only). The admin sees only statistics. Every access is written to the audit log. |
+| How is the data protected? | HTTPS (Let's Encrypt) in version 2. Passwords are hashed with bcrypt. The website uses a JWT token and the device uses its own API key. Each role opens only the pages it is allowed. |
+| Does the recording file contain the patient's name? | No. The file name is a random ID. The name and other personal data are in a separate table (pseudonymization). |
+| Is the patient's consent obtained? | Yes, written consent. Without the "consent obtained" mark in the system, an exam cannot start. For now only team members and voluntary volunteers are tested; ethics approval will be obtained before real patients. |
+| Can the data be deleted? | Yes. If the patient asks, all their recordings and results are deleted. |
+| Is there a backup? | In version 2, a daily backup of the database and files is made. |
+| Is it legal? | The Uzbekistan law "On Personal Data" (ZRU-547) applies. After the March 2026 amendment, the requirement to keep servers only in Uzbekistan remains mainly for biometric and genetic data ([kun.uz](https://kun.uz/en/news/2026/08/04/uzbekistan-approves-49-countries-for-simplified-personal-data-transfers)). Still, the safest way is to host the version 2 server with a hosting provider in Uzbekistan. |
+| Is this a medical device? | No, it is a research prototype. A real medical device gets official approval (for example, source \[11\] in the PPT: Eko's FDA clearance). |
+| What about electrical safety? | When ECG electrodes are connected to a person, the device runs only from a power bank or battery and is not connected by USB to a laptop that is plugged into the wall. |
 
-Qonun bo'yicha javobni taqdimotdan oldin yana bir bor tekshiring: men advokat emasman, qonun 2026-yilda o'zgargan.
+Check the legal answer once more before the presentation: I am not a lawyer, and the law changed in 2026.
 
-## Jamoa rejasidagi xatolar va nimalar qo'shish kerak
+## Errors in the team's plan and what to add
 
-PPT'dagi asosiy muammo: reja juda katta, ba'zi joylari esa texnik jihatdan noto'g'ri. Eng muhim yetishmayotgan narsa — mikrofonni ko'krakka qanday tegizish.
+The main problem with the PPT: the plan is too big, and some parts are technically wrong. The most important missing thing is how to attach the microphone to the chest.
 
-### Tuzatish kerak
+### To fix
 
-| PPT'da | Muammo | To'g'risi |
+| In the PPT | Problem | Correct |
 | --- | --- | --- |
-| "Wi-Fi 5" | ESP32-S3 faqat 2.4 GHz Wi-Fi 4 (802.11 b/g/n) va BLE 5 ni qo'llaydi | "Wi-Fi (2.4 GHz)" |
-| Slide 14: "CardioEcho AI" | Loyiha nomi boshqa | MurMur |
-| AI telefonda, "sensor to phone" | Mobil ilova yo'q, keraksiz murakkablik | AI serverda, natija web saytda |
-| "MEMS sensor" | Mikrofon havo uchun; ko'krakka qanday tegishi rejada yo'q | Stetoskop boshi + trubka ichiga mikrofon (8-bo'lim) |
-| Reference mic + adaptive noise cancellation | Ikkinchi mikrofon olinmagan, signal ishlovi murakkab | Oddiy filtr (25–400 Hz); ANC — future work |
-| Self-calibration | Aniq reja yo'q | Future work |
-| PPG | Sensor buyurtma qilinmagan | PPT'dan olib tashlash |
-| MPU6050 | Sotib olingan, lekin PPT'da yo'q | Layer 1 ga qo'shish: harakat tekshiruvi |
-| Fusion (H2), Baseline (H3), Fingerprint, Uncertainty, "Models 5 → 6" | MVP uchun juda katta | ISR yoki future work |
-| "Time sync PCG + ECG" | Alohida muammo emas: ikkala signalni bitta ESP32 yig'adi | ECG 2-bosqichda, bitta vaqt bilan |
-| Slide 10: "Delivery to Uzbekistan" | Eskirgan | Yangi holatni yozish |
-| Cheklovlar yo'q | CirCor bolalar datasi, klinik stetoskop | 5-bo'limdagi cheklovlarni qo'shish |
-| Quvvat yo'q | Batareya rejada yo'q | Power bank (8-bo'lim) |
+| "Wi-Fi 5" | The ESP32-S3 supports only 2.4 GHz Wi-Fi 4 (802.11 b/g/n) and BLE 5 | "Wi-Fi (2.4 GHz)" |
+| Slide 14: "CardioEcho AI" | Wrong project name | MurMur |
+| AI on the phone, "sensor to phone" | No mobile app, unnecessary complexity | AI on the server, result on the website |
+| "MEMS sensor" | The microphone is for air; there is no plan for how it touches the chest | Stethoscope head + tube with the microphone inside (section 8) |
+| Reference mic + adaptive noise cancellation | A second microphone was not ordered, and the signal processing is complex | Simple filter (25–400 Hz); ANC — future work |
+| Self-calibration | No clear plan | Future work |
+| PPG | The sensor was not ordered | Remove from the PPT |
+| MPU6050 | Purchased, but not in the PPT | Add to Layer 1: motion check |
+| Fusion (H2), Baseline (H3), Fingerprint, Uncertainty, "Models 5 → 6" | Too big for the MVP | ISR or future work |
+| "Time sync PCG + ECG" | Not a separate problem: one ESP32 collects both signals | ECG in phase 2, with a single clock |
+| Slide 10: "Delivery to Uzbekistan" | Outdated | Write the new status |
+| No limitations | CirCor is children's data, clinical stethoscopes | Add the limitations from section 5 |
+| No power | A battery is not in the plan | Power bank (section 8) |
 
-### Qo'shish kerak (PPT'da umuman yo'q)
+### To add (missing from the PPT entirely)
 
-- Rollar (admin va doktor), login va ma'lumotlar bazasi.
-- Qurilmani boshqarish: holati (online/offline) va saytdan "yozishni boshlash" buyrug'i.
-- Data xavfsizligi bo'limi (6-bo'lim).
-- Doktor xulosasi: yakuniy qarorni odam qiladi, AI faqat yordam beradi.
-- Phantom test: CirCor yozuvlarini kichik dinamikdan qurilmaga eshittirib, odamsiz aniqlikni o'lchash. Ethics approval kutmasdan butun tizimni sinash mumkin bo'ladi.
-- Ikki modelni solishtirish (5-bo'lim) — ISR uchun natija.
+- Roles (admin and doctor), login and database.
+- Device management: status (online/offline) and a "start recording" command from the website.
+- Data security section (section 6).
+- Doctor's conclusion: the final decision is made by a human, the AI only helps.
+- Phantom test: play CirCor recordings to the device through a small speaker and measure accuracy without people. This makes it possible to test the whole system without waiting for ethics approval.
+- Comparison of two models (section 5) — a result for the ISR.
 
-## Qo'shimcha xarid ro'yxati
+## Additional shopping list
 
-Buyurtma qilingan 4 ta moduldan tashqari quyidagilar kerak. Eng muhimi — arzon stetoskop: mikrofon uning trubkasi ichiga joylanadi, shunda yurak tovushi to'g'ri ushlanadi.
+Besides the 4 ordered modules, the following are needed. The most important is a cheap stethoscope: the microphone is placed inside its tube, so the heart sound is captured properly.
 
-| Narsa | Nima uchun | Qachon |
+| Item | Why | When |
 | --- | --- | --- |
-| Arzon stetoskop (boshi + trubka) | Mikrofonni trubka ichiga joylash | Hoziroq, majburiy |
-| Power bank (USB-C) | Quvvat va elektr xavfsizligi | Hoziroq, majburiy |
-| USB-C data kabel | ESP32'ga kod yuklash | Hoziroq, majburiy |
-| Breadboard, female-female simlar | Modullarni ulash | Hoziroq, majburiy |
-| Payalnik va qalay | Modul pinlarini kavsharlash | Hoziroq, majburiy |
-| Kichik dinamik yoki eski naushnik | Phantom test | Hoziroq, majburiy |
-| Bir martalik ECG elektrodlar (snap) | ADS1292R uchun | ECG bosqichida |
-| Ikkinchi ICS-43434 | Faqat shovqin kesish (ANC) qilinsa | Ixtiyoriy |
-| 3D bosma korpus | Ko'krakka taqiladigan qurilma | MVP'dan keyin |
+| Cheap stethoscope (head + tube) | To place the microphone inside the tube | Right now, required |
+| Power bank (USB-C) | Power and electrical safety | Right now, required |
+| USB-C data cable | To upload code to the ESP32 | Right now, required |
+| Breadboard, female-female wires | To connect the modules | Right now, required |
+| Soldering iron and solder | To solder the module pins | Right now, required |
+| Small speaker or old earphones | Phantom test | Right now, required |
+| Disposable ECG electrodes (snap) | For the ADS1292R | At the ECG stage |
+| Second ICS-43434 | Only if noise cancellation (ANC) is done | Optional |
+| 3D-printed case | Device worn on the chest | After the MVP |
 
-ADS1292R bilan birga kabellar kelgan bo'lishi mumkin (rasmda ko'rinadi), qurilma kelgach tekshiring.
+Cables may have come with the ADS1292R (visible in the picture); check when the device arrives.
 
-## Haftalik ish rejasi va vazifa taqsimoti
+## Weekly work plan and task assignment
 
-Reja 5 haftaga mo'ljallangan, 9-noyabrdan boshlanadi. Qurilma kelguncha software tayyorlanadi, shuning uchun hech kim kutib o'tirmaydi. NTCC sanasi aniq bo'lsa, haftalar shunga moslab siqiladi.
+The plan is for 5 weeks, starting on November 9. Software is prepared until the device arrives, so nobody sits waiting. When the NTCC date is known, the weeks will be compressed accordingly.
 
-### 1-hafta (9–15 noyabr): qurilmasiz
+### Week 1 (Nov 9–15): without the device
 
-- [ ] Backend skeleti: FastAPI, login, rollar, jadvallar
-- [ ] React: login, admin va doktor sahifalari skeleti
-- [ ] CirCor'ni yuklab olish, 2 modelni 100 ta faylda sinash
-- [ ] Stetoskop, power bank, simlar, payalnik sotib olish
+- [ ] Backend skeleton: FastAPI, login, roles, tables
+- [ ] React: login, admin and doctor page skeletons
+- [ ] Download CirCor, test the 2 models on 100 files
+- [ ] Buy the stethoscope, power bank, wires, soldering iron
 
-### 2-hafta (16–22 noyabr): qurilma keladi
+### Week 2 (Nov 16–22): the device arrives
 
-- [ ] Modullarni kavsharlash va ulash
-- [ ] Mikrofondan WAV olish va noutbukka yuborish
-- [ ] Heartbeat, admin sahifasida online/offline
+- [ ] Solder and connect the modules
+- [ ] Get a WAV from the microphone and send it to the laptop
+- [ ] Heartbeat, online/offline on the admin page
 
-### 3-hafta (23–29 noyabr): to'liq zanjir
+### Week 3 (Nov 23–29): the full chain
 
-- [ ] Saytdan "Boshlash" → qurilma yozadi → AI → natija
-- [ ] Natija sahifasi: tovush to'lqini, foiz, doktor izohi
-- [ ] Sifat tekshiruvi va MPU6050 harakat belgisi
+- [ ] From the website "Start" → the device records → AI → result
+- [ ] Result page: sound waveform, percentage, doctor's note
+- [ ] Quality check and the MPU6050 motion flag
 
-### 4-hafta (30 noyabr – 6 dekabr): sinov
+### Week 4 (Nov 30 – Dec 6): testing
 
-- [ ] Phantom test, natijalarni jadvalga yozish
-- [ ] Audit log, PDF hisobot (ixtiyoriy)
+- [ ] Phantom test, record the results in a table
+- [ ] Audit log, PDF report (optional)
 
-### 5-hafta (7–13 dekabr): 2-versiya va taqdimot
+### Week 5 (Dec 7–13): version 2 and presentation
 
-- [ ] Serverga ko'chirish, domen, HTTPS, WiFiManager
-- [ ] ECG grafigi (vaqt qolsa)
-- [ ] PPT'ni yangilash, jonli demo tayyorlash
+- [ ] Move to the server, domain, HTTPS, WiFiManager
+- [ ] ECG graph (if time remains)
+- [ ] Update the PPT, prepare the live demo
 
-### Kim nima qiladi
+### Who does what
 
-Coding bilmaydigan a'zolar uchun ham aniq ish bor.
+There is clear work even for members who cannot code.
 
-| Vazifa | Kim | Coding kerakmi |
+| Task | Who | Coding needed |
 | --- | --- | --- |
-| Backend, frontend, qurilma kodi (Claude bilan) | Siz | Ha |
-| Qurilmani yig'ish, kavsharlash, stetoskopga mikrofon joylash | 1 kishi | Yo'q |
-| AI sinovi: tayyor skriptni ishga tushirish, natijalarni Excel'ga yozish | 1 kishi | Ozgina |
-| Phantom test va qurilma sinovlari | 1 kishi | Yo'q |
-| PPT, adabiyot, rozilik formasi, ethics hujjatlari | 1 kishi | Yo'q |
+| Backend, frontend, device code (with Claude) | You | Yes |
+| Assemble the device, solder, place the microphone in the stethoscope | 1 person | No |
+| AI testing: run the ready script, write results into Excel | 1 person | A little |
+| Phantom test and device tests | 1 person | No |
+| PPT, literature, consent form, ethics documents | 1 person | No |
 
-## Keyingi qadam: qurilma kodi
+## Next step: device code
 
-Qurilma kodi Arduino IDE'da, tayyor kutubxonalar bilan yoziladi. Modullar kelgach, quyidagi tartibda yozib beraman: avval mikrofon, keyin Wi-Fi va yuborish, keyin MPU6050, oxirida ECG.
+The device code is written in Arduino IDE with ready-made libraries. Once the modules arrive, I will write it in this order: first the microphone, then Wi-Fi and sending, then the MPU6050, and ECG last.
 
-| Modul | Kutubxona |
+| Module | Library |
 | --- | --- |
-| ICS-43434 mikrofon (I2S) | ESP\_I2S (Arduino-ESP32 3.x ichida bor) |
+| ICS-43434 microphone (I2S) | ESP\_I2S (included in Arduino-ESP32 3.x) |
 | MPU6050 | Adafruit MPU6050 |
 | ADS1292R (ECG) | ProtoCentral ADS1292R |
-| Wi-Fi sozlash | WiFiManager |
-| Serverga yuborish | HTTPClient (ichida bor) |
+| Wi-Fi setup | WiFiManager |
+| Sending to the server | HTTPClient (included) |
 
-Arduino IDE sozlamalari: board — "ESP32S3 Dev Module", PSRAM — "OPI PSRAM", Flash — 16MB. Bu yozuvni xotirada vaqtincha saqlash uchun kerak.
+Arduino IDE settings: board — "ESP32S3 Dev Module", PSRAM — "OPI PSRAM", Flash — 16MB. This is needed to hold the recording temporarily in memory.
 
-Taxminiy ulanish (board kelgach pinout bo'yicha tasdiqlanadi):
+Approximate wiring (to be confirmed against the pinout once the board arrives):
 
-- Mikrofon (I2S): BCLK → GPIO 4, WS → GPIO 5, SD → GPIO 6, L/R → GND.
+- Microphone (I2S): BCLK → GPIO 4, WS → GPIO 5, SD → GPIO 6, L/R → GND.
 - MPU6050 (I2C): SDA → GPIO 8, SCL → GPIO 9.
 - ADS1292R (SPI): MOSI → 11, SCK → 12, MISO → 13, CS → 10, DRDY → 14, START → 15, PWDN → 16.
-- GPIO 35, 36, 37 ishlatilmaydi: N16R8 board'da ular ichki xotira (PSRAM) uchun band.
+- GPIO 35, 36, 37 are not used: on the N16R8 board they are reserved for the internal memory (PSRAM).
 
-Qurilmalar kelgan kuni board va modullarning rasmini yuboring, shu bo'yicha birinchi kodni (mikrofon → WAV → noutbuk) yozaman.
+On the day the devices arrive, send a photo of the board and the modules, and I will write the first code (microphone → WAV → laptop) based on it.

@@ -9,7 +9,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 - `README.md` — what MurMur is, first run, tests, roles, API overview
 - `AGENTS.md` — all project rules (Claude reads it through `CLAUDE.md`)
-- `CLAUDE.md` — only imports `AGENTS.md`
+- `CLAUDE.md` — imports `AGENTS.md`; adds commands and cross-file architecture notes for Claude
 - `.gitignore` — ignores `.env`, Python caches, `storage/`, `samples/`, `models/` (AI weights, downloaded at setup)
 - `.claude/settings.json` — permissions + hook that blocks reading secret files
 - `.claude/secret-files.txt` — list of real secret files (`.env`)
@@ -19,6 +19,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Backend
 
+- `backend/README.md` — backend: run, tests, layout, rules, API overview
 - `backend/pyproject.toml` — dependencies (uv), pytest config, pure-Python SQLAlchemy setting
 - `backend/app/main.py` — `create_app()`: CORS, routers, `/api/health`; serves `frontend/dist` at `/` when built
 - `backend/app/upload_limit.py` — ASGI middleware: rejects big/unsized device uploads from Content-Length
@@ -75,6 +76,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Frontend
 
+- `frontend/README.md` — frontend: run, checks, layout, rules
 - `frontend/package.json` — React 19 + Vite 8 + TypeScript 5.9; scripts: dev, build, test (Vitest), lint (ESLint)
 - `frontend/vite.config.ts` — Tailwind plugin, `/api` proxy, vendor chunk, Vitest (jsdom) config
 - `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
@@ -114,5 +116,6 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference
 - `firmware/murmur/` — ESP32-S3 Arduino firmware: `murmur.ino` (loop), `audio.h` (I2S mic → 16 kHz WAV), `net.h`
   (Wi-Fi + device API), `config.h` (pins, rates, gain), `secrets.example.h` (copy to gitignored `secrets.h`)
+- `scripts/ai/README.md` — AI model: how it works, results, setup, train / evaluate
 - `scripts/ai/` — CirCor labels + split (`circor.py`), shared training/metrics (`learn.py`), `experiment.py` (5-fold CV →
   `docs/specs/ai-experiments.md`), `train_head.py` (final head + threshold), `evaluate.py` (→ `docs/specs/ai-results.md`)
