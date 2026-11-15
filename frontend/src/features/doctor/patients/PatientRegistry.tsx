@@ -26,7 +26,6 @@ import {
   type Status,
 } from "../../../redesign/components";
 import { PointLabel, useOneTimeState } from "../shared";
-import { mockAnalyzedClinic, mockRegisteredClinic } from "./mockClinic";
 
 const SORTS: PatientSort[] = ["recent", "name", "priority"];
 const STATUSES: PatientStatusFilter[] = ["all", "needs_review", "pending"];
@@ -231,12 +230,11 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
         {ageFromBirthYear(patient.birth_year)} · {t(`registry.sexShort.${patient.sex}`)}
       </td>
       <td>
-        {/* MOCK clinic data: see mockClinic.ts */}
         <div className="rd-table__cell">
-          <span className="rd-label">{mockRegisteredClinic(patient.id)}</span>
+          <span className="rd-label">{patient.clinic ?? "—"}</span>
           <span className="rd-sm">
             {exam && (exam.status === "analyzed" || exam.status === "reviewed")
-              ? t("registry.analyzedAt", { clinic: mockAnalyzedClinic(patient.id), device: exam.device_name ?? "—" })
+              ? t("registry.analyzedAt", { clinic: exam.clinic ?? "—", device: exam.device_name ?? "—" })
               : t("registry.notAnalyzed")}
           </span>
         </div>
@@ -270,7 +268,7 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
 }
 
 /** The word comes from the backend's `result_status`. Borderline / critical never appear: the model gives yes / no only. */
-export function ResultChip({ patient }: { patient: PatientRegistryRow }) {
+export function ResultChip({ patient }: { patient: Pick<PatientRegistryRow, "result_status" | "needs_review"> }) {
   const { t } = useTranslation();
   const { result_status: result, needs_review: needsReview } = patient;
   const [status, word]: [Status, string] =

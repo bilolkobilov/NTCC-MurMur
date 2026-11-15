@@ -11,8 +11,8 @@ class PatientCreate(BaseModel):
     full_name: FullName
     birth_year: int = Field(ge=1900, le=2100)
     sex: Sex
-    height_cm: float | None = Field(default=None, gt=0, lt=300)
-    weight_kg: float | None = Field(default=None, gt=0, lt=500)
+    height_cm: float = Field(ge=30, le=250)
+    weight_kg: float = Field(ge=2, le=400)
     consent_given: bool = False
 
 
@@ -22,8 +22,8 @@ class PatientUpdate(BaseModel):
     full_name: FullName | None = None
     birth_year: int | None = Field(default=None, ge=1900, le=2100)
     sex: Sex | None = None
-    height_cm: float | None = Field(default=None, gt=0, lt=300)
-    weight_kg: float | None = Field(default=None, gt=0, lt=500)
+    height_cm: float | None = Field(default=None, ge=30, le=250)
+    weight_kg: float | None = Field(default=None, ge=2, le=400)
 
     @model_validator(mode="after")
     def required_fields_not_cleared(self):
@@ -42,6 +42,7 @@ class PatientOut(BaseModel):
     sex: Sex
     height_cm: float | None
     weight_kg: float | None
+    clinic: str | None
     consent_given_at: datetime | None
     has_login: bool
     created_at: datetime
@@ -53,6 +54,7 @@ class LastExamOut(BaseModel):
     status: ExamStatus
     created_at: datetime
     device_name: str | None
+    clinic: str | None = None  # where it was analyzed: the clinic of the device's doctor
 
 
 class PatientRegistryRow(PatientOut):
@@ -61,6 +63,35 @@ class PatientRegistryRow(PatientOut):
     last_exam: LastExamOut | None
     result_status: Literal["normal", "abnormal", "pending", "failed", "reviewed"]
     needs_review: bool
+
+
+class VitalsCreate(BaseModel):
+    """Vital signs the doctor measured. Send what was measured; blood pressure needs both numbers."""
+
+    heart_rate: int | None = Field(default=None, ge=20, le=300)
+    systolic: int | None = Field(default=None, ge=50, le=300)
+    diastolic: int | None = Field(default=None, ge=20, le=200)
+    spo2: int | None = Field(default=None, ge=50, le=100)
+    resp_rate: int | None = Field(default=None, ge=4, le=80)
+    temp_c: float | None = Field(default=None, ge=30, le=45)
+
+    @model_validator(mode="after")
+    def something_measured(self):
+        if (self.systolic is None) != (self.diastolic is None):
+            raise ValueError("blood pressure needs both numbers")
+        if self.systolic is not None and self.systolic <= self.diastolic:
+            raise ValueError("systolic must be higher than diastolic")
+        if all(getattr(self, name) is None for name in type(self).model_fields):
+            raise ValueError("enter at least one value")
+        return self
+
+
+class VitalsOut(VitalsCreate):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: datetime
+    recorded_by: str
 
 
 class PatientSummary(BaseModel):
@@ -124,6 +155,18 @@ class ExamSummary(BaseModel):
     reviewed_at: datetime | None
 
 
+class PatientExamRow(ExamSummary):
+    """An exam in the patient's recording history: the exam plus what the doctor scans for in a table."""
+
+    duration_s: float | None
+    device_name: str | None
+    device_code: str | None
+    clinic: str | None
+    result_status: Literal["normal", "abnormal", "pending", "failed", "reviewed"]
+    needs_review: bool
+    ai_label: str | None
+
+
 class ExamDetail(ExamSummary):
     failure_reason: str | None
     doctor_note: str | None
@@ -141,5 +184,10 @@ class DoctorDeviceOut(BaseModel):
     id: int
     name: str
     serial: str
+    code: str
+    model: str
+    location: str | None
+    clinic: str | None
+    battery_pct: int | None
     online: bool
     last_seen_at: datetime | None

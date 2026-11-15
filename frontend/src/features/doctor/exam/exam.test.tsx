@@ -13,6 +13,7 @@ const patient: Patient = {
   sex: "male",
   height_cm: null,
   weight_kg: null,
+  clinic: null,
   consent_given_at: "2026-11-08T08:00:00Z",
   has_login: false,
   created_at: "2026-11-08T08:00:00Z",

@@ -265,7 +265,7 @@ export function Breadcrumbs({ label, items }: { label: string; items: Crumb[] })
           const last = i === items.length - 1;
           return (
             <li key={c.label} aria-current={last ? "page" : undefined}>
-              {!last && c.href ? <a href={c.href}>{c.label}</a> : c.label}
+              {!last && c.href ? <Link to={c.href}>{c.label}</Link> : c.label}
               {!last && <Icon name="chevronRight" size="sm" className="rd-crumb-sep" />}
             </li>
           );
@@ -327,6 +327,124 @@ export function SummaryTile({ icon, value, label, tone, sub }: { icon: IconName;
       </span>
       <span className="rd-tile__value">{value}</span>
       {sub && <span className="rd-sm">{sub}</span>}
+    </div>
+  );
+}
+
+// ---- Detail-page pieces (moved from the admin device pages; shared by the doctor's patient pages) --------------------
+
+export function DAlert({ tone, icon, children, role }: { tone: "info" | "warn" | "crit" | "ok"; icon: IconName; children: ReactNode; role?: "alert" | "status" }) {
+  return (
+    <div className={clsx("rd-dalert", `rd-dalert--${tone}`)} role={role ?? (tone === "crit" ? "alert" : "status")}>
+      <Icon name={icon} />
+      <span>{children}</span>
+    </div>
+  );
+}
+
+export function DCard({ title, icon, meta, children, id }: { title: string; icon?: IconName; meta?: ReactNode; children: ReactNode; id: string }) {
+  return (
+    <section className="rd-dcard" aria-labelledby={id}>
+      <div className="rd-dcard__head">
+        <div className="flex items-center gap-3">
+          {icon && (
+            <span style={{ color: "var(--c-primary)" }} className="inline-flex">
+              <Icon name={icon} />
+            </span>
+          )}
+          <h2 className="rd-h3" id={id}>
+            {title}
+          </h2>
+        </div>
+        {meta}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+export function KvRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="rd-kvrow">
+      <dt>{label}</dt>
+      <dd>{children}</dd>
+    </div>
+  );
+}
+
+/** A form field as drawn in the mockup: 14 px label (red * when required), 44 px field, 12 px hint under it. */
+export function FormGroup({
+  label,
+  required,
+  hint,
+  error,
+  htmlFor,
+  children,
+}: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  error?: string | null;
+  htmlFor: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="rd-fgrp">
+      <label htmlFor={htmlFor} className="rd-label">
+        {label}
+        {required && (
+          <>
+            {" "}
+            <span style={{ color: "var(--c-critical-fg)" }} aria-hidden="true">
+              *
+            </span>
+          </>
+        )}
+      </label>
+      {children}
+      {(error || hint) && (
+        <span
+          id={`${htmlFor}-help`}
+          className={clsx("rd-sm", error && "rd-fgrp__err")}
+          style={{ color: error ? "var(--c-critical-fg)" : undefined }}
+        >
+          {error && <Icon name="alertTriangle" size="sm" />}
+          <span>{error ?? hint}</span>
+        </span>
+      )}
+    </div>
+  );
+}
+
+/** Native select in the mockup's field frame: keyboard and screen readers work everywhere, also on a phone. */
+export function SelectBox({
+  id,
+  value,
+  onChange,
+  disabled,
+  invalid,
+  children,
+}: {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  invalid?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div className={clsx("rd-field rd-field--sel", invalid && "rd-field--error")}>
+      <select
+        id={id}
+        value={value}
+        disabled={disabled}
+        aria-invalid={invalid || undefined}
+        aria-describedby={`${id}-help`}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        {children}
+      </select>
+      <Icon name="chevronDown" size="sm" />
     </div>
   );
 }

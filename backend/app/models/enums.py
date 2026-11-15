@@ -14,6 +14,7 @@ class Role(StrEnum):
 class Sex(StrEnum):
     MALE = "male"
     FEMALE = "female"
+    OTHER = "other"
 
 
 class AuscultationPoint(StrEnum):

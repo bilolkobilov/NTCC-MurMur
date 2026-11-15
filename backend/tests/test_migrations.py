@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "ai_results",
     "device_commands",
     "audit_logs",
+    "vital_signs",
 }
 
 

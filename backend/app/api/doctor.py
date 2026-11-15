@@ -17,12 +17,15 @@ from app.schemas.doctor import (
     ExamSummary,
     LastExamOut,
     PatientCreate,
+    PatientExamRow,
     PatientLoginCreate,
     PatientLoginCreated,
     PatientOut,
     PatientRegistryRow,
     PatientSummary,
     PatientUpdate,
+    VitalsCreate,
+    VitalsOut,
 )
 from app.services import devices, doctors, exams, patients
 
@@ -63,6 +66,7 @@ def list_patients(
                 status=row.last_exam.status,
                 created_at=row.last_exam.created_at,
                 device_name=row.device_name,
+                clinic=row.device_clinic,
             )
             if row.last_exam
             else None,
@@ -107,6 +111,26 @@ def create_patient_login(
     return PatientLoginCreated(username=user.username, temporary_password=temp_password)
 
 
+@router.post("/patients/{patient_id}/vitals", status_code=status.HTTP_201_CREATED)
+def record_patient_vitals(patient_id: PathId, body: VitalsCreate, db: DbSession, doctor: CurrentDoctor) -> VitalsOut:
+    vitals, by = patients.record_vitals(db, doctor, patient_id, body.model_dump())
+    return VitalsOut(**body.model_dump(), id=vitals.id, created_at=vitals.created_at, recorded_by=by)
+
+
+@router.get("/patients/{patient_id}/vitals/latest")
+def latest_patient_vitals(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> VitalsOut | None:
+    found = patients.latest_vitals(db, doctor, patient_id)
+    if found is None:
+        return None
+    vitals, by = found
+    return VitalsOut(
+        **{name: getattr(vitals, name) for name in VitalsCreate.model_fields},
+        id=vitals.id,
+        created_at=vitals.created_at,
+        recorded_by=by,
+    )
+
+
 @router.post("/patients/{patient_id}/reset-password")
 def reset_patient_password(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> PatientLoginCreated:
     """New one-time password for a patient who forgot theirs (shown once; must be changed on next login)."""
@@ -115,8 +139,20 @@ def reset_patient_password(patient_id: PathId, db: DbSession, doctor: CurrentDoc
 
 
 @router.get("/patients/{patient_id}/exams")
-def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> list[ExamSummary]:
-    return [ExamSummary.model_validate(e) for e in patients.list_patient_exams(db, doctor, patient_id)]
+def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor) -> list[PatientExamRow]:
+    return [
+        PatientExamRow(
+            **ExamSummary.model_validate(row.exam).model_dump(),
+            duration_s=row.duration_s,
+            device_name=row.device.name if row.device else None,
+            device_code=row.device.code if row.device else None,
+            clinic=row.device.clinic if row.device else None,
+            result_status=row.status.result_status,
+            needs_review=row.status.needs_review,
+            ai_label=row.ai_label,
+        )
+        for row in patients.list_patient_exams(db, doctor, patient_id)
+    ]
 
 
 # --- exams ---

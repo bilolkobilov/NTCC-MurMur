@@ -195,7 +195,8 @@
     },
     "sexShort": {
       "male": "M",
-      "female": "F"
+      "female": "F",
+      "other": "O"
     },
     "analysisInProgress": "Analysis in progress",
     "noRecording": "No recording yet",
@@ -222,22 +223,24 @@
   },
   "sex": {
     "male": "Male",
-    "female": "Female"
+    "female": "Female",
+    "other": "Other"
   },
   "units": {
     "cm": "{{value}} cm",
-    "kg": "{{value}} kg"
+    "kg": "{{value}} kg",
+    "cmShort": "cm",
+    "kgShort": "kg"
   },
   "patientForm": {
-    "newTitle": "Add patient",
+    "newTitle": "New patient",
     "editTitle": "Edit {{name}}",
     "fullName": "Full name",
-    "fullNamePlaceholder": "Ali Valiyev…",
+    "fullNamePlaceholder": "e.g. Nodira Rakhimova",
     "birthYear": "Year of birth",
     "sex": "Sex",
-    "height": "Height, cm",
-    "weight": "Weight, kg",
-    "optional": "Optional. For the doctor's record; the current AI model uses only the sound.",
+    "height": "Height (cm)",
+    "weight": "Weight (kg)",
     "consent": "Signed consent form received",
     "consentHint": "An exam cannot start without it. You can also record it later.",
     "saveChanges": "Save changes",
@@ -247,13 +250,38 @@
     "leave": "Leave without saving",
     "errors": {
       "fullName": "Enter the patient's full name.",
-      "birthYear": "Enter a 4-digit year, not in the future.",
-      "sex": "Choose the sex.",
-      "height": "Enter height in centimetres, e.g. 172.",
-      "weight": "Enter weight in kilograms, e.g. 70.5."
-    }
+      "birthYear": "Enter a four-digit year between 1900 and {{year}}.",
+      "sex": "Select the patient's sex.",
+      "height": "Enter height in cm, between 30 and 250.",
+      "weight": "Enter weight in kg, between 2 and 400."
+    },
+    "lead": "Create the patient record. Recordings can be added after saving.",
+    "sectionDetails": "Patient details",
+    "sectionMeasurements": "Measurements",
+    "sectionConsent": "Consent",
+    "birthYearPlaceholder": "e.g. 1968",
+    "age": "Age {{count}}",
+    "heightPlaceholder": "e.g. 170",
+    "weightPlaceholder": "e.g. 68",
+    "save": "Save patient",
+    "fixFields_one": "{{count}} field needs attention",
+    "fixFields_other": "{{count}} fields need attention",
+    "fieldNames": {
+      "fullName": "Full name",
+      "birthYear": "Year of birth",
+      "sex": "Sex",
+      "height": "Height",
+      "weight": "Weight"
+    },
+    "createdTitle": "Patient created",
+    "createdBody": "{{name}} was added to the {{clinic}} roster.",
+    "createdBodyNoClinic": "{{name}} was added to your patients.",
+    "noRecordings": "No recordings yet",
+    "backToPatients": "Back to patients",
+    "openProfile": "Open patient page"
   },
   "patient": {
+    "mrn": "Record",
     "startExam": "Start exam",
     "saved": "Patient saved.",
     "exams": "Exams",
@@ -293,7 +321,54 @@
     "deleteBody_other": "This removes the profile, the login, {{count}} exams with their recordings and AI results. This can't be undone.",
     "keep": "Keep patient",
     "deleteTypeName": "Type “{{name}}” to confirm",
-    "deleteTypeHint": "The delete button unlocks when the name matches."
+    "deleteTypeHint": "The delete button unlocks when the name matches.",
+    "recordAuscultation": "Record auscultation",
+    "summaryLabel": "Patient summary",
+    "flagTitle": "Possible murmur, clinician confirmation required",
+    "flagBody": "AI screening found a possible murmur at {{point}}, {{when}}. It is decision support only.",
+    "reviewAnalysis": "Review analysis",
+    "registeredAt": "Registered at",
+    "notAnalyzedYet": "Not analyzed yet",
+    "moreActions": "More actions",
+    "sectionsLabel": "Patient sections",
+    "tabOverview": "Overview",
+    "tabRecordings": "Recordings",
+    "height": "Height",
+    "weight": "Weight",
+    "bmi": "BMI",
+    "bmiUnit": "kg/m²",
+    "noData": "No data",
+    "latest": "Latest auscultation",
+    "aiChip": "AI-assisted · decision support only",
+    "latestMeta": "{{point}} · {{seconds}} s · {{when}}",
+    "openAnalysis": "Open full analysis",
+    "noLatest": "No recording has been analyzed yet.",
+    "history": "Recording history",
+    "historyLabel": "Recording history",
+    "colWhen": "When",
+    "colSite": "Site",
+    "colLength": "Length",
+    "colFinding": "Finding",
+    "colAnalyzedAt": "Analyzed at",
+    "colStatus": "Status",
+    "colOpen": "Open",
+    "openRecording": "Open recording {{site}}, {{when}}",
+    "seconds": "{{value}} s",
+    "findingNone": "—",
+    "iot": "IoT device",
+    "iotDeviceId": "Device ID",
+    "iotModel": "Model",
+    "iotClinic": "Assigned clinic",
+    "iotLocation": "Location",
+    "iotBattery": "Battery",
+    "iotFrom": "The device of the latest recording.",
+    "iotNone": "No device yet. Ask the administrator to assign one to you.",
+    "iotChoose": "Choose device for the next recording",
+    "fullName": "Full name",
+    "yearOfBirth": "Year of birth",
+    "latestAnalysis": "Latest analysis",
+    "consentRequired": "Record the consent first, then start a recording.",
+    "viewAll": "View all {{count}}"
   },
   "newExam": {
     "title": "New exam",
@@ -826,5 +901,38 @@
     "accountCreated": "Account created",
     "editDetails": "Edit details",
     "editTitle": "Edit {{name}}"
+  },
+  "vitals": {
+    "title": "Vital signs",
+    "record": "Record vitals",
+    "recordBody": "Enter what you measured for {{name}}. Leave out what you did not measure.",
+    "save": "Save vitals",
+    "measured": "Measured {{when}} · {{by}}",
+    "none": "Not measured yet",
+    "ref": "Ref. {{range}}",
+    "heartRate": "Heart rate",
+    "bloodPressure": "Blood pressure",
+    "systolic": "Systolic pressure",
+    "diastolic": "Diastolic pressure",
+    "spo2": "SpO₂",
+    "respRate": "Respiratory rate",
+    "temperature": "Temperature",
+    "unit": {
+      "bpm": "bpm",
+      "mmHg": "mmHg",
+      "perMin": "/min"
+    },
+    "level": {
+      "normal": "Normal",
+      "borderline": "Borderline",
+      "abnormal": "Abnormal",
+      "none": "No data"
+    },
+    "errors": {
+      "range": "Enter a value between {{min}} and {{max}}.",
+      "bothNumbers": "Enter both blood pressure numbers.",
+      "order": "Systolic must be higher than diastolic.",
+      "empty": "Enter at least one value."
+    }
   }
 }

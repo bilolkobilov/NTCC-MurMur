@@ -10,7 +10,7 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.models import AIResult, Device, DeviceCommand, Exam, Patient, Recording, Role, Sex, User
+from app.models import AIResult, Device, DeviceCommand, Exam, Patient, Recording, Role, Sex, User, VitalSigns
 from app.security import generate_temp_password
 from app.services import audit, storage
 from app.services.errors import Conflict, NotFound
@@ -27,8 +27,8 @@ def create_patient(
     full_name: str,
     birth_year: int,
     sex: Sex,
-    height_cm: float | None,
-    weight_kg: float | None,
+    height_cm: float,
+    weight_kg: float,
     consent_given: bool,
 ) -> Patient:
     patient = Patient(
@@ -38,6 +38,7 @@ def create_patient(
         sex=sex,
         height_cm=height_cm,
         weight_kg=weight_kg,
+        clinic=doctor.clinic,
         consent_given_at=datetime.now(UTC) if consent_given else None,
     )
     db.add(patient)
@@ -62,6 +63,7 @@ class RegistryRow:
     patient: Patient
     last_exam: Exam | None
     device_name: str | None
+    device_clinic: str | None
     status: RegistryStatus
 
 
@@ -78,7 +80,7 @@ def _registry(db: Session, doctor: User, search: str | None = None) -> list[Regi
         .scalar_subquery()
     )
     query = (
-        select(Patient, Exam, AIResult, Device.name)
+        select(Patient, Exam, AIResult, Device)
         .outerjoin(Exam, and_(Exam.patient_id == Patient.id, Exam.id.in_(latest)))
         .outerjoin(AIResult, AIResult.exam_id == Exam.id)
         .outerjoin(Device, Device.id == Exam.device_id)
@@ -88,14 +90,16 @@ def _registry(db: Session, doctor: User, search: str | None = None) -> list[Regi
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # % and _ match literally
         query = query.where(Patient.full_name.ilike(f"%{escaped}%", escape="\\"))
     rows = []
-    for patient, exam, ai, device_name in db.execute(query):
+    for patient, exam, ai, device in db.execute(query):
         status = derive(
             exam.status if exam else None,
             ai_quality=ai.quality if ai else None,
             ai_label=ai.label if ai else None,
             doctor_agrees=exam.doctor_agrees_with_ai if exam else None,
         )
-        rows.append(RegistryRow(patient, exam, device_name, status))
+        rows.append(
+            RegistryRow(patient, exam, device.name if device else None, device.clinic if device else None, status)
+        )
     return rows
 
 
@@ -191,11 +195,67 @@ def create_patient_login(db: Session, doctor: User, patient_id: int, username: s
     return user, temp_password
 
 
-def list_patient_exams(db: Session, doctor: User, patient_id: int) -> list[Exam]:
+@dataclass(frozen=True)
+class ExamRow:
+    exam: Exam
+    duration_s: float | None
+    device: Device | None
+    ai_label: str | None
+    status: RegistryStatus
+
+
+def list_patient_exams(db: Session, doctor: User, patient_id: int) -> list[ExamRow]:
+    """The patient's exams, newest first, with length, device (and its clinic) and the derived result status."""
     patient = _own_patient(db, doctor, patient_id)
-    exams = list(db.scalars(select(Exam).where(Exam.patient_id == patient.id).order_by(Exam.id.desc())))
+    query = (
+        select(Exam, Recording.duration_s, Device, AIResult)
+        .outerjoin(Recording, Recording.exam_id == Exam.id)
+        .outerjoin(Device, Device.id == Exam.device_id)
+        .outerjoin(AIResult, AIResult.exam_id == Exam.id)
+        .where(Exam.patient_id == patient.id)
+        .order_by(Exam.id.desc())
+    )
+    rows = [
+        ExamRow(
+            exam,
+            duration,
+            device,
+            ai.label if ai else None,
+            derive(
+                exam.status,
+                ai_quality=ai.quality if ai else None,
+                ai_label=ai.label if ai else None,
+                doctor_agrees=exam.doctor_agrees_with_ai,
+            ),
+        )
+        for exam, duration, device, ai in db.execute(query)
+    ]
     audit.record_read(db, doctor, "patient.exams.list", "patient", patient.id)
-    return exams
+    return rows
+
+
+def record_vitals(db: Session, doctor: User, patient_id: int, values: dict) -> tuple[VitalSigns, str]:
+    """Save a new set of vital signs. Returns it with the name of whoever entered it."""
+    patient = _own_patient(db, doctor, patient_id)
+    vitals = VitalSigns(patient_id=patient.id, doctor_id=doctor.id, **values)
+    db.add(vitals)
+    db.commit()
+    audit.record(db, doctor, "patient.vitals.create", "patient", patient.id)
+    return vitals, doctor.full_name
+
+
+def latest_vitals(db: Session, doctor: User, patient_id: int) -> tuple[VitalSigns, str] | None:
+    """The newest set of vital signs (and who entered it), or None when none was entered."""
+    patient = _own_patient(db, doctor, patient_id)
+    row = db.execute(
+        select(VitalSigns, User.full_name)
+        .join(User, User.id == VitalSigns.doctor_id)
+        .where(VitalSigns.patient_id == patient.id)
+        .order_by(VitalSigns.id.desc())
+        .limit(1)
+    ).first()
+    audit.record_read(db, doctor, "patient.vitals.read", "patient", patient.id)
+    return (row[0], row[1]) if row else None
 
 
 def reset_patient_password(db: Session, doctor: User, patient_id: int) -> tuple[User, str]:
@@ -234,6 +294,7 @@ def delete_patient(db: Session, doctor: User, patient_id: int) -> None:
     exam_ids = list(db.scalars(select(Exam.id).where(Exam.patient_id == patient.id).with_for_update()))
     file_names = list(db.scalars(select(Recording.file_name).where(Recording.exam_id.in_(exam_ids))))
 
+    db.execute(delete(VitalSigns).where(VitalSigns.patient_id == patient.id))
     db.execute(delete(AIResult).where(AIResult.exam_id.in_(exam_ids)))
     db.execute(delete(Recording).where(Recording.exam_id.in_(exam_ids)))
     db.execute(delete(DeviceCommand).where(DeviceCommand.exam_id.in_(exam_ids)))
