@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from app.config import get_settings
 from app.deps import CurrentDevice, DbSession
 from app.schemas.common import PathId
-from app.schemas.device import CommandOut, Heartbeat, UploadAccepted, UploadMeta
+from app.schemas.device import CommandOut, Heartbeat, SelfTestResult, UploadAccepted, UploadMeta
 from app.services import analysis, device_flow
 
 router = APIRouter(prefix="/api/device", tags=["device"])
@@ -17,7 +17,7 @@ router = APIRouter(prefix="/api/device", tags=["device"])
 @router.post("/heartbeat")
 def heartbeat(body: Heartbeat, db: DbSession, device: CurrentDevice) -> dict[str, str]:
     """Sent every ~10 s. A device is 'online' if seen in the last 30 s."""
-    device_flow.heartbeat(db, device, body.firmware_version, body.wifi_rssi)
+    device_flow.heartbeat(db, device, **body.model_dump())
     return {"status": "ok"}
 
 
@@ -31,6 +31,13 @@ def poll_command(db: DbSession, device: CurrentDevice) -> CommandOut | None:
     if command is None:
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     return CommandOut(command=command.command, exam_id=command.exam_id, duration_s=command.duration_s)
+
+
+@router.post("/self-test")
+def self_test_result(body: SelfTestResult, db: DbSession, device: CurrentDevice) -> dict[str, str]:
+    """The device's answer to a self_test command."""
+    device_flow.report_self_test(db, device, body.ok, body.mic_noise_db)
+    return {"status": "ok"}
 
 
 @router.post("/upload/{exam_id}", status_code=status.HTTP_202_ACCEPTED)

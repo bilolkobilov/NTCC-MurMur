@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from app.models import AuscultationPoint, Device, Exam, User
 from app.services import audit, exam_flow, storage
-from app.services.errors import NotFound
+from app.services.errors import BadRequest, NotFound
 from app.services.patients import get_patient_for_exam
 
 
@@ -14,6 +14,8 @@ def _own_device(db: Session, doctor: User, device_id: int) -> Device:
     device = db.get(Device, device_id)
     if device is None or device.doctor_id != doctor.id:
         raise NotFound("device not found")
+    if device.disconnected_at is not None:
+        raise BadRequest("device is disconnected by the administrator")
     return device
 
 

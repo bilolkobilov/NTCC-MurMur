@@ -1,6 +1,7 @@
 // MurMur device firmware (ESP32-S3 + ICS-43434), stage 1: microphone + Wi-Fi + the device API.
 // Does exactly what scripts/fake_device.py does: heartbeat every 10 s -> poll for a command every 1.5 s ->
-// on "record": record N seconds -> upload the WAV (+ meta) -> back to polling.
+// on "record": record N seconds -> upload the WAV (+ meta) -> back to polling. On "self_test": measure the
+// microphone noise floor and report it.
 // Not yet: MPU6050 motion flag (sent as false), ECG. Build/flash: docs/runbook.md "Device firmware".
 //
 // Board: ESP32S3 Dev Module, PSRAM "OPI PSRAM", Flash 16 MB (the 20 s recording lives in PSRAM).
@@ -64,6 +65,8 @@ void setup() {
   led(0, 0, 40);
   if (!psramFound()) Serial.println("WARNING: no PSRAM found - recording will fail");
   if (!micBegin()) Serial.println("WARNING: I2S microphone did not start");
+  lastMicNoiseDb = micNoiseDb();
+  Serial.printf("microphone noise floor: %d dB\n", lastMicNoiseDb);
   while (!wifiEnsure()) Serial.println("Wi-Fi: not connected yet, retrying");
   Serial.printf("Wi-Fi: %s, RSSI %d dBm\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
   Serial.printf("heartbeat: HTTP %d\n", sendHeartbeat());
@@ -88,6 +91,12 @@ void loop() {
     const int status = pollCommand(command);
     if (status == 200 && command.record && command.examId > 0) {
       Serial.printf("upload %s\n", recordAndUpload(command) ? "done" : "FAILED");
+    } else if (status == 200 && command.selfTest) {
+      lastMicNoiseDb = micNoiseDb();
+      const bool ok = lastMicNoiseDb >= 0;  // a microphone that delivers no data is a failed self-test
+      Serial.printf("self-test: mic %d dB -> HTTP %d\n", lastMicNoiseDb, sendSelfTest(ok, lastMicNoiseDb));
+    } else if (status == 403) {
+      Serial.println("command 403: the administrator disconnected this device; waiting to be reconnected");
     }
   }
   delay(20);

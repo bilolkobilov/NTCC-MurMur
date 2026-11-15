@@ -3,14 +3,17 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Query, status
+from sqlalchemy.orm import Session
 
 from app.deps import CurrentAdmin, DbSession
+from app.models import Device
 from app.schemas.admin import (
     ActivityEntryOut,
     AuditEntryOut,
     DeviceAssign,
     DeviceCreate,
     DeviceCreated,
+    DeviceDisconnect,
     DeviceOut,
     DoctorCreate,
     DoctorOut,
@@ -24,6 +27,19 @@ from app.schemas.common import PathId
 from app.services import audit, devices, doctors, stats
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
+
+
+def _audit_out(entry, user) -> AuditEntryOut:
+    return AuditEntryOut(
+        id=entry.id,
+        user_id=entry.user_id,
+        username=user.username if user else None,
+        role=user.role.value if user else None,
+        action=entry.action,
+        object_type=entry.object_type,
+        object_id=entry.object_id,
+        created_at=entry.created_at,
+    )
 
 
 # --- doctors ---
@@ -100,26 +116,68 @@ def reset_doctor_password(doctor_id: PathId, body: DoctorPasswordReset, db: DbSe
 
 
 @router.post("/devices", status_code=status.HTTP_201_CREATED)
-def create_device(body: DeviceCreate, db: DbSession, _: CurrentAdmin) -> DeviceCreated:
-    device, api_key = devices.create_device(db, name=body.name, serial=body.serial, doctor_id=body.doctor_id)
-    return DeviceCreated(**DeviceOut.model_validate(device).model_dump(), api_key=api_key)
+def create_device(body: DeviceCreate, db: DbSession, admin: CurrentAdmin) -> DeviceCreated:
+    device, api_key = devices.create_device(
+        db,
+        name=body.name,
+        serial=body.serial,
+        doctor_id=body.doctor_id,
+        model=body.model,
+        location=body.location,
+        admin=admin,
+    )
+    return DeviceCreated(**DeviceOut.build(device).model_dump(), api_key=api_key)
 
 
 @router.get("/devices")
 def list_devices(db: DbSession, _: CurrentAdmin) -> list[DeviceOut]:
-    return [DeviceOut.model_validate(device) for device in devices.list_devices(db)]
+    busy = devices.busy_ids(db)
+    return [DeviceOut.build(device, busy=device.id in busy) for device in devices.list_devices(db)]
+
+
+def _device_out(db: Session, device: Device) -> DeviceOut:
+    return DeviceOut.build(device, busy=device.id in devices.busy_ids(db))
+
+
+@router.get("/devices/{device_id}")
+def get_device(device_id: PathId, db: DbSession, _: CurrentAdmin) -> DeviceOut:
+    return _device_out(db, devices.get_device(db, device_id))
 
 
 @router.patch("/devices/{device_id}")
-def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, _: CurrentAdmin) -> DeviceOut:
-    return DeviceOut.model_validate(devices.assign_device(db, device_id, body.doctor_id))
+def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, admin: CurrentAdmin) -> DeviceOut:
+    return _device_out(db, devices.assign_device(db, admin, device_id, body.doctor_id))
 
 
 @router.post("/devices/{device_id}/rotate-key")
-def rotate_device_key(device_id: PathId, db: DbSession, _: CurrentAdmin) -> DeviceCreated:
+def rotate_device_key(device_id: PathId, db: DbSession, admin: CurrentAdmin) -> DeviceCreated:
     """Issue a new key (shown once). The old key stops working at once; put the new one into the firmware."""
-    device, api_key = devices.rotate_key(db, device_id)
-    return DeviceCreated(**DeviceOut.model_validate(device).model_dump(), api_key=api_key)
+    device, api_key = devices.rotate_key(db, admin, device_id)
+    return DeviceCreated(**DeviceOut.build(device).model_dump(), api_key=api_key)
+
+
+@router.post("/devices/{device_id}/disconnect")
+def disconnect_device(device_id: PathId, body: DeviceDisconnect, db: DbSession, admin: CurrentAdmin) -> DeviceOut:
+    """Block a device from the API. It keeps recording locally; doctors can no longer pick it."""
+    return _device_out(db, devices.disconnect(db, admin, device_id, body.reason))
+
+
+@router.post("/devices/{device_id}/reconnect")
+def reconnect_device(device_id: PathId, db: DbSession, admin: CurrentAdmin) -> DeviceOut:
+    return _device_out(db, devices.reconnect(db, admin, device_id))
+
+
+@router.post("/devices/{device_id}/self-test", status_code=status.HTTP_202_ACCEPTED)
+def self_test_device(device_id: PathId, db: DbSession, admin: CurrentAdmin) -> DeviceOut:
+    """Queue a self-test; the result arrives with the device's next poll and shows in the health checks."""
+    return _device_out(db, devices.request_self_test(db, admin, device_id))
+
+
+@router.get("/devices/{device_id}/activity")
+def device_activity(
+    device_id: PathId, db: DbSession, _: CurrentAdmin, limit: Annotated[int, Query(ge=1, le=100)] = 30
+) -> list[AuditEntryOut]:
+    return [_audit_out(entry, user) for entry, user in devices.activity(db, device_id, limit=limit)]
 
 
 # --- system ---
@@ -139,15 +197,5 @@ def list_audit(
     action: Annotated[str | None, Query(pattern=r"^[a-z_]+(\.[a-z_]+)*$", max_length=64)] = None,
 ) -> list[AuditEntryOut]:
     return [
-        AuditEntryOut(
-            id=entry.id,
-            user_id=entry.user_id,
-            username=user.username if user else None,
-            role=user.role.value if user else None,
-            action=entry.action,
-            object_type=entry.object_type,
-            object_id=entry.object_id,
-            created_at=entry.created_at,
-        )
-        for entry, user in audit.list_entries(db, limit=limit, offset=offset, action=action)
+        _audit_out(entry, user) for entry, user in audit.list_entries(db, limit=limit, offset=offset, action=action)
     ]

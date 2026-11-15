@@ -2,7 +2,7 @@
 // Pins follow docs/PLAN.md "Keyingi qadam: qurilma kodi" — confirm them against the real board before the first flash.
 #pragma once
 
-#define FIRMWARE_VERSION "0.1.0"
+#define FIRMWARE_VERSION "0.2.0"
 
 // ICS-43434 I2S microphone (L/R pin to GND = left slot).
 #define MIC_PIN_BCLK 4
@@ -22,6 +22,12 @@
 
 // The first part of every recording is thrown away: the mic needs time to settle after the clock starts.
 #define MIC_SETTLE_MS 300
+
+// Battery level in the heartbeat: define the ADC pin of a voltage divider on the battery to turn it on. Without
+// it the heartbeat has no battery value and the web app shows "no data" (the dev board has no fuel gauge).
+// #define BATTERY_ADC_PIN 1
+#define BATTERY_EMPTY_MV 3300  // battery voltage (after the divider is scaled back) that counts as 0 %
+#define BATTERY_FULL_MV 4150   // ... and as 100 %
 
 #define MAX_RECORD_SECONDS 30        // safety limit, whatever the server asks for
 #define HEARTBEAT_EVERY_MS 10000     // server: "online" = seen in the last 30 s

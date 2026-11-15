@@ -46,7 +46,12 @@ def upload(client, key, exam_id, data=None, meta=None):
 
 @pytest.mark.parametrize(
     ("method", "path"),
-    [("post", "/api/device/heartbeat"), ("get", "/api/device/command"), ("post", "/api/device/upload/1")],
+    [
+        ("post", "/api/device/heartbeat"),
+        ("get", "/api/device/command"),
+        ("post", "/api/device/upload/1"),
+        ("post", "/api/device/self-test"),
+    ],
 )
 def test_device_endpoints_need_a_valid_key(client, db, method, path):
     make_user(db, "dr.aziz", Role.DOCTOR)

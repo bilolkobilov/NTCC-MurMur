@@ -33,6 +33,8 @@ from pathlib import Path
 
 FIRMWARE_VERSION = "fake-0.1.0"
 FAKE_RSSI = -58
+FAKE_BATTERY = 82
+FAKE_NOISE_DB = 24
 
 
 class Device:
@@ -57,7 +59,18 @@ class Device:
                 return error.code, raw.decode(errors="replace")
 
     def heartbeat(self) -> int:
-        body = json.dumps({"firmware_version": FIRMWARE_VERSION, "wifi_rssi": FAKE_RSSI}).encode()
+        body = json.dumps(
+            {
+                "firmware_version": FIRMWARE_VERSION,
+                "wifi_rssi": FAKE_RSSI,
+                "battery_pct": FAKE_BATTERY,
+                "mic_noise_db": FAKE_NOISE_DB,
+                "wifi_ssid": "Fake-Clinic",
+                "ip": "10.0.0.50",
+                "mac": "02:00:00:00:00:01",
+                "gateway": "10.0.0.1",
+            }
+        ).encode()
         status, _ = self._request("POST", "/api/device/heartbeat", body, "application/json")
         return status
 
@@ -65,9 +78,17 @@ class Device:
         status, body = self._request("GET", "/api/device/command")
         if status == 204:
             return None
+        if status == 403:  # the administrator disconnected this device: wait to be reconnected
+            log("disconnected by the administrator (403), waiting")
+            return None
         if status != 200:
             raise RuntimeError(f"poll failed: {status} {body}")
         return body
+
+    def self_test(self) -> int:
+        body = json.dumps({"ok": True, "mic_noise_db": FAKE_NOISE_DB}).encode()
+        status, _ = self._request("POST", "/api/device/self-test", body, "application/json")
+        return status
 
     def upload(self, exam_id: int, wav_path: Path, motion: bool) -> tuple[int, object]:
         with wave.open(str(wav_path)) as wav:
@@ -136,6 +157,9 @@ def main() -> int:
             time.sleep(args.poll_seconds)
             continue
 
+        if command["command"] == "self_test":
+            log(f"command: self_test -> reported ok ({device.self_test()})")
+            continue
         exam_id, seconds = command["exam_id"], command["duration_s"]
         log(f"command: {command['command']} {seconds} s for exam {exam_id} (LED on)")
         time.sleep(0.5 if args.fast else seconds)

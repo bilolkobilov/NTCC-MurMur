@@ -5,7 +5,7 @@ import type { AuditEntry, Device, Doctor, DoctorProfile, Stats } from "../../api
 import { session } from "../../app/session";
 import { backend, bodyOf, ok, renderAt } from "../../test/utils";
 import { generatePassword } from "./doctorFields";
-import { signalWord } from "./DevicesPage";
+import { maskIp, maskMac, maskSerial, matchesQuery, matchesTab, signalWord, sortDevices } from "./deviceUi";
 
 const me = () => ok({ id: 1, username: "admin", role: "admin", full_name: "Admin" });
 const doctors: Doctor[] = [
@@ -29,14 +29,34 @@ const profileRoutes = () => ({
 });
 const device = (overrides: Partial<Device> = {}): Device => ({
   id: 1,
-  name: "MurMur #1",
-  serial: "MM-001",
+  code: "MM-0001",
+  name: "MM-0001",
+  serial: "SN-5516-0042",
+  model: "MurMur S2",
+  location: "Ward 2",
   doctor_id: 2,
+  doctor_name: "Aziz Karimov",
+  clinic: "Highlands Clinic",
   online: true,
   last_seen_at: new Date().toISOString(),
   wifi_rssi: -58,
   firmware_version: "0.3.1",
+  battery_pct: 72,
+  mic_noise_db: 24,
+  wifi_ssid: "Clinic-Wifi",
+  ip: "10.30.4.41",
+  mac: "AA:BB:CC:4E:2A:91",
+  gateway: "10.30.4.1",
+  disconnected_at: null,
+  disconnect_reason: null,
+  last_self_test_at: null,
+  last_self_test_ok: null,
   created_at: "2026-11-01T08:00:00Z",
+  state: "online",
+  health: "healthy",
+  checks: { connection: "pass", battery: "pass", signal: "pass", firmware: "nodata", microphone: "pass", self_test: "nodata" },
+  busy: false,
+  latest_firmware: null,
   ...overrides,
 });
 const stats: Stats = {
@@ -173,75 +193,208 @@ test("a suspended doctor offers Unblock instead of Block", async () => {
   await waitFor(() => expect(calls).toEqual(["unblock 3"]));
 });
 
-test("register a device: the key is shown once; then the list shows it live", async () => {
+const fleet = () => [
+  device(),
+  device({ id: 2, code: "MM-0002", serial: "SN-1000-0002", clinic: "Lakeside Center", doctor_name: "Nodira Usmonova", battery_pct: 12, health: "fault", checks: { ...device().checks, battery: "fail" } }),
+  device({ id: 3, code: "MM-0003", serial: "SN-1000-0003", clinic: null, doctor_id: null, doctor_name: null, online: false, last_seen_at: null, state: "pending", health: "pending", battery_pct: null }),
+];
+
+test("devices list: summary, status tabs, clinic filter, needs-attention first, and Details opens the device page", async () => {
+  backend({
+    "GET /api/auth/me": me,
+    "GET /api/admin/stats": () => ok(stats),
+    "GET /api/admin/doctors": () => ok(doctors),
+    "GET /api/admin/devices": () => ok(fleet()),
+    "GET /api/admin/devices/1": () => ok(device()),
+    "GET /api/admin/devices/1/activity": () => ok([]),
+  });
+  const router = renderAt("/admin/devices");
+  const user = userEvent.setup();
+
+  const table = await screen.findByRole("table", { name: "Devices" });
+  const rowNames = () => within(table).getAllByRole("row").slice(1).map((r) => within(r).getAllByRole("cell")[0]!.textContent);
+  expect(rowNames()[0]).toContain("MM-0002"); // the fault comes first
+  expect(screen.getByText("Showing 3 of 3 devices")).toBeInTheDocument();
+  expect(within(table).getByText("72%")).toBeInTheDocument();
+  expect(within(table).getByText("Awaiting first connection")).toBeInTheDocument();
+  expect(within(table).queryByText("SN-5516-0042")).not.toBeInTheDocument(); // the serial is masked here
+  expect(within(table).getAllByText("••••0042")).toHaveLength(1);
+
+  await user.click(screen.getByRole("tab", { name: /Pending/ }));
+  expect(router.state.location.search).toBe("?tab=pending");
+  expect(rowNames()).toHaveLength(1);
+  await user.click(screen.getByRole("tab", { name: /^All/ }));
+
+  await user.selectOptions(screen.getByLabelText("Clinic"), "Lakeside Center");
+  expect(rowNames()).toHaveLength(1);
+  await user.selectOptions(screen.getByLabelText("Clinic"), "All clinics (2)");
+  await user.type(screen.getByRole("searchbox", { name: "Search devices" }), "zzz");
+  expect(await screen.findByText("No devices match your filters")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Clear filters" }));
+
+  await user.click(await screen.findByRole("link", { name: "Details of MM-0001" }));
+  expect(router.state.location.pathname).toBe("/admin/devices/1");
+});
+
+test("devices list: no devices registered yet offers to register one", async () => {
+  backend({ "GET /api/auth/me": me, "GET /api/admin/stats": () => ok(stats), "GET /api/admin/devices": () => ok([]) });
+  renderAt("/admin/devices");
+
+  expect(await screen.findByText("No devices registered yet")).toBeInTheDocument();
+  expect(screen.getAllByRole("link", { name: "Register device" }).length).toBeGreaterThan(0);
+});
+
+test("register a device page: serial is required, the key is then shown once, and the form is wiped", async () => {
   let sent: unknown;
   backend({
     "GET /api/auth/me": me,
     "GET /api/admin/doctors": () => ok(doctors),
-    "GET /api/admin/devices": () => ok([device()]),
     "POST /api/admin/devices": (init) => {
       sent = bodyOf(init);
-      return { status: 201, body: { ...device({ id: 5, name: "MurMur #3", serial: "MM-003", online: false }), api_key: "k3y-once" } };
+      return { status: 201, body: { ...device({ id: 5, code: "MM-0005", online: false, state: "pending", health: "pending" }), api_key: "k3y-once" } };
     },
   });
-  renderAt("/admin/devices");
+  renderAt("/admin/devices/new");
   const user = userEvent.setup();
 
-  expect(await screen.findByText("MM-001")).toBeInTheDocument();
-  expect(screen.getByText(/Wi-Fi: strong/)).toBeInTheDocument();
-  await user.click(screen.getByRole("button", { name: "Register device" }));
-  const dialog = await screen.findByRole("dialog", { name: "Register device" });
-  await user.type(within(dialog).getByLabelText("Name"), "MurMur #3");
-  await user.type(within(dialog).getByLabelText("Serial number"), "MM-003");
-  await user.selectOptions(within(dialog).getByLabelText("Doctor"), "Aziz Karimov");
-  expect(within(dialog).getByRole("option", { name: "Olga Kim (Blocked)" })).toBeDisabled();
-  await user.click(within(dialog).getByRole("button", { name: "Register" }));
+  await user.click(await screen.findByRole("button", { name: "Register device" }));
+  expect(screen.getByText("Enter the serial number.")).toBeInTheDocument();
+  expect(screen.getByLabelText(/Serial number/)).toHaveFocus();
+  expect(sent).toBeUndefined();
 
-  const secret = await screen.findByRole("dialog", { name: "Device registered" });
-  expect(sent).toEqual({ name: "MurMur #3", serial: "MM-003", doctor_id: 2 });
-  expect(within(secret).getByDisplayValue("k3y-once")).toBeInTheDocument();
-  await user.keyboard("{Escape}"); // a one-time secret cannot be dismissed by accident
-  expect(screen.getByRole("dialog", { name: "Device registered" })).toBeInTheDocument();
+  await user.type(screen.getByLabelText(/Serial number/), "SN-5516-0042");
+  await user.selectOptions(screen.getByLabelText(/^Model/), "MurMur S3");
+  await user.type(screen.getByLabelText("Room or location"), "Ward 2");
+  await user.selectOptions(screen.getByLabelText("Assign to a doctor"), "Aziz Karimov · Highlands Clinic");
+  expect(screen.getByText("Clinic: Highlands Clinic")).toBeInTheDocument();
+  expect(screen.getByRole("option", { name: "Olga Kim (Blocked)" })).toBeDisabled();
+  await user.click(screen.getByRole("button", { name: "Register device" }));
+
+  expect(await screen.findByRole("heading", { name: "Pair the device" })).toBeInTheDocument();
+  expect(sent).toEqual({ serial: "SN-5516-0042", model: "MurMur S3", location: "Ward 2", doctor_id: 2 });
+  expect(screen.getByDisplayValue("k3y-once")).toBeInTheDocument();
+  expect(screen.getByText(/MM-0005 is registered/)).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Register another" }));
+  expect(screen.queryByDisplayValue("k3y-once")).not.toBeInTheDocument(); // gone for good
+  expect((screen.getByLabelText(/Serial number/) as HTMLInputElement).value).toBe("");
 });
 
-test("rotating a key warns that the old one stops at once", async () => {
-  let rotated = false;
+test("a taken serial number is explained, not a generic error", async () => {
   backend({
     "GET /api/auth/me": me,
     "GET /api/admin/doctors": () => ok(doctors),
-    "GET /api/admin/devices": () => ok([device()]),
-    "POST /api/admin/devices/1/rotate-key": () => {
-      rotated = true;
-      return ok({ ...device(), api_key: "n3w-key" });
-    },
+    "POST /api/admin/devices": () => ({ status: 409, body: { detail: "serial already exists" } }),
   });
-  renderAt("/admin/devices");
+  renderAt("/admin/devices/new");
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("button", { name: "New key" }));
-  const dialog = await screen.findByRole("dialog", { name: "New key for MurMur #1?" });
+  await user.type(await screen.findByLabelText(/Serial number/), "SN-1");
+  await user.click(screen.getByRole("button", { name: "Register device" }));
+
+  expect(await screen.findByText("A device with this serial number already exists.")).toBeInTheDocument();
+});
+
+const detailRoutes = (state: { device: Device }, calls: string[] = []) => ({
+  "GET /api/auth/me": me,
+  "GET /api/admin/doctors": () => ok(doctors),
+  "GET /api/admin/devices/1": () => ok(state.device),
+  "GET /api/admin/devices/1/activity": () =>
+    ok([{ id: 9, user_id: 1, username: "admin", role: "admin", action: "device.create", object_type: "device", object_id: 1, created_at: "2026-11-15T09:00:00Z" }]),
+  "PATCH /api/admin/devices/1": (init?: RequestInit) => {
+    calls.push(`assign ${JSON.stringify(bodyOf(init))}`);
+    return ok(state.device);
+  },
+  "POST /api/admin/devices/1/rotate-key": () => {
+    calls.push("rotate");
+    return ok({ ...state.device, api_key: "n3w-key" });
+  },
+  "POST /api/admin/devices/1/disconnect": (init?: RequestInit) => {
+    calls.push(`disconnect ${JSON.stringify(bodyOf(init))}`);
+    state.device = device({ state: "disconnected", disconnected_at: "2026-11-15T10:00:00Z", disconnect_reason: "lost" });
+    return ok(state.device);
+  },
+  "POST /api/admin/devices/1/reconnect": () => {
+    calls.push("reconnect");
+    state.device = device();
+    return ok(state.device);
+  },
+});
+
+test("device detail: network (partly masked), checks, the admin's activity, and the new-key warning", async () => {
+  const calls: string[] = [];
+  backend(detailRoutes({ device: device() }, calls));
+  renderAt("/admin/devices/1");
+  const user = userEvent.setup();
+
+  expect(await screen.findByRole("heading", { name: "MM-0001" })).toBeInTheDocument();
+  expect(screen.getByText("10.30.••.41")).toBeInTheDocument();
+  expect(screen.getByText("••:••:••:4E:2A:91")).toBeInTheDocument();
+  expect(screen.getByText("SN-5516-0042")).toBeInTheDocument(); // full serial on the detail page
+  expect(await screen.findByText("Registered a device")).toBeInTheDocument();
+  expect(screen.getByText("Noise floor 24 dB (limit 35 dB)")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "New key" }));
+  const dialog = await screen.findByRole("dialog", { name: "New key for MM-0001?" });
   expect(within(dialog).getByText(/stops working at once/)).toBeInTheDocument();
-  expect(rotated).toBe(false);
+  expect(calls).toEqual([]);
   await user.click(within(dialog).getByRole("button", { name: "Create new key" }));
   expect(await screen.findByDisplayValue("n3w-key")).toBeInTheDocument();
+  await user.keyboard("{Escape}"); // a one-time secret cannot be dismissed by accident
+  expect(screen.getByDisplayValue("n3w-key")).toBeInTheDocument();
 });
 
-test("reassigning a device sends the new doctor (or none)", async () => {
-  const sent: unknown[] = [];
-  backend({
-    "GET /api/auth/me": me,
-    "GET /api/admin/doctors": () => ok(doctors),
-    "GET /api/admin/devices": () => ok([device()]),
-    "PATCH /api/admin/devices/1": (init) => {
-      sent.push(bodyOf(init));
-      return ok(device({ doctor_id: null }));
-    },
-  });
-  renderAt("/admin/devices");
+test("device detail: reassigning sends the new doctor (or none)", async () => {
+  const calls: string[] = [];
+  backend(detailRoutes({ device: device() }, calls));
+  renderAt("/admin/devices/1");
   const user = userEvent.setup();
 
   await user.selectOptions(await screen.findByLabelText("Doctor"), "Not assigned");
-  await waitFor(() => expect(sent).toEqual([{ doctor_id: null }]));
+  await waitFor(() => expect(calls).toEqual(['assign {"doctor_id":null}']));
+});
+
+test("device detail: disconnecting needs a reason; reconnecting is one click", async () => {
+  const calls: string[] = [];
+  backend(detailRoutes({ device: device() }, calls));
+  renderAt("/admin/devices/1");
+  const user = userEvent.setup();
+
+  await user.click((await screen.findAllByRole("button", { name: "Disconnect from network" }))[0]!);
+  const group = await screen.findByRole("group", { name: "Disconnect MM-0001 from the network?" });
+  await user.click(within(group).getByRole("button", { name: "Disconnect MM-0001" }));
+  expect(within(group).getByText("Choose a reason. It is saved to the audit log.")).toBeInTheDocument();
+  expect(calls).toEqual([]);
+  await user.selectOptions(within(group).getByLabelText(/Reason/), "Device lost or stolen");
+  await user.click(within(group).getByRole("button", { name: "Disconnect MM-0001" }));
+
+  expect(await screen.findByText(/Reason: Device lost or stolen/)).toBeInTheDocument();
+  expect(screen.getByText("MM-0001 is blocked from the network.")).toBeInTheDocument();
+  expect(calls).toEqual(['disconnect {"reason":"lost"}']);
+  await user.click(screen.getByRole("button", { name: "Reconnect to network" }));
+  await waitFor(() => expect(calls).toEqual(['disconnect {"reason":"lost"}', "reconnect"]));
+});
+
+test("device detail: a device that is recording cannot be disconnected", async () => {
+  backend(detailRoutes({ device: device({ busy: true }) }));
+  renderAt("/admin/devices/1");
+
+  for (const button of await screen.findAllByRole("button", { name: "Disconnect from network" })) expect(button).toBeDisabled();
+  expect(screen.getByText("In use right now.")).toBeInTheDocument();
+});
+
+test("device list helpers: masks, search, tabs and the needs-attention order", () => {
+  expect(maskSerial("SN-5516-5503")).toBe("••••5503");
+  expect(maskIp("10.30.4.41")).toBe("10.30.••.41");
+  expect(maskMac("AA:BB:CC:4E:2A:91")).toBe("••:••:••:4E:2A:91");
+  const [a, b, c] = fleet() as [Device, Device, Device];
+  expect(sortDevices([a, c, b], "attention").map((d) => d.code)).toEqual(["MM-0002", "MM-0003", "MM-0001"]);
+  expect(sortDevices([c, a, b], "id").map((d) => d.code)).toEqual(["MM-0001", "MM-0002", "MM-0003"]);
+  expect(matchesQuery(a, "ward")).toBe(true);
+  expect(matchesQuery(a, "s3")).toBe(false);
+  expect(matchesTab(b, "fault")).toBe(true);
+  expect(matchesTab(b, "attention")).toBe(false);
+  expect(matchesTab(c, "pending")).toBe(true);
 });
 
 test("audit log: pages of 50 and the filter live in the URL", async () => {

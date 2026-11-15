@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, PageHeader, SkeletonRows } from "../../componen
 import { formatDateTime } from "../../lib/format";
 
 /** Filter groups = action prefixes the backend understands (`?action=patient` → patient.read, patient.update, …). */
-const GROUPS = ["patient", "exam", "me"] as const;
+const GROUPS = ["patient", "exam", "me", "device"] as const;
 
 /**
  * Audit log: who read or changed patient data, when, and which record — ids only, never names or results.

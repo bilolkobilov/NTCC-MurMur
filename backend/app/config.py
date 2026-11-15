@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     recordings_dir: Path = Path("storage/recordings")
     frontend_dist: Path = Path("frontend/dist")  # built web app; served at / when it exists
     max_upload_mb: int = 10
+    latest_firmware: str | None = None  # newest device firmware; older devices show "update available"
     min_recording_seconds: int = 10  # shorter recordings are rejected as "re-record"
     # Which analyzer runs after upload. "cardiophon" needs `uv sync --group ai` + model files (docs/runbook.md);
     # if they are missing the server logs it and uses "dummy" (no AI opinion).

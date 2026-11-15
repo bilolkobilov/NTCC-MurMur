@@ -45,6 +45,31 @@ static inline int16_t toPcm16(int32_t sample) {
 }
 
 /**
+ * Microphone noise floor in dB re 1 LSB of the 16-bit WAV (20*log10 of the RMS over ~0.5 s of silence, after the
+ * gain). It is NOT calibrated to sound pressure; the admin page compares it with a fixed limit (35 dB) to spot a
+ * dead or noisy microphone. Returns -1 when the microphone gives no data.
+ */
+inline int micNoiseDb() {
+  int32_t chunk[512];
+  const uint32_t settleEnd = millis() + MIC_SETTLE_MS;
+  while ((int32_t)(millis() - settleEnd) < 0) mic.readBytes((char*)chunk, sizeof(chunk));
+  const uint32_t end = millis() + 500;
+  double sumSquares = 0;
+  uint32_t count = 0;
+  while ((int32_t)(millis() - end) < 0) {
+    const size_t got = mic.readBytes((char*)chunk, sizeof(chunk)) / sizeof(int32_t);
+    for (size_t i = 0; i < got; i++) {
+      const double v = toPcm16(chunk[i]);
+      sumSquares += v * v;
+      count++;
+    }
+  }
+  if (count == 0) return -1;
+  const double rms = sqrt(sumSquares / count);
+  return (int)(20.0 * log10(rms < 1.0 ? 1.0 : rms) + 0.5);
+}
+
+/**
  * Record `seconds` into `out` (wavSize(seconds) bytes): WAV header + samples. Every DECIMATE input samples are
  * averaged into one output sample (a simple low-pass before dropping to WAV_SAMPLE_RATE).
  * Returns the number of bytes written, or 0 when the microphone stopped delivering data.

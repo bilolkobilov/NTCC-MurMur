@@ -12,17 +12,37 @@ from app.services import exam_flow, storage
 from app.services.errors import BadRequest, Conflict, NotFound
 
 
-def heartbeat(db: Session, device: Device, firmware_version: str | None, wifi_rssi: int | None) -> None:
+def heartbeat(db: Session, device: Device, **reported: object) -> None:
+    """Store what the device reported (only the values it sent: a device that lacks a sensor omits it)."""
     device.last_seen_at = datetime.now(UTC)
-    if firmware_version is not None:
-        device.firmware_version = firmware_version
-    if wifi_rssi is not None:
-        device.wifi_rssi = wifi_rssi
+    for field, value in reported.items():
+        if value is not None:
+            setattr(device, field, value)
+    db.commit()
+
+
+def report_self_test(db: Session, device: Device, ok: bool, mic_noise_db: int | None) -> None:
+    """The device's answer to a self_test command: store it and close the command."""
+    device.last_seen_at = datetime.now(UTC)
+    device.last_self_test_at = datetime.now(UTC)
+    device.last_self_test_ok = ok
+    if mic_noise_db is not None:
+        device.mic_noise_db = mic_noise_db
+    for command in db.scalars(
+        select(DeviceCommand).where(
+            DeviceCommand.device_id == device.id,
+            DeviceCommand.command == "self_test",
+            DeviceCommand.status == CommandStatus.TAKEN,
+        )
+    ):
+        command.status = CommandStatus.DONE
+        command.done_at = datetime.now(UTC)
     db.commit()
 
 
 def take_next_command(db: Session, device: Device) -> DeviceCommand | None:
-    """Oldest pending command for this device; marks it taken and moves its exam to 'recording'.
+    """Oldest pending command for this device; marks it taken and moves its exam to 'recording'
+    (a self_test has no exam).
 
     Lock order is always EXAM, then its COMMAND — the same order as upload, cancel and patient delete — so these
     can never deadlock each other. After the exam lock is held the command is re-read: a parallel poll may have
@@ -41,7 +61,11 @@ def take_next_command(db: Session, device: Device) -> DeviceCommand | None:
         if candidate is None:
             db.commit()
             return None
-        exam = db.get(Exam, candidate.exam_id, with_for_update=True, populate_existing=True)
+        exam = (
+            None
+            if candidate.exam_id is None
+            else db.get(Exam, candidate.exam_id, with_for_update=True, populate_existing=True)
+        )
         command = db.scalar(
             select(DeviceCommand)
             .where(DeviceCommand.id == candidate.id, DeviceCommand.status == CommandStatus.PENDING)
@@ -52,6 +76,9 @@ def take_next_command(db: Session, device: Device) -> DeviceCommand | None:
             continue
         command.status = CommandStatus.TAKEN
         command.taken_at = datetime.now(UTC)
+        if candidate.exam_id is None:  # self_test: no exam; it is closed when the device reports (report_self_test)
+            db.commit()
+            return command
         if exam is not None and exam.status == ExamStatus.WAITING:
             exam_flow.mark_recording(exam)
             db.commit()
