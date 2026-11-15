@@ -1,16 +1,19 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { backend, type Handler, renderAt } from "../test/utils";
+import { backend, bodyOf, type Handler, renderAt } from "../test/utils";
 import { App } from "./App";
 import { safeNext } from "./guards";
 import { session } from "./session";
 
-const doctorMe: Handler = () => ({ status: 200, body: { id: 1, username: "dr", role: "doctor", full_name: "Dr Aziz" } });
+const doctorMe: Handler = () => ({
+  status: 200,
+  body: { id: 1, username: "dr", role: "doctor" },
+});
 
 async function fillLogin(username: string, password: string) {
   const user = userEvent.setup();
-  await user.type(screen.getByLabelText("Username"), username);
+  await user.type(screen.getByLabelText("Doctor username"), username);
   await user.type(screen.getByLabelText("Password"), password);
   return user;
 }
@@ -25,60 +28,106 @@ test("a protected page sends you to login, and back to that page afterwards", as
   backend({
     "POST /api/auth/login": () => ({
       status: 200,
-      body: { access_token: "t1", token_type: "bearer", role: "doctor", must_change_password: false },
+      body: {
+        access_token: "t1",
+        token_type: "bearer",
+        role: "doctor",
+        must_change_password: false,
+      },
     }),
     "GET /api/auth/me": doctorMe,
     "GET /api/patients": () => ({ status: 200, body: [] }),
   });
   renderAt("/doctor/patients");
 
-  expect(await screen.findByRole("heading", { name: "Log in" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { name: "Sign in" }),
+  ).toBeInTheDocument();
   const user = await fillLogin("dr", "secret-pass");
-  await user.click(screen.getByRole("button", { name: "Log in" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("heading", { level: 1, name: "Patients" })).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Patients" })).toHaveAttribute("aria-current", "page");
-  expect(session.get()).toEqual({ token: "t1", role: "doctor", mustChangePassword: false });
+  expect(
+    await screen.findByRole("heading", { level: 1, name: "Patients" }),
+  ).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Patients" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(session.get()).toEqual({
+    token: "t1",
+    role: "doctor",
+    mustChangePassword: false,
+  });
 });
 
 test("a one-time password forces a new password before anything else", async () => {
   backend({
     "POST /api/auth/login": () => ({
       status: 200,
-      body: { access_token: "temp", token_type: "bearer", role: "patient", must_change_password: true },
+      body: {
+        access_token: "temp",
+        token_type: "bearer",
+        role: "patient",
+        must_change_password: true,
+      },
     }),
     "POST /api/auth/change-password": () => ({
       status: 200,
-      body: { access_token: "fresh", token_type: "bearer", role: "patient", must_change_password: false },
+      body: {
+        access_token: "fresh",
+        token_type: "bearer",
+        role: "patient",
+        must_change_password: false,
+      },
     }),
-    "GET /api/auth/me": () => ({ status: 200, body: { id: 2, username: "ali", role: "patient", full_name: "Ali" } }),
+    "GET /api/auth/me": () => ({
+      status: 200,
+      body: { id: 2, username: "ali", role: "patient" },
+    }),
   });
   renderAt("/login");
   const user = await fillLogin("ali", "temp-pass");
-  await user.click(screen.getByRole("button", { name: "Log in" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("heading", { name: "Choose your own password" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { name: "Choose your own password" }),
+  ).toBeInTheDocument();
   await user.type(screen.getByLabelText("One-time password"), "temp-pass");
   await user.type(screen.getByLabelText("New password"), "my-own-pass");
   await user.type(screen.getByLabelText("Repeat new password"), "my-own-typo");
   await user.click(screen.getByRole("button", { name: "Save password" }));
-  expect(screen.getByText("The two new passwords are different.")).toBeInTheDocument();
+  expect(
+    screen.getByText("The two new passwords are different."),
+  ).toBeInTheDocument();
 
   await user.clear(screen.getByLabelText("Repeat new password"));
   await user.type(screen.getByLabelText("Repeat new password"), "my-own-pass");
   await user.click(screen.getByRole("button", { name: "Save password" }));
 
-  expect(await screen.findByRole("link", { name: "Your results" })).toBeInTheDocument();
-  expect(session.get()).toEqual({ token: "fresh", role: "patient", mustChangePassword: false });
+  expect(
+    await screen.findByRole("link", { name: "Your results" }),
+  ).toBeInTheDocument();
+  expect(session.get()).toEqual({
+    token: "fresh",
+    role: "patient",
+    mustChangePassword: false,
+  });
 });
 
 test("a wrong password shows a plain message and keeps you on the login page", async () => {
-  backend({ "POST /api/auth/login": () => ({ status: 401, body: { detail: "wrong username or password" } }) });
+  backend({
+    "POST /api/auth/login": () => ({
+      status: 401,
+      body: { detail: "wrong username or password" },
+    }),
+  });
   renderAt("/login");
   const user = await fillLogin("dr", "nope-nope");
-  await user.click(screen.getByRole("button", { name: "Log in" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("alert")).toHaveTextContent("Wrong username or password.");
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Wrong username or password.",
+  );
   expect(session.get()).toBeNull();
 });
 
@@ -87,18 +136,24 @@ test("double-clicking log in sends one request", async () => {
   const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(
     () =>
       new Promise((resolve) => {
-        release = () => resolve(new Response(JSON.stringify({ detail: "wrong username or password" }), { status: 401 }));
+        release = () =>
+          resolve(
+            new Response(
+              JSON.stringify({ detail: "wrong username or password" }),
+              { status: 401 },
+            ),
+          );
       }),
   );
   renderAt("/login");
   const user = await fillLogin("dr", "secret-pass");
-  const button = screen.getByRole("button", { name: "Log in" });
+  const button = screen.getByRole("button", { name: "Sign in" });
 
   await user.dblClick(button);
   await user.click(button);
 
   expect(fetchMock).toHaveBeenCalledTimes(1);
-  expect(screen.getByRole("button", { name: "Logging in…" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Verifying…" })).toBeDisabled();
   release();
   expect(await screen.findByRole("alert")).toBeInTheDocument();
 });
@@ -108,15 +163,30 @@ test("another role's page says so instead of showing a blank screen", async () =
   session.start({ token: "t", role: "doctor", mustChangePassword: false });
   renderAt("/admin/doctors");
 
-  expect(await screen.findByRole("heading", { name: "Not available for your account" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", {
+      name: "Not available for your account",
+    }),
+  ).toBeInTheDocument();
 });
 
 test("an expired session returns you to login with an explanation", async () => {
-  backend({ "GET /api/auth/me": () => ({ status: 401, body: { detail: "invalid or expired token" } }) });
-  session.start({ token: "expired", role: "doctor", mustChangePassword: false });
+  backend({
+    "GET /api/auth/me": () => ({
+      status: 401,
+      body: { detail: "invalid or expired token" },
+    }),
+  });
+  session.start({
+    token: "expired",
+    role: "doctor",
+    mustChangePassword: false,
+  });
   renderAt("/doctor");
 
-  expect(await screen.findByText("Your session ended. Log in again to continue.")).toBeInTheDocument();
+  expect(
+    await screen.findByText("Your session ended. Sign in again to continue."),
+  ).toBeInTheDocument();
   expect(session.get()).toBeNull();
 });
 
@@ -130,7 +200,9 @@ test("log out from the account menu", async () => {
   await user.click(await screen.findByRole("button", { name: "Account" }));
   await user.click(await screen.findByRole("menuitem", { name: "Log out" }));
 
-  await waitFor(() => expect(screen.getByText("You logged out.")).toBeInTheDocument());
+  await waitFor(() =>
+    expect(screen.getByText("You signed out.")).toBeInTheDocument(),
+  );
   expect(session.get()).toBeNull();
 });
 
@@ -146,16 +218,26 @@ test("?next= from another role's area is ignored after login", async () => {
   backend({
     "POST /api/auth/login": () => ({
       status: 200,
-      body: { access_token: "t", token_type: "bearer", role: "doctor", must_change_password: false },
+      body: {
+        access_token: "t",
+        token_type: "bearer",
+        role: "doctor",
+        must_change_password: false,
+      },
     }),
     "GET /api/auth/me": doctorMe,
   });
   renderAt("/login?next=%2Fpatient");
   const user = await fillLogin("dr", "secret-pass");
-  await user.click(screen.getByRole("button", { name: "Log in" }));
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("link", { name: "Home" })).toHaveAttribute("aria-current", "page");
-  expect(screen.queryByText("Not available for your account")).not.toBeInTheDocument();
+  expect(await screen.findByRole("link", { name: "Home" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  expect(
+    screen.queryByText("Not available for your account"),
+  ).not.toBeInTheDocument();
 });
 
 test("empty fields: errors appear next to them and focus moves to the first one; nothing is sent", async () => {
@@ -163,12 +245,15 @@ test("empty fields: errors appear next to them and focus moves to the first one;
   renderAt("/login");
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("button", { name: "Log in" }));
+  await user.click(await screen.findByRole("button", { name: "Sign in" }));
 
   expect(screen.getByText("Enter your username.")).toBeInTheDocument();
   expect(screen.getByText("Enter your password.")).toBeInTheDocument();
-  expect(screen.getByLabelText("Username")).toHaveFocus();
-  expect(screen.getByLabelText("Username")).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByLabelText("Doctor username")).toHaveFocus();
+  expect(screen.getByLabelText("Doctor username")).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
   expect(fetchMock).not.toHaveBeenCalled();
 });
 
@@ -180,7 +265,9 @@ test("the skip link jumps to the main content", async () => {
   const skip = await screen.findByRole("link", { name: "Skip to content" });
   expect(skip).toHaveAttribute("href", "#main");
   expect(document.getElementById("main")).toBeInTheDocument();
-  expect(screen.getByRole("navigation", { name: "Main navigation" })).toBeInTheDocument();
+  expect(
+    screen.getByRole("navigation", { name: "Main navigation" }),
+  ).toBeInTheDocument();
 });
 
 test("language menu: flag + own name, choice applies at once and is remembered", async () => {
@@ -188,14 +275,125 @@ test("language menu: flag + own name, choice applies at once and is remembered",
   renderAt("/login");
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("button", { name: "Language: English" }));
+  await user.click(
+    await screen.findByRole("button", { name: "Language: English" }),
+  );
   const russian = await screen.findByRole("menuitemradio", { name: "Русский" });
-  expect(screen.getByRole("menuitemradio", { name: "English" })).toHaveAttribute("aria-checked", "true");
+  expect(
+    screen.getByRole("menuitemradio", { name: "English" }),
+  ).toHaveAttribute("aria-checked", "true");
   await user.click(russian);
 
-  expect(await screen.findByRole("heading", { name: "Вход" })).toBeInTheDocument();
+  expect(
+    await screen.findByRole("heading", { name: "Вход" }),
+  ).toBeInTheDocument();
   expect(document.documentElement.lang).toBe("ru");
   expect(localStorage.getItem("murmur.lang")).toBe("ru");
   await i18n.changeLanguage("en"); // leave other tests in English
   localStorage.removeItem("murmur.lang");
+});
+
+test("a failed sign-in says how many attempts are left", async () => {
+  backend({
+    "POST /api/auth/login": () => ({
+      status: 401,
+      body: { detail: "wrong username or password" },
+      headers: { "X-Attempts-Left": "2" },
+    }),
+  });
+  renderAt("/login");
+  const user = await fillLogin("dr", "nope-nope");
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+  const alert = await screen.findByRole("alert");
+  expect(alert).toHaveTextContent("We couldn't sign you in");
+  expect(alert).toHaveTextContent("You have 2 attempts left");
+});
+
+test("the chosen role card is sent with the login, and its labels follow the choice", async () => {
+  const sent: unknown[] = [];
+  backend({
+    "POST /api/auth/login": (init) => {
+      sent.push(bodyOf(init));
+      return { status: 401, body: { detail: "wrong username or password" } };
+    },
+  });
+  renderAt("/login");
+  const user = userEvent.setup();
+
+  expect(
+    screen.queryByRole("radio", { name: "Administrator" }),
+  ).not.toBeInTheDocument();
+  await user.click(await screen.findByRole("radio", { name: "Patient" }));
+  expect(screen.getByLabelText("Patient username")).toBeInTheDocument();
+  await user.type(screen.getByLabelText("Patient username"), "ali");
+  await user.type(screen.getByLabelText("Password"), "secret-pass");
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+  await screen.findByRole("alert");
+  expect(sent).toEqual([
+    { username: "ali", password: "secret-pass", role: "patient" },
+  ]);
+});
+
+test("show password toggles the field; there is no remember checkbox or forgot link", async () => {
+  backend({
+    "POST /api/auth/login": () => ({
+      status: 200,
+      body: {
+        access_token: "t",
+        token_type: "bearer",
+        role: "doctor",
+        must_change_password: false,
+      },
+    }),
+  });
+  renderAt("/login");
+  const user = await fillLogin("dr", "secret-pass");
+
+  await user.click(screen.getByRole("button", { name: "Show password" }));
+  expect(screen.getByLabelText("Password")).toHaveAttribute("type", "text");
+  await user.click(screen.getByRole("button", { name: "Hide password" }));
+  expect(screen.getByLabelText("Password")).toHaveAttribute("type", "password");
+  expect(screen.queryByText("Forgot password?")).not.toBeInTheDocument();
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+});
+
+test("administrators sign in on /login/admin through their own endpoint", async () => {
+  const sent: string[] = [];
+  backend({
+    "POST /api/auth/admin/login": (init) => {
+      sent.push(String(init?.body));
+      return {
+        status: 200,
+        body: {
+          access_token: "a",
+          token_type: "bearer",
+          role: "admin",
+          must_change_password: false,
+        },
+      };
+    },
+  });
+  renderAt("/login/admin");
+  const user = userEvent.setup();
+
+  expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+  await user.type(
+    await screen.findByLabelText("Administrator username"),
+    "boss",
+  );
+  await user.type(screen.getByLabelText("Password"), "secret-pass");
+  await user.click(screen.getByRole("button", { name: "Sign in" }));
+
+  await waitFor(() =>
+    expect(session.get()).toEqual({
+      token: "a",
+      role: "admin",
+      mustChangePassword: false,
+    }),
+  );
+  expect(sent).toEqual([
+    JSON.stringify({ username: "boss", password: "secret-pass" }),
+  ]);
 });

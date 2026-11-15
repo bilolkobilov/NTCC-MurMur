@@ -308,7 +308,7 @@ DOCTOR_ENDPOINTS = [
 @pytest.mark.parametrize("role", [Role.ADMIN, Role.PATIENT])
 def test_only_doctors_can_use_doctor_endpoints(client, db, method, path, role):
     make_user(db, "someone", role)
-    headers = login(client, "someone")
+    headers = login(client, "someone", admin=role == Role.ADMIN)
 
     assert client.request(method, path, headers=headers, json={}).status_code == 403
     assert client.request(method, path, json={}).status_code == 401

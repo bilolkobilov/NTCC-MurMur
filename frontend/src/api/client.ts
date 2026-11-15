@@ -11,13 +11,16 @@ export class ApiError extends Error {
   readonly status: number; // 0 = no connection
   readonly detail: string;
   readonly retryAfterSeconds?: number;
+  /** Wrong-password tries left before the login is paused (`X-Attempts-Left` on a failed login). */
+  readonly attemptsLeft?: number;
 
-  constructor(status: number, detail: string, retryAfterSeconds?: number) {
+  constructor(status: number, detail: string, retryAfterSeconds?: number, attemptsLeft?: number) {
     super(`${status} ${detail}`);
     this.name = "ApiError";
     this.status = status;
     this.detail = detail;
     this.retryAfterSeconds = retryAfterSeconds;
+    this.attemptsLeft = attemptsLeft;
   }
 }
 
@@ -57,7 +60,8 @@ async function send(path: string, options: Options, accept: string): Promise<Res
 
   if (response.status === 401 && token) session.end("expired");
   if (response.status === 403 && detail === "password change required") session.requirePasswordChange();
-  throw new ApiError(response.status, detail, retryAfter);
+  const left = response.headers.get("X-Attempts-Left");
+  throw new ApiError(response.status, detail, retryAfter, left === null ? undefined : Number(left));
 }
 
 export async function api<T>(path: string, options: Options = {}): Promise<T> {

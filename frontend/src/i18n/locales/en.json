@@ -31,14 +31,31 @@
     "patient": "Patient"
   },
   "login": {
-    "title": "Log in",
+    "title": "Sign in",
     "username": "Username",
+    "sub": {
+      "doctor": "Acoustic cardiac decision support",
+      "admin": "Fleet and system administration",
+      "patient": "Your reviewed results"
+    },
+    "roleLabel": "Sign in as",
+    "identity": {
+      "doctor": "Doctor username",
+      "admin": "Administrator username",
+      "patient": "Patient username"
+    },
     "password": "Password",
-    "submit": "Log in",
-    "submitting": "Logging in…",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submit": "Sign in",
+    "submitting": "Verifying…",
+    "verifying": "Checking your credentials.",
+    "failedTitle": "We couldn't sign you in",
+    "failedBody_one": "The username or password is incorrect. You have {{count}} attempt left before sign-in is paused for a while.",
+    "failedBody_other": "The username or password is incorrect. You have {{count}} attempts left before sign-in is paused for a while.",
     "noSignup": "Accounts are created by your administrator or doctor.",
-    "sessionEnded": "Your session ended. Log in again to continue.",
-    "loggedOut": "You logged out.",
+    "sessionEnded": "Your session ended. Sign in again to continue.",
+    "loggedOut": "You signed out.",
     "usernameRequired": "Enter your username.",
     "passwordRequired": "Enter your password."
   },

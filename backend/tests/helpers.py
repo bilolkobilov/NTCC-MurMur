@@ -37,9 +37,11 @@ def make_user(
     return user
 
 
-def login(client, username: str, password: str = DEFAULT_PASSWORD) -> dict[str, str]:
-    """Log in and return the Authorization header."""
-    response = client.post("/api/auth/login", json={"username": username, "password": password})
+def login(client, username: str, password: str = DEFAULT_PASSWORD, admin: bool | None = None) -> dict[str, str]:
+    """Log in, return the Authorization header. Admins use their own endpoint (default: a name starting `admin`)."""
+    is_admin = username.startswith("admin") if admin is None else admin
+    path = "/api/auth/admin/login" if is_admin else "/api/auth/login"
+    response = client.post(path, json={"username": username, "password": password})
     assert response.status_code == 200, response.text
     return {"Authorization": f"Bearer {response.json()['access_token']}"}
 

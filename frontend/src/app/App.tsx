@@ -49,6 +49,7 @@ export function createQueryClient(): QueryClient {
 export const routes: RouteObject[] = [
   { path: "/", element: <HomeRedirect /> },
   { path: "/login", element: <LoginPage /> },
+  { path: "/login/admin", element: <LoginPage admin /> },
   {
     path: "/change-password",
     element: (

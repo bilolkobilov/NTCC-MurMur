@@ -45,7 +45,7 @@ def test_create_admin_fails_without_password(admin_env, db, monkeypatch):
 def test_admin_created_by_cli_can_log_in(admin_env, client):
     cli.main(["create-admin"])
 
-    response = client.post("/api/auth/login", json={"username": "root.admin", "password": "first-admin-pass"})
+    response = client.post("/api/auth/admin/login", json={"username": "root.admin", "password": "first-admin-pass"})
 
     assert response.status_code == 200
     assert response.json()["role"] == "admin"
