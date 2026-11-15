@@ -236,6 +236,11 @@ ADMIN_ENDPOINTS = [
     ("get", "/api/admin/audit"),
     ("post", "/api/admin/doctors/1/password"),
     ("post", "/api/admin/devices/1/rotate-key"),
+    ("get", "/api/admin/devices/1"),
+    ("post", "/api/admin/devices/1/disconnect"),
+    ("post", "/api/admin/devices/1/reconnect"),
+    ("post", "/api/admin/devices/1/self-test"),
+    ("get", "/api/admin/devices/1/activity"),
 ]
 
 

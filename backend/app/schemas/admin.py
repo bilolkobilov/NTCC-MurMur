@@ -118,9 +118,16 @@ class ActivityEntryOut(BaseModel):
     created_at: datetime
 
 
+DisconnectReason = Literal["maintenance", "lost", "security", "retired"]
+
+
 class DeviceCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
+    """`name` is optional: without it the device is called by its code (MM-0007)."""
+
+    name: str | None = Field(default=None, max_length=100)
     serial: str = Field(min_length=1, max_length=64)
+    model: Literal["MurMur S2", "MurMur S3"] = "MurMur S2"
+    location: str | None = Field(default=None, max_length=100)
     doctor_id: RefId | None = None
 
 
@@ -128,18 +135,55 @@ class DeviceAssign(BaseModel):
     doctor_id: RefId | None
 
 
+class DeviceDisconnect(BaseModel):
+    reason: DisconnectReason
+
+
 class DeviceOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    code: str
     name: str
     serial: str
+    model: str
+    location: str | None
     doctor_id: int | None
+    doctor_name: str | None
+    clinic: str | None
     online: bool
     last_seen_at: datetime | None
     wifi_rssi: int | None
     firmware_version: str | None
+    battery_pct: int | None
+    mic_noise_db: int | None
+    wifi_ssid: str | None
+    ip: str | None
+    mac: str | None
+    gateway: str | None
+    disconnected_at: datetime | None
+    disconnect_reason: str | None
+    last_self_test_at: datetime | None
+    last_self_test_ok: bool | None
     created_at: datetime
+    # Derived (services/device_health.py); `build` fills them.
+    state: Literal["pending", "online", "offline", "disconnected"] = "pending"
+    health: Literal["pending", "healthy", "attention", "degraded", "fault"] = "pending"
+    checks: dict[str, str] = {}
+    busy: bool = Field(default=False, description="An exam is being recorded on it right now")
+    latest_firmware: str | None = None
+
+    @classmethod
+    def build(cls, device, *, busy: bool = False) -> DeviceOut:
+        from app.services import device_health
+
+        out = cls.model_validate(device)
+        out.state = device_health.state(device)
+        out.health = device_health.health(device)
+        out.checks = device_health.checks(device)
+        out.busy = busy
+        out.latest_firmware = device_health.latest_firmware()
+        return out
 
 
 class DeviceCreated(DeviceOut):

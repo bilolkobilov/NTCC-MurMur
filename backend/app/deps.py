@@ -65,6 +65,8 @@ def get_current_device(db: DbSession, x_device_key: Annotated[str | None, Header
     device = db.scalar(select(Device).where(Device.api_key_hash == hash_api_key(x_device_key)))
     if device is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "invalid device key")
+    if device.disconnected_at is not None:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "device is disconnected by the administrator")
     return device
 
 

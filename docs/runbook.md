@@ -106,6 +106,10 @@ Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. N
 4. Flash: add `--upload -p COM<n>` (the board's USB port); serial log: `arduino-cli monitor -p COM<n> -c baudrate=115200`.
 5. First real check: the device shows *Online* in Admin → Devices; then a doctor starts an exam. Tune `MIC_GAIN_SHIFT`
    in `config.h` if the server answers "almost silent" (raise gain: smaller number) or "clipped" (bigger number).
+6. Admin → Devices shows what the heartbeat reports: Wi-Fi, network (IP / MAC partly hidden), microphone noise floor
+   (measured at boot and on "Run self-test"), battery (only when `BATTERY_ADC_PIN` is set in `config.h`; the dev board has
+   no fuel gauge). Set `LATEST_FIRMWARE` in `.env` to the `FIRMWARE_VERSION` of the newest build so older devices show
+   "update available". A device the admin disconnected gets 403 and keeps polling; it works again after "Reconnect".
 
 ## Database migrations
 

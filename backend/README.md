@@ -68,10 +68,10 @@ tests/
 | Prefix | Who | What |
 | --- | --- | --- |
 | `/api/auth/*` | everyone | login, change password, `me` |
-| `/api/admin/*` | admin | doctors, devices (+ one-time key), stats, audit log |
+| `/api/admin/*` | admin | doctors, devices (+ one-time key, health, disconnect, self-test), stats, audit log |
 | `/api/patients/*`, `/api/exams/*`, `/api/devices` | doctor | own patients, exams, own devices |
 | `/api/me`, `/api/me/exams` | patient | own profile, reviewed exams |
-| `/api/device/*` | device (`X-Device-Key`) | heartbeat, command poll (204 = nothing), WAV upload |
+| `/api/device/*` | device (`X-Device-Key`) | heartbeat, command poll (204 = nothing), self-test result, WAV upload (403 once the admin disconnected the device) |
 
 ### Device round trip
 

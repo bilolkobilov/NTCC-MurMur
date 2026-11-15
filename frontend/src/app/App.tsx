@@ -35,6 +35,10 @@ const DoctorProfilePage = lazy(() =>
   import("../features/admin/DoctorProfilePage").then((m) => ({ default: m.DoctorProfilePage })),
 );
 const MyProfilePage = lazy(() => import("../features/profile/MyProfilePage").then((m) => ({ default: m.MyProfilePage })));
+const DeviceFormPage = lazy(() => import("../features/admin/DeviceFormPage").then((m) => ({ default: m.DeviceFormPage })));
+const DeviceDetailPage = lazy(() =>
+  import("../features/admin/DeviceDetailPage").then((m) => ({ default: m.DeviceDetailPage })),
+);
 const DevicesPage = lazy(() => import("../features/admin/DevicesPage").then((m) => ({ default: m.DevicesPage })));
 const AuditPage = lazy(() => import("../features/admin/AuditPage").then((m) => ({ default: m.AuditPage })));
 const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
@@ -98,6 +102,8 @@ export const routes: RouteObject[] = [
       { path: "doctors/new", element: <DoctorFormPage /> },
       { path: "doctors/:doctorId", element: <DoctorProfilePage /> },
       { path: "devices", element: <DevicesPage /> },
+      { path: "devices/new", element: <DeviceFormPage /> },
+      { path: "devices/:deviceId", element: <DeviceDetailPage /> },
       { path: "audit", element: <AuditPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],

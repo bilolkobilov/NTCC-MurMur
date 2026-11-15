@@ -62,6 +62,7 @@ export function AdminShell() {
               <Icon name={item.icon} />
               <span style={{ flex: 1 }}>{t(item.key)}</span>
               {item.to === "/admin/doctors" && stats.data && <CountBadge value={stats.data.doctors_total} />}
+              {item.to === "/admin/devices" && stats.data && <CountBadge value={stats.data.devices_total} />}
             </NavLink>
           ))}
         </nav>

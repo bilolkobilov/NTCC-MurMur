@@ -37,7 +37,7 @@ src/
   main.tsx, app/        entry, router (role pages lazy-loaded), session (token in sessionStorage), route guards
   api/                  client.ts is the only door to the server; auth.ts, doctor.ts, admin.ts, patient.ts
   features/
-    admin/              counts, doctors, devices (key shown once), audit
+    admin/              counts, doctors, devices (fleet list, register, detail), audit
     doctor/             review queue, patients, exam flow (new exam, live status, result + review)
     patient/            reviewed results only, never AI fields
   pages/, components/   login, change password, status pages; ui / brand / layout / exam / device components

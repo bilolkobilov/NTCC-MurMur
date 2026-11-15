@@ -16,7 +16,7 @@ import "./redesign.css";
 
 // ---- Button -------------------------------------------------------------------------------------------------------
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "dangerline";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -316,7 +316,7 @@ export function TitleToolbar({ crumbs, crumbsLabel, title, description, actions 
 }
 
 /** Summary figure: small icon + label above a 32 px number (the design draws them inside one panel, no card each). */
-export function SummaryTile({ icon, value, label, tone }: { icon: IconName; value: number | string; label: string; tone?: "normal" | "abnormal" | "pending" }) {
+export function SummaryTile({ icon, value, label, tone, sub }: { icon: IconName; value: number | string; label: string; tone?: "normal" | "abnormal" | "pending" | "critical"; sub?: string }) {
   return (
     <div className="rd-tile">
       <span className="rd-tile__label">
@@ -326,6 +326,7 @@ export function SummaryTile({ icon, value, label, tone }: { icon: IconName; valu
         {label}
       </span>
       <span className="rd-tile__value">{value}</span>
+      {sub && <span className="rd-sm">{sub}</span>}
     </div>
   );
 }

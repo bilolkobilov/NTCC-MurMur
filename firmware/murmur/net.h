@@ -9,6 +9,7 @@
 
 struct Command {
   bool record = false;
+  bool selfTest = false;
   long examId = 0;
   long seconds = 0;
 };
@@ -29,12 +30,43 @@ static void beginRequest(HTTPClient& http, const String& path) {
   http.addHeader("X-Device-Key", DEVICE_KEY);
 }
 
-/** POST /api/device/heartbeat with firmware version and Wi-Fi strength. Returns the HTTP status (or <0). */
+/** Microphone noise floor from the last measurement (boot or self-test); -1 = not measured yet. */
+static int lastMicNoiseDb = -1;
+
+#ifdef BATTERY_ADC_PIN
+/** Battery percent from a voltage divider on BATTERY_ADC_PIN (1:2 divider assumed: the pin sees half the voltage). */
+static int batteryPercent() {
+  const int mv = analogReadMilliVolts(BATTERY_ADC_PIN) * 2;
+  return constrain(map(mv, BATTERY_EMPTY_MV, BATTERY_FULL_MV, 0, 100), 0, 100);
+}
+#endif
+
+/** POST /api/device/heartbeat: firmware, Wi-Fi, network details, and battery / microphone when known. */
 inline int sendHeartbeat() {
   HTTPClient http;
   beginRequest(http, "/api/device/heartbeat");
   http.addHeader("Content-Type", "application/json");
-  String body = String("{\"firmware_version\":\"") + FIRMWARE_VERSION + "\",\"wifi_rssi\":" + WiFi.RSSI() + "}";
+  String body = String("{\"firmware_version\":\"") + FIRMWARE_VERSION + "\",\"wifi_rssi\":" + WiFi.RSSI() +
+                ",\"wifi_ssid\":\"" + WiFi.SSID() + "\",\"ip\":\"" + WiFi.localIP().toString() +
+                "\",\"mac\":\"" + WiFi.macAddress() + "\",\"gateway\":\"" + WiFi.gatewayIP().toString() + "\"";
+  if (lastMicNoiseDb >= 0) body += String(",\"mic_noise_db\":") + lastMicNoiseDb;
+#ifdef BATTERY_ADC_PIN
+  body += String(",\"battery_pct\":") + batteryPercent();
+#endif
+  body += "}";
+  int status = http.POST(body);
+  http.end();
+  return status;
+}
+
+/** POST /api/device/self-test: the answer to a "self_test" command. */
+inline int sendSelfTest(bool ok, int micNoiseDb) {
+  HTTPClient http;
+  beginRequest(http, "/api/device/self-test");
+  http.addHeader("Content-Type", "application/json");
+  String body = String("{\"ok\":") + (ok ? "true" : "false");
+  if (micNoiseDb >= 0) body += String(",\"mic_noise_db\":") + micNoiseDb;
+  body += "}";
   int status = http.POST(body);
   http.end();
   return status;
@@ -48,7 +80,7 @@ static long jsonInt(const String& json, const char* key) {
   return at < 0 ? -1 : json.substring(at + 1).toInt();
 }
 
-/** GET /api/device/command: 204 = nothing to do, 200 = {"command":"record","exam_id":N,"duration_s":S}. */
+/** GET /api/device/command: 204 = nothing, 200 = {"command":"record","exam_id":N,"duration_s":S} or "self_test". */
 inline int pollCommand(Command& command) {
   HTTPClient http;
   beginRequest(http, "/api/device/command");
@@ -57,6 +89,7 @@ inline int pollCommand(Command& command) {
   if (status == 200) {
     String body = http.getString();
     command.record = body.indexOf("\"record\"") >= 0;
+    command.selfTest = body.indexOf("\"self_test\"") >= 0;
     command.examId = jsonInt(body, "exam_id");
     command.seconds = jsonInt(body, "duration_s");
   }

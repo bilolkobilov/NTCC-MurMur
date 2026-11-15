@@ -111,13 +111,13 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 | all | `POST /api/auth/login` (doctor, patient), `POST /api/auth/admin/login` (admin only), `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change (returns a fresh token; older tokens die), who am I |
 | admin | `GET/POST /api/admin/doctors`, `GET /api/admin/doctors/{id}` (profile) · `/patients` · `/activity`, `PATCH /api/admin/doctors/{id}` (name, clinic), `POST /api/admin/doctors/{id}/block` · `/unblock` · `/password` | doctors, profile, password reset |
 | doctor | `GET /api/profile`, `GET /api/profile/activity` | own profile (read-only) |
-| admin | `GET/POST /api/admin/devices`, `PATCH /api/admin/devices/{id}`, `POST …/rotate-key` | devices, assignment, new key |
+| admin | `GET/POST /api/admin/devices`, `GET/PATCH /api/admin/devices/{id}`, `POST …/rotate-key`, `…/disconnect`, `…/reconnect`, `…/self-test`, `GET …/activity` | devices, assignment, new key, disconnect with a reason, self-test, admin actions |
 | admin | `GET /api/admin/stats`, `GET /api/admin/audit` | counts, audit log |
 | doctor | `GET/POST /api/patients` (list = registry rows with last exam + status), `GET /api/patients/summary`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
 | doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET …/audio`, `PATCH …/review`, `POST …/cancel` | exams |
 | doctor | `GET /api/devices` | own devices with online status |
 | patient | `GET /api/me`, `GET /api/me/exams` | own data |
-| device | `POST /api/device/heartbeat`, `GET /api/device/command`, `POST /api/device/upload/{exam_id}` | device link |
+| device | `POST /api/device/heartbeat` (+ battery, microphone noise, network), `GET /api/device/command` (`record` or `self_test`), `POST /api/device/self-test`, `POST /api/device/upload/{exam_id}` | device link |
 
 Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`: cancelled, analysis error, or
 a "re-record" quality problem — too short, almost silent, clipped, or movement).
