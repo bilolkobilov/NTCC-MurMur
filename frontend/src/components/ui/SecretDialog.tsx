@@ -47,7 +47,8 @@ export function SecretDialog({
   );
 }
 
-function SecretRow({ label, value }: Secret) {
+/** One copyable secret; also used inline by the "add doctor" page. */
+export function SecretRow({ label, value }: Secret) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const fieldRef = useRef<HTMLInputElement>(null);

@@ -119,7 +119,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,
   saved conclusion), HeartStrip (wavesurfer on chart paper, close-up, spectrogram), `aiOutcome.ts`
-- `frontend/src/api/admin.ts`, `frontend/src/features/admin/` — AdminHome (counts, devices, AI model), DoctorsPage,
+- `frontend/src/api/admin.ts`, `frontend/src/features/admin/` — AdminHome (counts, devices, AI model), DoctorsPage (list, block, reset),
+  DoctorFormPage (`/admin/doctors/new`: details → credentials shown once), `doctorFields.tsx` (password field + generator),
   DevicesPage (key shown once, assign, rotate), AuditPage (pages of 50, action filter in the URL)
 - `frontend/src/api/patient.ts`, `frontend/src/features/patient/` — patient phone pages: PatientHome (reviewed results),
   ResultPage (doctor's conclusion + where listened); never any AI field

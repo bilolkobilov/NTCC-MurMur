@@ -27,6 +27,9 @@ const NewExamPage = lazy(() =>
 const ExamPage = lazy(() => import("../features/doctor/exam/ExamPage").then((m) => ({ default: m.ExamPage })));
 const AdminHome = lazy(() => import("../features/admin/AdminHome").then((m) => ({ default: m.AdminHome })));
 const DoctorsPage = lazy(() => import("../features/admin/DoctorsPage").then((m) => ({ default: m.DoctorsPage })));
+const DoctorFormPage = lazy(() =>
+  import("../features/admin/DoctorFormPage").then((m) => ({ default: m.DoctorFormPage })),
+);
 const DevicesPage = lazy(() => import("../features/admin/DevicesPage").then((m) => ({ default: m.DevicesPage })));
 const AuditPage = lazy(() => import("../features/admin/AuditPage").then((m) => ({ default: m.AuditPage })));
 const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
@@ -86,6 +89,7 @@ export const routes: RouteObject[] = [
     children: [
       { index: true, element: <AdminHome /> },
       { path: "doctors", element: <DoctorsPage /> },
+      { path: "doctors/new", element: <DoctorFormPage /> },
       { path: "devices", element: <DevicesPage /> },
       { path: "audit", element: <AuditPage /> },
       { path: "*", element: <NotFoundPage /> },

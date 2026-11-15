@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import type { AuditEntry, Device, Doctor, Stats } from "../../api/admin";
 import { session } from "../../app/session";
 import { backend, bodyOf, ok, renderAt } from "../../test/utils";
-import { generatePassword } from "./DoctorsPage";
+import { generatePassword } from "./doctorFields";
 import { signalWord } from "./DevicesPage";
 
 const me = () => ok({ id: 1, username: "admin", role: "admin", full_name: "Admin" });
@@ -57,7 +57,7 @@ test("overview: exams today, pipeline by status, devices and the AI model — co
   expect(await screen.findByText("Never connected")).toBeInTheDocument();
 });
 
-test("create a doctor: validation, then the credentials are shown once to hand over", async () => {
+test("add a doctor page: validation, then the credentials are shown once to hand over", async () => {
   let sent: unknown;
   let list = [...doctors];
   backend({
@@ -70,29 +70,31 @@ test("create a doctor: validation, then the credentials are shown once to hand o
       return { status: 201, body: created };
     },
   });
-  renderAt("/admin/doctors");
+  const router = renderAt("/admin/doctors");
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("button", { name: "Add doctor" }));
-  const dialog = await screen.findByRole("dialog", { name: "Add doctor" });
-  await user.click(within(dialog).getByRole("button", { name: "Create doctor" }));
-  expect(within(dialog).getByText("Enter the doctor's full name.")).toBeInTheDocument();
+  await user.click(await screen.findByRole("link", { name: "Add doctor" }));
+  expect(router.state.location.pathname).toBe("/admin/doctors/new");
+  await user.click(await screen.findByRole("button", { name: "Create doctor" }));
+  expect(screen.getByText("Enter the doctor's full name.")).toBeInTheDocument();
+  expect(screen.getByLabelText("Full name")).toHaveFocus();
   expect(sent).toBeUndefined();
 
-  await user.type(within(dialog).getByLabelText("Full name"), "Nodira Usmonova");
-  await user.type(within(dialog).getByLabelText("Clinic"), "Lakeside Center");
-  await user.type(within(dialog).getByLabelText("Username"), "dr.new");
-  await user.click(within(dialog).getByRole("button", { name: "Generate" }));
-  const password = (within(dialog).getByLabelText("Password") as HTMLInputElement).value;
+  await user.type(screen.getByLabelText("Full name"), "Nodira Usmonova");
+  await user.type(screen.getByLabelText("Clinic"), "Lakeside Center");
+  await user.type(screen.getByLabelText("Username"), "dr.new");
+  await user.click(screen.getByRole("button", { name: "Generate" }));
+  const password = (screen.getByLabelText("Password") as HTMLInputElement).value;
   expect(password).toHaveLength(12);
-  await user.click(within(dialog).getByRole("button", { name: "Create doctor" }));
+  await user.click(screen.getByRole("button", { name: "Create doctor" }));
 
-  const secret = await screen.findByRole("dialog", { name: "Doctor created" });
+  expect(await screen.findByRole("heading", { name: "Hand over the login" })).toBeInTheDocument();
   expect(sent).toEqual({ full_name: "Nodira Usmonova", username: "dr.new", password, clinic: "Lakeside Center" });
-  expect(within(secret).getByDisplayValue(password)).toBeInTheDocument();
-  await user.click(within(secret).getByRole("button", { name: "I have handed it over" }));
+  expect(screen.getByDisplayValue(password)).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Add another doctor" }));
   expect(screen.queryByDisplayValue(password)).not.toBeInTheDocument(); // gone for good
-  expect(await screen.findByText("Nodira Usmonova")).toBeInTheDocument();
+  expect((screen.getByLabelText("Password") as HTMLInputElement).value).toBe("");
 });
 
 test("a taken username is explained, not a generic error", async () => {
@@ -101,17 +103,15 @@ test("a taken username is explained, not a generic error", async () => {
     "GET /api/admin/doctors": () => ok(doctors),
     "POST /api/admin/doctors": () => ({ status: 409, body: { detail: "username already exists" } }),
   });
-  renderAt("/admin/doctors");
+  renderAt("/admin/doctors/new");
   const user = userEvent.setup();
 
-  await user.click(await screen.findByRole("button", { name: "Add doctor" }));
-  const dialog = await screen.findByRole("dialog");
-  await user.type(within(dialog).getByLabelText("Full name"), "Aziz Two");
-  await user.type(within(dialog).getByLabelText("Username"), "dr.aziz");
-  await user.type(within(dialog).getByLabelText("Password"), "long-enough-1");
-  await user.click(within(dialog).getByRole("button", { name: "Create doctor" }));
+  await user.type(await screen.findByLabelText("Full name"), "Aziz Two");
+  await user.type(screen.getByLabelText("Username"), "dr.aziz");
+  await user.type(screen.getByLabelText("Password"), "long-enough-1");
+  await user.click(screen.getByRole("button", { name: "Create doctor" }));
 
-  expect(await within(dialog).findByText(/username is already taken/i)).toBeInTheDocument();
+  expect(await screen.findByText(/username is already taken/i)).toBeInTheDocument();
 });
 
 test("blocking asks first and says what happens; a blocked doctor can be unblocked", async () => {
