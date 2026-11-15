@@ -21,6 +21,7 @@ class Patient(CreatedAtMixin, Base):
     sex: Mapped[Sex] = mapped_column(str_enum(Sex, "sex"))
     height_cm: Mapped[float | None]
     weight_kg: Mapped[float | None]
+    clinic: Mapped[str | None] = mapped_column(String(200))  # the doctor's clinic when the patient was registered
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     doctor: Mapped[User] = relationship(foreign_keys=[doctor_id])

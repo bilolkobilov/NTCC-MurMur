@@ -3,6 +3,7 @@ from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, computed_field, field_validator, model_validator
 
+from app.models import Sex
 from app.schemas.common import FullName, NewPassword, RefId, Username
 
 # The clinic is free text; blank means "not set".
@@ -107,7 +108,7 @@ class DoctorPatientRow(BaseModel):
     id: int
     full_name: str
     birth_year: int
-    sex: Literal["male", "female"]
+    sex: Sex
     last_exam_at: datetime | None
 
 

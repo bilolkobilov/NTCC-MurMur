@@ -34,7 +34,7 @@ export type DoctorPatientRow = {
   id: number;
   full_name: string;
   birth_year: number;
-  sex: "male" | "female";
+  sex: "male" | "female" | "other";
   last_exam_at: string | null;
 };
 

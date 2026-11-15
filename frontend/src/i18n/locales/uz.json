@@ -195,7 +195,8 @@
     },
     "sexShort": {
       "male": "E",
-      "female": "A"
+      "female": "A",
+      "other": "B"
     },
     "analysisInProgress": "Tahlil davom etmoqda",
     "noRecording": "Hali yozuv yoʻq",
@@ -222,22 +223,24 @@
   },
   "sex": {
     "male": "Erkak",
-    "female": "Ayol"
+    "female": "Ayol",
+    "other": "Boshqa"
   },
   "units": {
     "cm": "{{value}} sm",
-    "kg": "{{value}} kg"
+    "kg": "{{value}} kg",
+    "cmShort": "sm",
+    "kgShort": "kg"
   },
   "patientForm": {
     "newTitle": "Yangi bemor",
     "editTitle": "Tahrirlash: {{name}}",
     "fullName": "Ism-familiya",
-    "fullNamePlaceholder": "Ali Valiyev…",
+    "fullNamePlaceholder": "masalan, Nodira Rahimova",
     "birthYear": "Tugʻilgan yili",
     "sex": "Jinsi",
-    "height": "Boʻyi, sm",
-    "weight": "Vazni, kg",
-    "optional": "Ixtiyoriy. Bemor kartasi uchun; hozirgi AI modeli faqat tovushdan foydalanadi.",
+    "height": "Boʻyi (sm)",
+    "weight": "Vazni (kg)",
     "consent": "Imzolangan rozilik varaqasi olindi",
     "consentHint": "Usiz tekshiruv boshlanmaydi. Keyinroq ham belgilash mumkin.",
     "saveChanges": "Oʻzgarishlarni saqlash",
@@ -247,13 +250,38 @@
     "leave": "Saqlamasdan chiqish",
     "errors": {
       "fullName": "Bemorning ism-familiyasini kiriting.",
-      "birthYear": "4 xonali yil kiriting, kelajakdagi emas.",
-      "sex": "Jinsini tanlang.",
-      "height": "Boʻyini santimetrda kiriting, masalan 172.",
-      "weight": "Vaznini kilogrammda kiriting, masalan 70,5."
-    }
+      "birthYear": "1900 va {{year}} oraligʻida 4 xonali yil kiriting.",
+      "sex": "Bemorning jinsini tanlang.",
+      "height": "Boʻyini santimetrda kiriting, 30 dan 250 gacha.",
+      "weight": "Vaznini kilogrammda kiriting, 2 dan 400 gacha."
+    },
+    "lead": "Bemor kartasini yarating. Yozuvlarni saqlagandan keyin qoʻshish mumkin.",
+    "sectionDetails": "Bemor maʼlumotlari",
+    "sectionMeasurements": "Oʻlchamlar",
+    "sectionConsent": "Rozilik",
+    "birthYearPlaceholder": "masalan, 1968",
+    "age": "Yoshi {{count}}",
+    "heightPlaceholder": "masalan, 170",
+    "weightPlaceholder": "masalan, 68",
+    "save": "Bemorni saqlash",
+    "fixFields_one": "{{count}} ta maydonni tuzating",
+    "fixFields_other": "{{count}} ta maydonni tuzating",
+    "fieldNames": {
+      "fullName": "Ism-familiya",
+      "birthYear": "Tugʻilgan yili",
+      "sex": "Jinsi",
+      "height": "Boʻyi",
+      "weight": "Vazni"
+    },
+    "createdTitle": "Bemor yaratildi",
+    "createdBody": "{{name}} {{clinic}} roʻyxatiga qoʻshildi.",
+    "createdBodyNoClinic": "{{name}} bemorlaringizga qoʻshildi.",
+    "noRecordings": "Hali yozuv yoʻq",
+    "backToPatients": "Bemorlarga qaytish",
+    "openProfile": "Bemor sahifasini ochish"
   },
   "patient": {
+    "mrn": "Karta",
     "startExam": "Tekshiruvni boshlash",
     "saved": "Bemor maʼlumotlari saqlandi.",
     "exams": "Tekshiruvlar",
@@ -293,7 +321,54 @@
     "deleteBody_other": "Profil, login va {{count}} ta tekshiruv (yozuvlari va AI natijalari bilan) oʻchiriladi. Buni qaytarib boʻlmaydi.",
     "keep": "Bemorni qoldirish",
     "deleteTypeName": "Tasdiqlash uchun “{{name}}” deb yozing",
-    "deleteTypeHint": "Ism mos kelganda oʻchirish tugmasi yoqiladi."
+    "deleteTypeHint": "Ism mos kelganda oʻchirish tugmasi yoqiladi.",
+    "recordAuscultation": "Auskultatsiyani yozish",
+    "summaryLabel": "Bemor haqida qisqacha",
+    "flagTitle": "Ehtimoliy shovqin, shifokor tasdigʻi kerak",
+    "flagBody": "AI skrining {{point}} nuqtasida, {{when}}, ehtimoliy shovqinni aniqladi. Bu faqat yordamchi maslahat.",
+    "reviewAnalysis": "Tahlilni koʻrish",
+    "registeredAt": "Roʻyxatga olingan joy",
+    "notAnalyzedYet": "Hali tahlil qilinmagan",
+    "moreActions": "Boshqa amallar",
+    "sectionsLabel": "Bemor boʻlimlari",
+    "tabOverview": "Umumiy",
+    "tabRecordings": "Yozuvlar",
+    "height": "Boʻyi",
+    "weight": "Vazni",
+    "bmi": "TMI",
+    "bmiUnit": "kg/m²",
+    "noData": "Maʼlumot yoʻq",
+    "latest": "Oxirgi auskultatsiya",
+    "aiChip": "AI yordamida · faqat maslahat",
+    "latestMeta": "{{point}} · {{seconds}} s · {{when}}",
+    "openAnalysis": "Toʻliq tahlilni ochish",
+    "noLatest": "Hali tahlil qilingan yozuv yoʻq.",
+    "history": "Yozuvlar tarixi",
+    "historyLabel": "Yozuvlar tarixi",
+    "colWhen": "Qachon",
+    "colSite": "Nuqta",
+    "colLength": "Davomiyligi",
+    "colFinding": "Xulosa",
+    "colAnalyzedAt": "Tahlil joyi",
+    "colStatus": "Holat",
+    "colOpen": "Ochish",
+    "openRecording": "Yozuvni ochish: {{site}}, {{when}}",
+    "seconds": "{{value}} s",
+    "findingNone": "—",
+    "iot": "IoT qurilma",
+    "iotDeviceId": "Qurilma ID",
+    "iotModel": "Model",
+    "iotClinic": "Biriktirilgan klinika",
+    "iotLocation": "Joylashuvi",
+    "iotBattery": "Batareya",
+    "iotFrom": "Oxirgi yozuv qurilmasi.",
+    "iotNone": "Hali qurilma yoʻq. Administratordan qurilma biriktirishni soʻrang.",
+    "iotChoose": "Keyingi yozuv uchun qurilmani tanlash",
+    "fullName": "Ism-familiya",
+    "yearOfBirth": "Tugʻilgan yili",
+    "latestAnalysis": "Oxirgi tahlil",
+    "consentRequired": "Avval rozilikni belgilang, soʻng yozuvni boshlang.",
+    "viewAll": "Barchasini koʻrish ({{count}})"
   },
   "newExam": {
     "title": "Yangi tekshiruv",
@@ -826,5 +901,38 @@
     "accountCreated": "Hisob yaratilgan",
     "editDetails": "Maʼlumotlarni oʻzgartirish",
     "editTitle": "{{name}} maʼlumotlarini oʻzgartirish"
+  },
+  "vitals": {
+    "title": "Hayotiy koʻrsatkichlar",
+    "record": "Koʻrsatkichlarni kiritish",
+    "recordBody": "{{name}} uchun oʻlchanganini kiriting. Oʻlchanmaganini boʻsh qoldiring.",
+    "save": "Saqlash",
+    "measured": "Oʻlchangan: {{when}} · {{by}}",
+    "none": "Hali oʻlchanmagan",
+    "ref": "Meʼyor: {{range}}",
+    "heartRate": "Yurak urishi",
+    "bloodPressure": "Qon bosimi",
+    "systolic": "Sistolik bosim",
+    "diastolic": "Diastolik bosim",
+    "spo2": "SpO₂",
+    "respRate": "Nafas olish chastotasi",
+    "temperature": "Harorat",
+    "unit": {
+      "bpm": "urish/daq",
+      "mmHg": "mm sim. ust.",
+      "perMin": "/daq"
+    },
+    "level": {
+      "normal": "Normal",
+      "borderline": "Chegarada",
+      "abnormal": "Chetlanish",
+      "none": "Maʼlumot yoʻq"
+    },
+    "errors": {
+      "range": "{{min}} dan {{max}} gacha qiymat kiriting.",
+      "bothNumbers": "Qon bosimining ikkala raqamini kiriting.",
+      "order": "Sistolik bosim diastolikdan yuqori boʻlishi kerak.",
+      "empty": "Kamida bitta qiymat kiriting."
+    }
   }
 }

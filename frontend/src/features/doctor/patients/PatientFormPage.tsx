@@ -1,21 +1,25 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { clsx } from "clsx";
-import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { type FormEvent, type RefObject, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useBlocker, useNavigate, useParams } from "react-router";
 
+import { me } from "../../../api/auth";
 import { errorMessage } from "../../../api/client";
 import { doctorApi, type Patient, type PatientInput, type Sex } from "../../../api/doctor";
-import { Alert } from "../../../components/ui/Alert";
-import { Button, ButtonLink } from "../../../components/ui/Button";
+import { useSession } from "../../../app/session";
 import { Dialog } from "../../../components/ui/Dialog";
-import { ErrorState, PageHeader, SkeletonRows } from "../../../components/ui/States";
-import { TextField } from "../../../components/ui/TextField";
+import { ErrorState, SkeletonRows } from "../../../components/ui/States";
+import { Button, ButtonLink, DAlert, FormGroup, TitleToolbar } from "../../../redesign/components";
+import { Icon } from "../../../redesign/Icon";
 
 type Form = { fullName: string; birthYear: string; sex: Sex | ""; height: string; weight: string; consent: boolean };
-type Problems = Partial<Record<"fullName" | "birthYear" | "sex" | "height" | "weight", string>>;
+type Field = "fullName" | "birthYear" | "sex" | "height" | "weight";
+type Problems = Partial<Record<Field, string>>;
 
 const EMPTY: Form = { fullName: "", birthYear: "", sex: "", height: "", weight: "", consent: false };
+const SEXES: Sex[] = ["female", "male", "other"];
+const FIELDS: Field[] = ["fullName", "birthYear", "sex", "height", "weight"];
 
 function fromPatient(p: Patient): Form {
   return {
@@ -28,7 +32,7 @@ function fromPatient(p: Patient): Form {
   };
 }
 
-const number = (text: string) => Number(text.replace(",", ".")); // "70,5" is how many people type decimals here
+const number = (text: string) => Number(text.trim().replace(",", ".")); // "70,5" is how many people type decimals here
 
 /** Client checks mirror the backend (app/schemas/doctor.py); the server stays the real guard. */
 export function validate(form: Form, now = new Date()): Problems {
@@ -39,8 +43,10 @@ export function validate(form: Form, now = new Date()): Problems {
     problems.birthYear = "patientForm.errors.birthYear";
   }
   if (!form.sex) problems.sex = "patientForm.errors.sex";
-  if (form.height && !(number(form.height) > 0 && number(form.height) < 300)) problems.height = "patientForm.errors.height";
-  if (form.weight && !(number(form.weight) > 0 && number(form.weight) < 500)) problems.weight = "patientForm.errors.weight";
+  const height = number(form.height);
+  if (!form.height.trim() || !(height >= 30 && height <= 250)) problems.height = "patientForm.errors.height";
+  const weight = number(form.weight);
+  if (!form.weight.trim() || !(weight >= 2 && weight <= 400)) problems.weight = "patientForm.errors.weight";
   return problems;
 }
 
@@ -49,8 +55,8 @@ function toInput(form: Form): PatientInput {
     full_name: form.fullName.trim(),
     birth_year: Number(form.birthYear),
     sex: form.sex as Sex,
-    height_cm: form.height ? number(form.height) : null,
-    weight_kg: form.weight ? number(form.weight) : null,
+    height_cm: number(form.height),
+    weight_kg: number(form.weight),
   };
 }
 
@@ -68,18 +74,30 @@ export function PatientFormPage() {
   return <PatientForm key={patientId ?? "new"} patient={existing.data} />;
 }
 
+/**
+ * New patient / edit patient (design "New patient", desktop + tablet + phone): details, measurements and consent. Errors show when a field is left
+ * and as a summary after a failed save; a new patient ends in a "Patient created" dialog.
+ */
 function PatientForm({ patient }: { patient?: Patient }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const current = useSession();
+  const account = useQuery({ queryKey: ["me", current?.token], queryFn: me, enabled: !!current, staleTime: 60_000 });
   const initial = useMemo(() => (patient ? fromPatient(patient) : EMPTY), [patient]);
   const [form, setForm] = useState<Form>(initial);
-  const [problems, setProblems] = useState<Problems>({});
+  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({});
+  const [submitted, setSubmitted] = useState(false);
+  const [created, setCreated] = useState<Patient | null>(null);
+  const ids = { fullName: useId(), birthYear: useId(), sex: useId(), height: useId(), weight: useId() };
   const fullNameRef = useRef<HTMLInputElement>(null);
   const birthYearRef = useRef<HTMLInputElement>(null);
   const sexRef = useRef<HTMLInputElement>(null);
   const heightRef = useRef<HTMLInputElement>(null);
   const weightRef = useRef<HTMLInputElement>(null);
+  /** Move focus to a field (only called from event handlers). */
+  const focusField = (field: Field) =>
+    ({ fullName: fullNameRef, birthYear: birthYearRef, sex: sexRef, height: heightRef, weight: weightRef })[field].current?.focus();
   const dirty = JSON.stringify(form) !== JSON.stringify(initial);
 
   const save = useMutation({
@@ -90,7 +108,8 @@ function PatientForm({ patient }: { patient?: Patient }) {
     onSuccess: (saved) => {
       queryClient.setQueryData(["patient", saved.id], saved);
       void queryClient.invalidateQueries({ queryKey: ["patients"] });
-      navigate(`/doctor/patients/${saved.id}`, { replace: !patient, state: { saved: true } });
+      if (patient) navigate(`/doctor/patients/${saved.id}`, { state: { saved: true } });
+      else setCreated(saved);
     },
   });
 
@@ -106,118 +125,201 @@ function PatientForm({ patient }: { patient?: Patient }) {
   }, [dirty, save.isSuccess]);
 
   const set = <K extends keyof Form>(key: K) => (value: Form[K]) => setForm((f) => ({ ...f, [key]: value }));
+  const touch = (field: Field) => () => setTouched((x) => ({ ...x, [field]: true }));
+
+  const found = validate(form);
+  const year = new Date().getFullYear();
+  const shown = (field: Field) => (submitted || touched[field] ? found[field] : undefined);
+  const err = (field: Field) => (shown(field) ? t(shown(field)!, { year }) : undefined);
+  const summary = submitted ? FIELDS.filter((field) => found[field]) : [];
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
     if (save.isPending) return;
-    const found = validate(form);
-    setProblems(found);
+    setSubmitted(true);
     // Focus the first invalid field, in the order they appear on screen.
-    const order: [keyof Problems, React.RefObject<HTMLInputElement | null>][] = [
-      ["fullName", fullNameRef],
-      ["birthYear", birthYearRef],
-      ["sex", sexRef],
-      ["height", heightRef],
-      ["weight", weightRef],
-    ];
-    const first = order.find(([key]) => found[key]);
-    if (first) return first[1].current?.focus();
+    const first = FIELDS.find((field) => found[field]);
+    if (first) return focusField(first);
     save.mutate();
   };
   const failure = save.isError ? errorMessage(save.error) : null;
-  const err = (key: keyof Problems) => (problems[key] ? t(problems[key]!) : undefined);
   const backTo = patient ? `/doctor/patients/${patient.id}` : "/doctor/patients";
+  const age = /^\d{4}$/.test(form.birthYear) && !found.birthYear ? year - Number(form.birthYear) : null;
+  const clinic = account.data?.clinic ?? null;
+  const title = patient ? t("patientForm.editTitle", { name: patient.full_name }) : t("patientForm.newTitle");
 
   return (
-    <div className="mx-auto max-w-2xl">
-      <PageHeader title={patient ? t("patientForm.editTitle", { name: patient.full_name }) : t("patientForm.newTitle")} />
-      <form onSubmit={submit} noValidate className="rounded-card border border-line bg-surface">
-        <div className="flex flex-col gap-5 p-6">
-          {failure && <Alert tone="danger">{t(failure.key, failure.values ?? {})}</Alert>}
-          <TextField
-            ref={fullNameRef}
-            label={t("patientForm.fullName")}
-            name="full_name"
-            autoComplete="off"
-            maxLength={200}
-            required
-            placeholder={t("patientForm.fullNamePlaceholder")}
-            error={err("fullName")}
-            value={form.fullName}
-            onChange={(e) => set("fullName")(e.target.value)}
-          />
-          <div className="grid gap-5 sm:grid-cols-2">
-            <TextField
-              ref={birthYearRef}
-              label={t("patientForm.birthYear")}
-              name="birth_year"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={4}
-              required
-              placeholder="1990"
-              error={err("birthYear")}
-              value={form.birthYear}
-              onChange={(e) => set("birthYear")(e.target.value.replace(/\D/g, ""))}
-              className="tabular-nums"
-            />
+    <div className="flex flex-col gap-6">
+      <TitleToolbar
+        crumbsLabel={t("registry.crumbsLabel")}
+        crumbs={[
+          { label: t("registry.crumbRoot") },
+          { label: t("registry.title"), href: "/doctor/patients" },
+          ...(patient ? [{ label: patient.full_name, href: backTo }] : []),
+          { label: patient ? t("patient.edit") : t("patientForm.newTitle") },
+        ]}
+        title={title}
+        description={patient ? undefined : t("patientForm.lead")}
+      />
+
+      <form onSubmit={submit} noValidate aria-label={title} aria-busy={save.isPending} className="rd-dcard w-full max-w-[760px]">
+        {(summary.length > 0 || failure) && (
+          <div className="rd-sec" style={{ paddingBottom: 0 }}>
+            <DAlert tone="crit" icon="alertOctagon">
+              {failure ? (
+                t(failure.key, failure.values ?? {})
+              ) : (
+                <>
+                  <strong>{t("patientForm.fixFields", { count: summary.length })}</strong>
+                  <ul className="rd-errlist">
+                    {summary.map((field) => (
+                      <li key={field}>
+                        <a
+                          href={`#${ids[field]}`}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            focusField(field);
+                          }}
+                        >
+                          {t(`patientForm.fieldNames.${field}`)}
+                        </a>
+                        : {t(found[field]!, { year })}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </DAlert>
+          </div>
+        )}
+
+        <section className="rd-sec" aria-label={t("patientForm.sectionDetails")}>
+          <FormGroup label={t("patientForm.fullName")} required htmlFor={ids.fullName} error={err("fullName")}>
+            <div className={clsx("rd-field rd-field--lg", err("fullName") && "rd-field--invalid")}>
+              <input
+                ref={fullNameRef}
+                id={ids.fullName}
+                name="full_name"
+                type="text"
+                autoComplete="off"
+                maxLength={200}
+                placeholder={t("patientForm.fullNamePlaceholder")}
+                aria-required="true"
+                aria-invalid={!!err("fullName")}
+                aria-describedby={`${ids.fullName}-help`}
+                value={form.fullName}
+                onChange={(e) => set("fullName")(e.target.value)}
+                onBlur={touch("fullName")}
+              />
+            </div>
+          </FormGroup>
+          <div className="rd-fgrid">
+            <FormGroup label={t("patientForm.birthYear")} required htmlFor={ids.birthYear} error={err("birthYear")}>
+              <div className={clsx("rd-field rd-field--lg", err("birthYear") && "rd-field--invalid")}>
+                <input
+                  ref={birthYearRef}
+                  id={ids.birthYear}
+                  name="birth_year"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  maxLength={4}
+                  placeholder={t("patientForm.birthYearPlaceholder")}
+                  aria-required="true"
+                  aria-invalid={!!err("birthYear")}
+                  aria-describedby={`${ids.birthYear}-help`}
+                  className="tabular-nums"
+                  value={form.birthYear}
+                  onChange={(e) => set("birthYear")(e.target.value.replace(/\D/g, ""))}
+                  onBlur={touch("birthYear")}
+                />
+                {age !== null && <span className="rd-unit">{t("patientForm.age", { count: age })}</span>}
+              </div>
+            </FormGroup>
             <SexField
+              id={ids.sex}
               inputRef={sexRef}
               value={form.sex}
               error={err("sex")}
-              onChange={(value) => set("sex")(value)}
+              onChange={(value) => {
+                set("sex")(value);
+                touch("sex")();
+              }}
             />
           </div>
-          <div className="grid gap-5 sm:grid-cols-2">
-            <TextField
-              ref={heightRef}
-              label={t("patientForm.height")}
-              name="height_cm"
-              inputMode="decimal"
-              autoComplete="off"
-              hint={t("patientForm.optional")}
-              error={err("height")}
-              value={form.height}
-              onChange={(e) => set("height")(e.target.value)}
-            />
-            <TextField
-              ref={weightRef}
-              label={t("patientForm.weight")}
-              name="weight_kg"
-              inputMode="decimal"
-              autoComplete="off"
-              hint={t("patientForm.optional")}
-              error={err("weight")}
-              value={form.weight}
-              onChange={(e) => set("weight")(e.target.value)}
-            />
+        </section>
+
+        <section className="rd-sec" aria-label={t("patientForm.sectionMeasurements")}>
+          <div className="rd-fgrid">
+            <FormGroup label={t("patientForm.height")} required htmlFor={ids.height} error={err("height")}>
+              <div className={clsx("rd-field rd-field--lg", err("height") && "rd-field--invalid")}>
+                <input
+                  ref={heightRef}
+                  id={ids.height}
+                  name="height_cm"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder={t("patientForm.heightPlaceholder")}
+                  aria-required="true"
+                  aria-invalid={!!err("height")}
+                  aria-describedby={`${ids.height}-help`}
+                  value={form.height}
+                  onChange={(e) => set("height")(e.target.value)}
+                  onBlur={touch("height")}
+                />
+                <span className="rd-unit" aria-hidden="true">
+                  {t("units.cmShort")}
+                </span>
+              </div>
+            </FormGroup>
+            <FormGroup label={t("patientForm.weight")} required htmlFor={ids.weight} error={err("weight")}>
+              <div className={clsx("rd-field rd-field--lg", err("weight") && "rd-field--invalid")}>
+                <input
+                  ref={weightRef}
+                  id={ids.weight}
+                  name="weight_kg"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  placeholder={t("patientForm.weightPlaceholder")}
+                  aria-required="true"
+                  aria-invalid={!!err("weight")}
+                  aria-describedby={`${ids.weight}-help`}
+                  value={form.weight}
+                  onChange={(e) => set("weight")(e.target.value)}
+                  onBlur={touch("weight")}
+                />
+                <span className="rd-unit" aria-hidden="true">
+                  {t("units.kgShort")}
+                </span>
+              </div>
+            </FormGroup>
           </div>
-          {!patient && (
-            <label className="flex cursor-pointer items-start gap-3 rounded-control border border-line p-4 has-[:checked]:border-clear has-[:checked]:bg-clear-bg">
-              <input
-                type="checkbox"
-                checked={form.consent}
-                onChange={(e) => set("consent")(e.target.checked)}
-                className="mt-0.5 size-5 shrink-0 accent-[var(--color-clear)]"
-              />
-              <span>
-                <span className="block font-medium">{t("patientForm.consent")}</span>
-                <span className="block text-label text-ink-500">{t("patientForm.consentHint")}</span>
+        </section>
+
+        {!patient && (
+          <section className="rd-sec" aria-label={t("patientForm.sectionConsent")}>
+            <label className="rd-consent">
+              <input type="checkbox" checked={form.consent} onChange={(e) => set("consent")(e.target.checked)} />
+              <span className="flex flex-col gap-1">
+                <span className="rd-label">{t("patientForm.consent")}</span>
+                <span className="rd-sm">{t("patientForm.consentHint")}</span>
               </span>
             </label>
-          )}
-        </div>
-        <div className="flex flex-col-reverse gap-2 border-t border-line px-6 py-4 sm:flex-row sm:justify-end">
-          <ButtonLink to={backTo} variant="ghost">
-            {t("common.cancel")}
-          </ButtonLink>
+          </section>
+        )}
+
+        <div className="rd-footbar rd-footbar--form" style={{ justifyContent: "flex-end" }}>
+          <ButtonLink to={backTo}>{t("common.cancel")}</ButtonLink>
           <Button
             type="submit"
             variant="primary"
+            icon={patient ? undefined : "userPlus"}
             busy={save.isPending}
             busyText={t("common.saving")}
           >
-            {patient ? t("patientForm.saveChanges") : t("patients.add")}
+            {patient ? t("patientForm.saveChanges") : t("patientForm.save")}
           </Button>
         </div>
       </form>
@@ -236,33 +338,72 @@ function PatientForm({ patient }: { patient?: Patient }) {
           </>
         }
       />
+
+      <CreatedDialog patient={created} clinic={created?.clinic ?? clinic} onClose={() => navigate("/doctor/patients")} />
     </div>
   );
 }
 
+/** "Patient created": what was saved, and the next step. Recording needs the consent, so without it the next step is the patient page. */
+function CreatedDialog({ patient, clinic, onClose }: { patient: Patient | null; clinic: string | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const consent = !!patient?.consent_given_at;
+  return (
+    <Dialog
+      open={!!patient}
+      onOpenChange={(open) => !open && onClose()}
+      title={t("patientForm.createdTitle")}
+      description={
+        patient
+          ? clinic
+            ? t("patientForm.createdBody", { name: patient.full_name, clinic })
+            : t("patientForm.createdBodyNoClinic", { name: patient.full_name })
+          : undefined
+      }
+      footer={
+        <>
+          <Button onClick={onClose}>{t("patientForm.backToPatients")}</Button>
+          {patient &&
+            (consent ? (
+              <ButtonLink to={`/doctor/patients/${patient.id}/exam`} variant="primary" icon="mic">
+                {t("patient.recordAuscultation")}
+              </ButtonLink>
+            ) : (
+              <ButtonLink to={`/doctor/patients/${patient.id}`} variant="primary">
+                {t("patientForm.openProfile")}
+              </ButtonLink>
+            ))}
+        </>
+      }
+    />
+  );
+}
+
 function SexField({
+  id,
   value,
   error,
   onChange,
   inputRef,
 }: {
+  id: string;
   value: Sex | "";
   error?: string;
   onChange: (value: Sex) => void;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: RefObject<HTMLInputElement | null>;
 }) {
   const { t } = useTranslation();
   return (
-    <fieldset aria-describedby={error ? "sex-error" : undefined} aria-invalid={error ? true : undefined}>
-      <legend className="mb-1.5 text-label font-medium text-ink-700 after:ml-1 after:text-ink-300 after:content-['*']">
-        {t("patientForm.sex")}
+    <fieldset id={id} aria-describedby={error ? `${id}-help` : undefined} className="rd-fgrp m-0 border-0 p-0">
+      <legend className="rd-label mb-2 p-0">
+        {t("patientForm.sex")}{" "}
+        <span style={{ color: "var(--c-critical-fg)" }} aria-hidden="true">
+          *
+        </span>
       </legend>
-      <div className={clsx("grid grid-cols-2 gap-1 rounded-control border bg-field p-1", error ? "border-danger" : "border-line-strong")}>
-        {(["male", "female"] as const).map((option, index) => (
-          <label
-            key={option}
-            className="flex min-h-9 cursor-pointer items-center justify-center rounded-[6px] text-body text-ink-700 has-[:checked]:bg-surface has-[:checked]:font-semibold has-[:checked]:text-ink-900 has-[:checked]:shadow-[0_0_0_1px_var(--color-line-strong)] has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-ink-900"
-          >
+      <div className={clsx("rd-opts", error && "rd-opts--invalid")}>
+        {SEXES.map((option, index) => (
+          <label key={option} className={clsx("rd-opt", value === option && "rd-opt--on")}>
             <input
               ref={index === 0 ? inputRef : undefined}
               type="radio"
@@ -270,16 +411,16 @@ function SexField({
               value={option}
               checked={value === option}
               onChange={() => onChange(option)}
-              className="sr-only"
             />
             {t(`sex.${option}`)}
           </label>
         ))}
       </div>
       {error && (
-        <p id="sex-error" className="mt-1.5 text-caption font-medium text-danger">
-          {error}
-        </p>
+        <span id={`${id}-help`} className="rd-sm rd-fgrp__err" style={{ color: "var(--c-critical-fg)" }}>
+          <Icon name="alertTriangle" size="sm" />
+          <span>{error}</span>
+        </span>
       )}
     </fieldset>
   );

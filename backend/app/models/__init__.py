@@ -9,6 +9,7 @@ from app.models.exam import Exam
 from app.models.patient import Patient
 from app.models.recording import Recording
 from app.models.user import User
+from app.models.vitals import VitalSigns
 
 __all__ = [
     "AIResult",
@@ -24,4 +25,5 @@ __all__ = [
     "Role",
     "Sex",
     "User",
+    "VitalSigns",
 ]

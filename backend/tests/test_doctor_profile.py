@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditLog, Exam, ExamStatus, Role
+from app.models import AuditLog, Exam, ExamStatus, Role, Sex
 from tests.helpers import login, make_device, make_patient, make_user
 
 
@@ -106,6 +106,18 @@ def test_admin_sees_a_doctors_patients_but_no_medical_data(client, db, admin):
     assert len(logged) == 1
 
 
+def test_admin_list_handles_every_sex_value(client, db, admin):
+    doctor = make_user(db, "dr.a", Role.DOCTOR)
+    patient = make_patient(db, doctor, "Alex Doe")
+    patient.sex = Sex.OTHER
+    db.commit()
+
+    response = client.get(f"/api/admin/doctors/{doctor.id}/patients", headers=admin)
+
+    assert response.status_code == 200
+    assert response.json()[0]["sex"] == "other"
+
+
 def test_activity_lists_the_actions_of_that_doctor_only(client, db, admin):
     doctor = make_user(db, "dr.a", Role.DOCTOR)
     other = make_user(db, "dr.b", Role.DOCTOR)
@@ -113,7 +125,14 @@ def test_activity_lists_the_actions_of_that_doctor_only(client, db, admin):
     client.post(
         "/api/patients",
         headers=login(client, "dr.a"),
-        json={"full_name": "New Person", "birth_year": 1990, "sex": "male", "consent_given": True},
+        json={
+            "full_name": "New Person",
+            "birth_year": 1990,
+            "sex": "male",
+            "height_cm": 170,
+            "weight_kg": 65,
+            "consent_given": True,
+        },
     )
     db.add(AuditLog(user_id=other.id, action="exam.read", object_type="exam", object_id=1))
     db.commit()

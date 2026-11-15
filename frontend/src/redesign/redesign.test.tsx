@@ -1,8 +1,14 @@
 // TEMPORARY — REDESIGN STAGING AREA. REMOVE `src/redesign/` once all mockups are applied.
-import { render, screen } from "@testing-library/react";
+import { render as plainRender, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router";
+
 import { RedesignPreview } from "./RedesignPreview";
+
+// The breadcrumb links are router links, so the preview needs a router around it.
+const render = (ui: ReactElement) => plainRender(<MemoryRouter>{ui}</MemoryRouter>);
 
 describe("redesign preview (temporary)", () => {
   it("renders every component from fake data without crashing", () => {

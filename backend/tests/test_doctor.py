@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditLog, CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Recording, Role
+from app.models import AuditLog, CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Recording, Role, VitalSigns
 from app.services import storage
 from tests.helpers import login, make_device, make_patient, make_user
 
@@ -43,13 +43,20 @@ def test_create_patient(client, headers):
 
 
 def test_create_patient_with_consent(client, headers):
-    body = {"full_name": "Ali", "birth_year": 1990, "sex": "male", "consent_given": True}
+    body = {
+        "full_name": "Ali",
+        "birth_year": 1990,
+        "sex": "male",
+        "height_cm": 175,
+        "weight_kg": 70,
+        "consent_given": True,
+    }
 
     assert client.post("/api/patients", headers=headers, json=body).json()["consent_given_at"] is not None
 
 
 def test_invalid_patient_data_is_rejected(client, headers):
-    bad = {"full_name": "Ali", "birth_year": 1800, "sex": "other"}
+    bad = {"full_name": "Ali", "birth_year": 1800, "sex": "robot", "height_cm": 175, "weight_kg": 70}
 
     assert client.post("/api/patients", headers=headers, json=bad).status_code == 422
 
@@ -595,7 +602,9 @@ def test_delete_patient_without_login_or_exams(client, db, headers, doctor):
 def test_every_doctor_action_that_returns_patient_data_is_audited(client, db, headers, doctor):
     device, _ = make_device(db, "MM-AUD", doctor)
     created = client.post(
-        "/api/patients", headers=headers, json={"full_name": "A", "birth_year": 1990, "sex": "male"}
+        "/api/patients",
+        headers=headers,
+        json={"full_name": "A", "birth_year": 1990, "sex": "male", "height_cm": 170, "weight_kg": 65},
     ).json()
     client.post(f"/api/patients/{created['id']}/consent", headers=headers)
     body = {"patient_id": created["id"], "device_id": device.id, "point": "MV"}
@@ -799,3 +808,101 @@ def test_summary_read_is_audited(client, db, headers, doctor):
     client.get("/api/patients/summary", headers=headers)
 
     assert ("patient.summary", None) in audit_actions(db)
+
+
+def test_patient_clinic_is_a_snapshot_of_the_doctors_clinic(client, db, headers, doctor):
+    doctor.clinic = "Highlands Clinic"
+    db.commit()
+    body = {"full_name": "Ali", "birth_year": 1990, "sex": "other", "height_cm": 175, "weight_kg": 70}
+
+    created = client.post("/api/patients", headers=headers, json=body).json()
+    doctor.clinic = "Lakeside Center"
+    db.commit()
+
+    assert created["sex"] == "other"
+    assert created["clinic"] == "Highlands Clinic"
+    assert client.get(f"/api/patients/{created['id']}", headers=headers).json()["clinic"] == "Highlands Clinic"
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("height_cm", 29), ("height_cm", 251), ("weight_kg", 1), ("weight_kg", 401), ("height_cm", None)],
+)
+def test_measurements_are_required_and_bounded(client, headers, field, value):
+    body = {"full_name": "Ali", "birth_year": 1990, "sex": "male", "height_cm": 175, "weight_kg": 70, field: value}
+
+    assert client.post("/api/patients", headers=headers, json=body).status_code == 422
+
+
+def test_patient_exam_rows_carry_what_the_history_table_shows(client, db, headers, doctor):
+    doctor.clinic = "Highlands Clinic"
+    device, _ = make_device(db, "MM-ROW", doctor)
+    patient = make_patient(db, doctor)
+    client.post(f"/api/patients/{patient.id}/consent", headers=headers)
+    started = client.post(
+        "/api/exams", headers=headers, json={"patient_id": patient.id, "device_id": device.id, "point": "AV"}
+    ).json()
+
+    rows = client.get(f"/api/patients/{patient.id}/exams", headers=headers).json()
+
+    assert [r["id"] for r in rows] == [started["id"]]
+    assert rows[0]["device_code"] == device.code
+    assert rows[0]["clinic"] == "Highlands Clinic"
+    assert rows[0]["result_status"] == "pending"
+    assert rows[0]["duration_s"] is None
+    assert rows[0]["ai_label"] is None
+
+
+def test_doctor_devices_carry_what_the_profile_card_shows(client, db, headers, doctor):
+    make_device(db, "MM-CARD", doctor)
+
+    card = client.get("/api/devices", headers=headers).json()[0]
+
+    assert card["code"].startswith("MM-")
+    assert card["model"]
+    assert {"location", "clinic", "battery_pct"} <= card.keys()
+
+
+def test_vitals_are_saved_per_patient_and_the_newest_is_returned(client, db, headers, doctor):
+    patient = make_patient(db, doctor)
+    url = f"/api/patients/{patient.id}/vitals"
+    assert client.get(f"{url}/latest", headers=headers).json() is None
+
+    first = {"heart_rate": 80, "systolic": 120, "diastolic": 78, "spo2": 98, "resp_rate": 16, "temp_c": 36.6}
+    assert client.post(url, headers=headers, json=first).status_code == 201
+    assert client.post(url, headers=headers, json={"heart_rate": 92}).status_code == 201
+
+    latest = client.get(f"{url}/latest", headers=headers).json()
+    assert latest["heart_rate"] == 92
+    assert latest["spo2"] is None
+    assert latest["recorded_by"] == doctor.full_name
+
+
+@pytest.mark.parametrize(
+    "body",
+    [{}, {"systolic": 120}, {"systolic": 70, "diastolic": 90}, {"heart_rate": 10}, {"spo2": 101}, {"temp_c": 50}],
+)
+def test_bad_vitals_are_rejected(client, db, headers, doctor, body):
+    patient = make_patient(db, doctor)
+
+    assert client.post(f"/api/patients/{patient.id}/vitals", headers=headers, json=body).status_code == 422
+
+
+def test_vitals_of_another_doctors_patient_are_hidden_and_audited(client, db, headers, doctor, other_doctor):
+    mine = make_patient(db, doctor, "Mine")
+    theirs = make_patient(db, other_doctor, "Theirs")
+
+    assert client.post(f"/api/patients/{theirs.id}/vitals", headers=headers, json={"heart_rate": 70}).status_code == 404
+    assert client.get(f"/api/patients/{theirs.id}/vitals/latest", headers=headers).status_code == 404
+    client.post(f"/api/patients/{mine.id}/vitals", headers=headers, json={"heart_rate": 70})
+    client.get(f"/api/patients/{mine.id}/vitals/latest", headers=headers)
+    actions = {a.action for a in db.scalars(select(AuditLog)).all()}
+    assert {"patient.vitals.create", "patient.vitals.read"} <= actions
+
+
+def test_deleting_a_patient_removes_their_vitals(client, db, headers, doctor):
+    patient = make_patient(db, doctor)
+    client.post(f"/api/patients/{patient.id}/vitals", headers=headers, json={"heart_rate": 70})
+
+    assert client.delete(f"/api/patients/{patient.id}", headers=headers).status_code == 204
+    assert db.scalars(select(VitalSigns)).all() == []

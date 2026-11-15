@@ -59,7 +59,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
 - `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
-- `backend/app/models/` — one file per table (8 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
+- `backend/app/models/` — one file per table (9 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
 - `backend/alembic/versions/` — migrations, numbered `0001_…`
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
@@ -115,8 +115,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/device/OnlineBadge.tsx` — online dot + word (doctor and admin pages)
 - `frontend/src/components/exam/ChestDiagram.tsx` — chest outline + 4 points (shared: doctor picker, patient map)
 - `frontend/src/components/layout/DoctorShell.tsx` — doctor's shell (sidebar, header, footer); admin/patient still use `AppShell`
-- `frontend/src/features/doctor/patients/mockClinic.ts` — MOCK clinic names for the registry column; delete when real data exists
-- `frontend/src/features/doctor/` — `patients/` PatientRegistry (the doctor's main page), form, patient page; `shared.tsx`
+- `frontend/src/features/doctor/` — `patients/` PatientRegistry (the doctor's main page), PatientFormPage (new / edit, "Patient created" dialog), PatientPage (`/doctor/patients/:id`: AI flag, VitalsCard + `vitalStatus.ts` (vital signs, record dialog), identity, overview / recordings tabs, device, details, consent, login, delete); `shared.tsx`
   (RecordNo, PointLabel, useOneTimeState for once-only banners)
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,

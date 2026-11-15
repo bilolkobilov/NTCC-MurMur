@@ -1,5 +1,4 @@
 import { clsx } from "clsx";
-import type { ReactNode } from "react";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +11,10 @@ import {
   type Doctor,
 } from "../../api/admin";
 import { formatRelative } from "../../lib/format";
+import { FormGroup, SelectBox } from "../../redesign/components";
 import { Icon, type IconName } from "../../redesign/Icon";
+
+export { DAlert, DCard, FormGroup, KvRow, SelectBox } from "../../redesign/components";
 
 /** Wi-Fi strength in words (RSSI in dBm): what the admin needs to decide "move the device closer". */
 export function signalWord(rssi: number): "strong" | "ok" | "weak" {
@@ -102,117 +104,6 @@ export function DevIcon({ large }: { large?: boolean }) {
     <span className={clsx("rd-devicon", large && "rd-devicon--lg")} aria-hidden="true">
       <Icon name="stethoscope" size={large ? "lg" : undefined} />
     </span>
-  );
-}
-
-export function DAlert({ tone, icon, children, role }: { tone: "info" | "warn" | "crit" | "ok"; icon: IconName; children: ReactNode; role?: "alert" | "status" }) {
-  return (
-    <div className={clsx("rd-dalert", `rd-dalert--${tone}`)} role={role ?? (tone === "crit" ? "alert" : "status")}>
-      <Icon name={icon} />
-      <span>{children}</span>
-    </div>
-  );
-}
-
-export function DCard({ title, icon, meta, children, id }: { title: string; icon?: IconName; meta?: ReactNode; children: ReactNode; id: string }) {
-  return (
-    <section className="rd-dcard" aria-labelledby={id}>
-      <div className="rd-dcard__head">
-        <div className="flex items-center gap-3">
-          {icon && (
-            <span style={{ color: "var(--c-primary)" }} className="inline-flex">
-              <Icon name={icon} />
-            </span>
-          )}
-          <h2 className="rd-h3" id={id}>
-            {title}
-          </h2>
-        </div>
-        {meta}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-export function KvRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="rd-kvrow">
-      <dt>{label}</dt>
-      <dd>{children}</dd>
-    </div>
-  );
-}
-
-/** A form field as drawn in the mockup: 14 px label (red * when required), 44 px field, 12 px hint under it. */
-export function FormGroup({
-  label,
-  required,
-  hint,
-  error,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  hint?: string;
-  error?: string | null;
-  htmlFor: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rd-fgrp">
-      <label htmlFor={htmlFor} className="rd-label">
-        {label}
-        {required && (
-          <>
-            {" "}
-            <span style={{ color: "var(--c-critical-fg)" }} aria-hidden="true">
-              *
-            </span>
-          </>
-        )}
-      </label>
-      {children}
-      {(error || hint) && (
-        <span id={`${htmlFor}-help`} className="rd-sm" style={{ color: error ? "var(--c-critical-fg)" : undefined }}>
-          {error ?? hint}
-        </span>
-      )}
-    </div>
-  );
-}
-
-/** Native select in the mockup's field frame: keyboard and screen readers work everywhere, also on a phone. */
-export function SelectBox({
-  id,
-  value,
-  onChange,
-  disabled,
-  invalid,
-  children,
-}: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  invalid?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className={clsx("rd-field rd-field--sel", invalid && "rd-field--error")}>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        aria-invalid={invalid || undefined}
-        aria-describedby={`${id}-help`}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {children}
-      </select>
-      <Icon name="chevronDown" size="sm" />
-    </div>
   );
 }
 

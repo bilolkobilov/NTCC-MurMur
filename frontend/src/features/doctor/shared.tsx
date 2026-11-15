@@ -1,18 +1,8 @@
-import { clsx } from "clsx";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation, useNavigate } from "react-router";
 
 import type { Point } from "../../api/doctor";
-
-/** Patient record number, e.g. "№ 012" — the clinical identity on lists instead of an avatar. */
-export function RecordNo({ id, className }: { id: number; className?: string }) {
-  return (
-    <span translate="no" className={clsx("font-mono text-caption text-ink-500 tabular-nums", className)}>
-      № {String(id).padStart(3, "0")}
-    </span>
-  );
-}
 
 /** Auscultation point: code (never translated) + the valve name in the user's language. */
 export function PointLabel({ point, short = false }: { point: Point; short?: boolean }) {

@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 
 import type { ActivityEntry, DoctorPatientRow, DoctorProfile } from "../../api/admin";
-import type { PatientRegistryRow } from "../../api/doctor";
+import type { PatientRegistryRow, Sex } from "../../api/doctor";
 import { OnlineBadge } from "../../components/device/OnlineBadge";
 import { ageFromBirthYear, formatDate, formatDateTime, formatNumber, formatRelative } from "../../lib/format";
 import { Avatar, ButtonLink, Card, StatusChip, Tabs } from "../../redesign/components";
@@ -292,7 +292,7 @@ function PatientsCard({ patients, total, full, onViewAll }: { patients: ProfileP
   );
 }
 
-function PatientCells({ name, birthYear, sex, at }: { name: string; birthYear: number; sex: "male" | "female"; at: string | null }) {
+function PatientCells({ name, birthYear, sex, at }: { name: string; birthYear: number; sex: Sex; at: string | null }) {
   const { t, i18n } = useTranslation();
   return (
     <>
