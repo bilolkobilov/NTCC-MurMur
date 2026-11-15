@@ -33,9 +33,26 @@
   "login": {
     "title": "Kirish",
     "username": "Foydalanuvchi nomi",
+    "sub": {
+      "doctor": "Yurak tovushlari asosida qaror qabul qilishga yordam",
+      "admin": "Qurilmalar va tizimni boshqarish",
+      "patient": "Siz uchun tasdiqlangan natijalar"
+    },
+    "roleLabel": "Kirish turi",
+    "identity": {
+      "doctor": "Shifokorning foydalanuvchi nomi",
+      "admin": "Administratorning foydalanuvchi nomi",
+      "patient": "Bemorning foydalanuvchi nomi"
+    },
     "password": "Parol",
+    "showPassword": "Parolni koʻrsatish",
+    "hidePassword": "Parolni yashirish",
     "submit": "Kirish",
-    "submitting": "Kirilmoqda…",
+    "submitting": "Tekshirilmoqda…",
+    "verifying": "Maʼlumotlaringiz tekshirilmoqda.",
+    "failedTitle": "Kirib boʻlmadi",
+    "failedBody_one": "Foydalanuvchi nomi yoki parol notoʻgʻri. Yana {{count}} urinish qoldi, soʻng kirish vaqtincha toʻxtatiladi.",
+    "failedBody_other": "Foydalanuvchi nomi yoki parol notoʻgʻri. Yana {{count}} urinish qoldi, soʻng kirish vaqtincha toʻxtatiladi.",
     "noSignup": "Hisoblarni administrator yoki shifokoringiz yaratadi.",
     "sessionEnded": "Seans tugadi. Davom etish uchun qaytadan kiring.",
     "loggedOut": "Tizimdan chiqdingiz.",

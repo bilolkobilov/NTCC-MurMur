@@ -46,6 +46,11 @@ class LoginLimiter:
             self._failures[key] = failures
             return None
 
+    def attempts_left(self, key: tuple[str, str]) -> int:
+        """How many more wrong passwords this key may send before it is blocked (0 = the next one is refused)."""
+        with self._lock:
+            return max(0, self.max_failures - len(self._recent(key, self.clock())))
+
     def reset(self, key: tuple[str, str] | None = None) -> None:
         with self._lock:
             if key is None:

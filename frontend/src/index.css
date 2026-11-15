@@ -46,6 +46,24 @@
   --color-danger: #b91c1c;
   --color-field: #f3f5f8; /* inputs are inset: a touch darker than the surface around them */
 
+  /* Redesigned sign-in card (docs/redesign, frames #7–#16): petrol-blue palette, used by components/auth only. */
+  --color-auth-canvas: #f6f8f9;
+  --color-auth-subtle: #edf1f3;
+  --color-auth-border: #dfe5e9;
+  --color-auth-input: #7d8c97;
+  --color-auth-ink: #0e1a22;
+  --color-auth-ink-2: #41525e;
+  --color-auth-ink-3: #5a6b77;
+  --color-auth-primary: #0b6e8a;
+  --color-auth-primary-hover: #095a72;
+  --color-auth-tint: #e4f2f6;
+  --color-auth-primary-ink: #0a5c74;
+  --color-auth-critical: #b0231a;
+  --color-auth-critical-bg: #fdebe9;
+  --color-auth-critical-dot: #d92d20;
+  --color-auth-ok: #15663d;
+  --color-auth-ok-bg: #e7f5ec;
+
   --font-sans: "Uzbek Okina", "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 

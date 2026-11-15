@@ -278,3 +278,61 @@ def test_parallel_attempts_cannot_slip_past_the_limit():
         thread.join(10)
 
     assert allowed.count(True) == 5
+
+
+def test_failed_login_says_how_many_attempts_are_left(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+    max_failures = get_settings().login_max_failures
+
+    first = client.post("/api/auth/login", json={"username": "dr.aziz", "password": "nope-nope"})
+    second = client.post("/api/auth/login", json={"username": "dr.aziz", "password": "nope-nope"})
+
+    assert first.headers["X-Attempts-Left"] == str(max_failures - 1)
+    assert second.headers["X-Attempts-Left"] == str(max_failures - 2)
+
+
+def test_login_with_the_right_role_card_works(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+
+    response = client.post(
+        "/api/auth/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD, "role": "doctor"}
+    )
+
+    assert response.status_code == 200
+
+
+def test_wrong_role_card_gets_the_same_401_as_a_wrong_password(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+
+    wrong_role = client.post(
+        "/api/auth/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD, "role": "admin"}
+    )
+    wrong_password = client.post("/api/auth/login", json={"username": "dr.aziz", "password": "nope-nope"})
+
+    assert wrong_role.status_code == wrong_password.status_code == 401
+    assert wrong_role.json() == wrong_password.json()
+    assert "X-Attempts-Left" in wrong_role.headers
+
+
+def test_admin_logs_in_only_through_the_admin_endpoint(client, db):
+    make_user(db, "admin", Role.ADMIN)
+    credentials = {"username": "admin", "password": DEFAULT_PASSWORD}
+
+    through_admin = client.post("/api/auth/admin/login", json=credentials)
+    through_normal = client.post("/api/auth/login", json=credentials)
+
+    assert through_admin.status_code == 200
+    assert through_admin.json()["role"] == "admin"
+    assert through_normal.status_code == 401
+    assert through_normal.json() == {"detail": "wrong username or password"}
+
+
+def test_admin_endpoint_refuses_doctors_and_patients_like_a_wrong_password(client, db):
+    make_user(db, "dr.aziz", Role.DOCTOR)
+
+    refused = client.post("/api/auth/admin/login", json={"username": "dr.aziz", "password": DEFAULT_PASSWORD})
+    wrong_password = client.post("/api/auth/admin/login", json={"username": "dr.aziz", "password": "nope-nope"})
+
+    assert refused.status_code == wrong_password.status_code == 401
+    assert refused.json() == wrong_password.json()
+    assert "X-Attempts-Left" in refused.headers

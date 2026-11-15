@@ -7,6 +7,12 @@ from app.schemas.common import NewPassword
 class LoginRequest(BaseModel):
     username: str
     password: str
+    role: Role | None = None  # the role chosen on the login card; the account must have it
+
+
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
 
 
 class TokenResponse(BaseModel):
