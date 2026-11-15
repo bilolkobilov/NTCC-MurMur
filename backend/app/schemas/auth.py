@@ -34,3 +34,4 @@ class AccountOut(BaseModel):
     username: str
     role: Role
     full_name: str
+    clinic: str | None = None

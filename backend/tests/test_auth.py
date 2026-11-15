@@ -336,3 +336,11 @@ def test_admin_endpoint_refuses_doctors_and_patients_like_a_wrong_password(clien
     assert refused.status_code == wrong_password.status_code == 401
     assert refused.json() == wrong_password.json()
     assert "X-Attempts-Left" in refused.headers
+
+
+def test_me_shows_the_clinic_of_the_account(client, db):
+    doctor = make_user(db, "dr.clinic", Role.DOCTOR)
+    doctor.clinic = "Highlands Clinic"
+    db.commit()
+
+    assert client.get("/api/auth/me", headers=login(client, "dr.clinic")).json()["clinic"] == "Highlands Clinic"

@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -44,6 +45,30 @@ class PatientOut(BaseModel):
     consent_given_at: datetime | None
     has_login: bool
     created_at: datetime
+
+
+class LastExamOut(BaseModel):
+    id: int
+    point: AuscultationPoint
+    status: ExamStatus
+    created_at: datetime
+    device_name: str | None
+
+
+class PatientRegistryRow(PatientOut):
+    """A patient in the registry: the patient plus the latest exam and the status derived from it."""
+
+    last_exam: LastExamOut | None
+    result_status: Literal["normal", "abnormal", "pending", "failed", "reviewed"]
+    needs_review: bool
+
+
+class PatientSummary(BaseModel):
+    total: int
+    assigned_today: int
+    normal: int
+    needs_review: int
+    pending: int
 
 
 class PatientLoginCreate(BaseModel):
@@ -97,10 +122,6 @@ class ExamSummary(BaseModel):
     status: ExamStatus
     created_at: datetime
     reviewed_at: datetime | None
-
-
-class DoctorExamListItem(ExamSummary):
-    patient_full_name: str
 
 
 class ExamDetail(ExamSummary):

@@ -3,7 +3,7 @@ from datetime import timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditLog, CommandStatus, DeviceCommand, Exam, ExamStatus, Recording, Role
+from app.models import AuditLog, CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Recording, Role
 from app.services import storage
 from tests.helpers import login, make_device, make_patient, make_user
 
@@ -300,7 +300,6 @@ DOCTOR_ENDPOINTS = [
     ("post", "/api/exams/1/cancel"),
     ("patch", "/api/patients/1"),
     ("delete", "/api/patients/1"),
-    ("get", "/api/exams"),
 ]
 
 
@@ -666,33 +665,6 @@ def test_start_exam_while_patient_is_being_deleted_gives_404(db, doctor, monkeyp
 # --- lists for the web app ---
 
 
-def test_doctor_exam_list_filters_by_status_and_shows_patient_names(client, db, headers, doctor, other_doctor):
-    waiting = make_exam(db, doctor, ExamStatus.WAITING)
-    analyzed = make_exam(db, doctor, ExamStatus.ANALYZED)
-    make_exam(db, other_doctor, ExamStatus.ANALYZED)
-
-    everything = client.get("/api/exams", headers=headers).json()
-    to_review = client.get("/api/exams?status=analyzed", headers=headers).json()
-
-    assert [e["id"] for e in everything] == [analyzed.id, waiting.id], "own exams only, newest first"
-    assert [e["id"] for e in to_review] == [analyzed.id]
-    assert to_review[0]["patient_full_name"] == "Ali Valiyev"
-    assert "ai_result" not in to_review[0]
-    assert ("exam.list", None) in audit_actions(db)
-
-
-def test_exam_list_paging_and_bad_parameters(client, db, headers, doctor):
-    ids = [make_exam(db, doctor).id for _ in range(3)]
-
-    page1 = client.get("/api/exams?limit=2", headers=headers).json()
-    page2 = client.get("/api/exams?limit=2&offset=2", headers=headers).json()
-
-    assert [e["id"] for e in page1 + page2] == list(reversed(ids))
-    assert client.get("/api/exams?limit=0", headers=headers).status_code == 422
-    assert client.get("/api/exams?limit=201", headers=headers).status_code == 422
-    assert client.get("/api/exams?status=bogus", headers=headers).status_code == 422
-
-
 def test_patient_list_search_sort_and_paging(client, db, headers, doctor, other_doctor):
     for name in ["Zarina Karimova", "ali valiyev", "Bobur Aliev", "100%_real"]:
         make_patient(db, doctor, name)
@@ -706,3 +678,124 @@ def test_patient_list_search_sort_and_paging(client, db, headers, doctor, other_
     assert names("?q=%25") == ["100%_real"], "% is matched literally"
     assert names("?q=_") == ["100%_real"], "_ is matched literally"
     assert names("?limit=2&offset=1") == ["ali valiyev", "Bobur Aliev"]
+
+
+# --- patient registry (list with last exam + status, summary) ---
+
+
+def add_exam(db, patient, device, status, *, label=None, quality="good", agrees=None, age=timedelta(0)):
+    from datetime import UTC, datetime
+
+    from app.models import AIResult
+
+    exam = Exam(
+        patient_id=patient.id,
+        doctor_id=patient.doctor_id,
+        device_id=device.id,
+        point="MV",
+        status=status,
+        doctor_agrees_with_ai=agrees,
+        created_at=datetime.now(UTC) - age,
+    )
+    db.add(exam)
+    db.flush()
+    if label:
+        db.add(AIResult(exam_id=exam.id, model_name="dummy", model_version="0.1", quality=quality, label=label))
+    db.commit()
+    return exam
+
+
+@pytest.fixture
+def registry(db, doctor):
+    """Anna: abnormal, to review. Boris: normal, to review. Carla: pending. Dina: no exam. Egor: failed."""
+    device, _ = make_device(db, "R1", doctor)
+    anna, boris, carla, dina, egor = (make_patient(db, doctor, n) for n in ("Anna", "Boris", "Carla", "Dina", "Egor"))
+    add_exam(db, anna, device, ExamStatus.ANALYZED, label="murmur", age=timedelta(hours=3))
+    add_exam(db, boris, device, ExamStatus.ANALYZED, label="absent", age=timedelta(hours=2))
+    add_exam(db, carla, device, ExamStatus.UPLOADED, age=timedelta(hours=1))
+    add_exam(db, egor, device, ExamStatus.FAILED, age=timedelta(days=3))
+    return {"anna": anna, "boris": boris, "carla": carla, "dina": dina, "egor": egor}
+
+
+def names(client, headers, **params):
+    response = client.get("/api/patients", headers=headers, params=params)
+    assert response.status_code == 200, response.text
+    return [p["full_name"] for p in response.json()]
+
+
+def test_registry_row_has_last_exam_and_status(client, headers, registry):
+    rows = {p["full_name"]: p for p in client.get("/api/patients", headers=headers).json()}
+
+    assert rows["Anna"]["result_status"] == "abnormal" and rows["Anna"]["needs_review"] is True
+    assert rows["Anna"]["last_exam"]["point"] == "MV" and rows["Anna"]["last_exam"]["device_name"] == "Device R1"
+    assert rows["Boris"]["result_status"] == "normal"
+    assert rows["Carla"]["result_status"] == "pending" and rows["Carla"]["needs_review"] is False
+    assert rows["Dina"]["last_exam"] is None and rows["Dina"]["result_status"] == "pending"
+    assert rows["Egor"]["result_status"] == "failed"
+
+
+def test_registry_uses_the_latest_exam_only(client, db, headers, doctor, registry):
+    device = db.scalar(select(Exam.device_id).limit(1))
+    anna = registry["anna"]
+    db.add(Exam(patient_id=anna.id, doctor_id=doctor.id, device_id=device, point="AV", status=ExamStatus.WAITING))
+    db.commit()
+
+    row = next(p for p in client.get("/api/patients", headers=headers).json() if p["full_name"] == "Anna")
+
+    assert row["last_exam"]["point"] == "AV" and row["result_status"] == "pending"
+
+
+def test_registry_sorts(client, headers, registry):
+    assert names(client, headers, sort="name") == ["Anna", "Boris", "Carla", "Dina", "Egor"]
+    assert names(client, headers, sort="recent") == ["Carla", "Boris", "Anna", "Egor", "Dina"]
+    assert names(client, headers, sort="priority") == ["Anna", "Egor", "Boris", "Carla", "Dina"]
+    assert client.get("/api/patients?sort=nonsense", headers=headers).status_code == 422
+
+
+def test_registry_status_filter_and_search(client, headers, registry):
+    assert names(client, headers, status="needs_review", sort="name") == ["Anna", "Boris"]
+    assert names(client, headers, status="pending", sort="name") == ["Carla", "Dina"]
+    assert names(client, headers, q="ann") == ["Anna"]
+    assert names(client, headers, limit=2, offset=1, sort="name") == ["Boris", "Carla"]
+
+
+def test_reviewed_exam_leaves_the_review_tab(client, db, headers, doctor, registry):
+    device = db.scalar(select(Device))
+    add_exam(db, registry["anna"], device, ExamStatus.REVIEWED, label="murmur", agrees=True)
+
+    row = next(p for p in client.get("/api/patients", headers=headers).json() if p["full_name"] == "Anna")
+
+    assert row["needs_review"] is False and row["result_status"] == "abnormal"
+
+
+def test_summary_counts_the_whole_roster(client, headers, registry):
+    response = client.get("/api/patients/summary", headers=headers)
+
+    assert response.status_code == 200
+    assert response.json() == {"total": 5, "assigned_today": 3, "normal": 1, "needs_review": 2, "pending": 2}
+
+
+def test_registry_and_summary_never_include_other_doctors(client, db, headers, other_doctor, registry):
+    stranger = make_patient(db, other_doctor, "Stranger")
+    device, _ = make_device(db, "R2", other_doctor)
+    add_exam(db, stranger, device, ExamStatus.ANALYZED, label="murmur")
+
+    assert "Stranger" not in names(client, headers)
+    assert client.get("/api/patients/summary", headers=headers).json()["total"] == 5
+
+
+def test_summary_is_for_doctors_only(client, db, headers):
+    make_user(db, "admin.root", Role.ADMIN)
+    make_user(db, "pat.ient", Role.PATIENT)
+    _, key = make_device(db, "R3")
+
+    assert client.get("/api/patients/summary").status_code == 401
+    assert client.get("/api/patients/summary", headers=login(client, "admin.root")).status_code == 403
+    assert client.get("/api/patients/summary", headers=login(client, "pat.ient")).status_code == 403
+    assert client.get("/api/patients/summary", headers={"X-Device-Key": key}).status_code in (401, 403)
+
+
+def test_summary_read_is_audited(client, db, headers, doctor):
+    client.get("/api/patients/summary", headers=headers)
+
+    assert ("patient.summary", None) in audit_actions(db)

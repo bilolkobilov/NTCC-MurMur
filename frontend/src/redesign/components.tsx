@@ -9,6 +9,7 @@
 import { clsx } from "clsx";
 import type { ButtonHTMLAttributes, ComponentProps, ReactNode } from "react";
 import { useId } from "react";
+import { Link, type LinkProps } from "react-router";
 
 import { Icon, type IconName } from "./Icon";
 import "./redesign.css";
@@ -38,6 +39,16 @@ export function Button({ variant = "secondary", icon, block, busy, busyText, cla
       {busy ? <span className="rd-spin" aria-hidden="true" /> : icon && <Icon name={icon} size="sm" />}
       {busy && busyText ? busyText : children}
     </button>
+  );
+}
+
+/** A real link that looks like a `Button` (Ctrl+click and middle-click keep working). */
+export function ButtonLink({ variant = "secondary", icon, className, children, ...rest }: LinkProps & { variant?: ButtonVariant; icon?: IconName }) {
+  return (
+    <Link {...rest} className={clsx("rd-btn", `rd-btn--${variant}`, className as string)}>
+      {icon && <Icon name={icon} size="sm" />}
+      {children}
+    </Link>
   );
 }
 
@@ -89,6 +100,23 @@ export function SearchField({ label, shortcut, className, ...input }: { label: s
       <Icon name="search" />
       <input type="search" {...input} />
       {shortcut && <kbd>{shortcut}</kbd>}
+    </label>
+  );
+}
+
+/** 44 px toolbar select (sort, filters). `label` is screen-reader only. Native `<select>`: keyboard and mobile for free. */
+export function SelectField({ label, options, className, ...select }: { label: string; options: { value: string; label: string }[] } & Omit<ComponentProps<"select">, "children">) {
+  return (
+    <label className={clsx("rd-field rd-field--select", className)}>
+      <span className="rd-sr">{label}</span>
+      <select {...select}>
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <Icon name="chevronDown" size="sm" />
     </label>
   );
 }
@@ -249,9 +277,9 @@ export function Breadcrumbs({ label, items }: { label: string; items: Crumb[] })
 
 // ---- Surfaces -----------------------------------------------------------------------------------------------------
 
-export function Avatar({ initials, size }: { initials: string; size?: "sm" }) {
+export function Avatar({ initials, size, soft }: { initials: string; size?: "sm"; soft?: boolean }) {
   return (
-    <span className={clsx("rd-avatar", size === "sm" && "rd-avatar--sm")} aria-hidden="true">
+    <span className={clsx("rd-avatar", size === "sm" && "rd-avatar--sm", soft && "rd-avatar--soft")} aria-hidden="true">
       {initials}
     </span>
   );
@@ -283,6 +311,21 @@ export function TitleToolbar({ crumbs, crumbsLabel, title, description, actions 
         </div>
         {actions && <div className="rd-toolbar__actions">{actions}</div>}
       </div>
+    </div>
+  );
+}
+
+/** Summary figure: small icon + label above a 32 px number (the design draws them inside one panel, no card each). */
+export function SummaryTile({ icon, value, label, tone }: { icon: IconName; value: number | string; label: string; tone?: "normal" | "abnormal" | "pending" }) {
+  return (
+    <div className="rd-tile">
+      <span className="rd-tile__label">
+        <span className={clsx("rd-tile__icon", tone && `rd-tile__icon--${tone}`)}>
+          <Icon name={icon} size="sm" />
+        </span>
+        {label}
+      </span>
+      <span className="rd-tile__value">{value}</span>
     </div>
   );
 }

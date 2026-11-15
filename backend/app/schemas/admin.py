@@ -1,14 +1,33 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
 
 from app.schemas.common import FullName, NewPassword, RefId, Username
+
+# The clinic is free text; blank means "not set".
+Clinic = Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=200)]
 
 
 class DoctorCreate(BaseModel):
     username: Username
     password: NewPassword
     full_name: FullName
+    clinic: Clinic = None
+
+    @field_validator("clinic")
+    @classmethod
+    def blank_is_none(cls, value):
+        return value or None
+
+
+class DoctorClinic(BaseModel):
+    clinic: Clinic
+
+    @field_validator("clinic")
+    @classmethod
+    def blank_is_none(cls, value):
+        return value or None
 
 
 class DoctorOut(BaseModel):
@@ -17,6 +36,7 @@ class DoctorOut(BaseModel):
     id: int
     username: str
     full_name: str
+    clinic: str | None
     is_active: bool
     created_at: datetime
     patient_count: int = 0

@@ -1,14 +1,13 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import type { Patient } from "../../api/doctor";
+import type { Patient, PatientRegistryRow } from "../../api/doctor";
 import { session } from "../../app/session";
-import i18n from "../../i18n";
 import { backend, bodyOf, ok, renderAt } from "../../test/utils";
 import { validate } from "./patients/PatientFormPage";
 import { suggestUsername } from "./patients/PatientPage";
 
-const me = () => ok({ id: 1, username: "dr", role: "doctor", full_name: "Aziz Karimov" });
+const me = () => ok({ id: 1, username: "dr", role: "doctor", full_name: "Aziz Karimov", clinic: "Highlands Clinic" });
 
 const ali: Patient = {
   id: 12,
@@ -30,81 +29,129 @@ afterEach(() => {
   session.takeEndReason();
 });
 
-describe("doctor home", () => {
-  test("the review queue leads: count sentence + rows; devices show online in words", async () => {
-    backend({
-      "GET /api/auth/me": me,
-      "GET /api/exams": (_, url) =>
-        url.searchParams.get("status") === "analyzed"
-          ? ok([
-              { id: 7, patient_id: 12, device_id: 1, point: "MV", status: "analyzed", created_at: new Date().toISOString(), reviewed_at: null, patient_full_name: "Ali Valiyev" },
-              { id: 8, patient_id: 13, device_id: 1, point: "AV", status: "analyzed", created_at: new Date().toISOString(), reviewed_at: null, patient_full_name: "Vali Aliyev" },
-            ])
-          : ok([]),
-      "GET /api/devices": () =>
-        ok([
-          { id: 1, name: "MurMur #1", serial: "MM-001", online: true, last_seen_at: new Date().toISOString() },
-          { id: 2, name: "MurMur #2", serial: "MM-002", online: false, last_seen_at: null },
-        ]),
-    });
-    renderAt("/doctor");
-
-    expect(await screen.findByRole("heading", { level: 1, name: "2 exams wait for your review" })).toBeInTheDocument();
-    const queue = screen.getByRole("heading", { level: 1 }).closest("section")!;
-    expect(within(queue).getByRole("link", { name: /Ali Valiyev/ })).toHaveAttribute("href", "/doctor/exams/7");
-    expect(await screen.findByText("Online")).toBeInTheDocument();
-    expect(screen.getByText("Offline")).toBeInTheDocument();
-    expect(screen.getByText("No exams yet.")).toBeInTheDocument();
-  });
-
-  test("an empty queue says so plainly and offers the next step", async () => {
-    backend({ "GET /api/auth/me": me, "GET /api/exams": () => ok([]), "GET /api/devices": () => ok([]) });
-    renderAt("/doctor");
-
-    expect(await screen.findByRole("heading", { level: 1, name: "No exams wait for your review" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open patients" })).toBeInTheDocument();
-    expect(await screen.findByText(/No device is assigned to you yet/)).toBeInTheDocument();
-  });
-
-  test("Russian plural forms are right (1 / 3 / 5)", () => {
-    const t = (count: number) => i18n.t("doctorHome.queueCount", { count, lng: "ru" });
-    expect(t(1)).toBe("1 обследование ждёт вашего заключения");
-    expect(t(3)).toBe("3 обследования ждут вашего заключения");
-    expect(t(5)).toBe("5 обследований ждут вашего заключения");
-  });
+const registryRow = (over: Partial<PatientRegistryRow> = {}): PatientRegistryRow => ({
+  ...ali,
+  last_exam: { id: 7, point: "MV", status: "analyzed", created_at: new Date().toISOString(), device_name: "MurMur #1" },
+  result_status: "abnormal",
+  needs_review: true,
+  ...over,
 });
 
-describe("patients list", () => {
-  test("rows show the record number, name, facts and a missing-consent flag", async () => {
-    backend({ "GET /api/auth/me": me, "GET /api/patients": () => ok([ali]) });
-    renderAt("/doctor/patients");
+const summary = { total: 4, assigned_today: 2, normal: 1, needs_review: 2, pending: 1 };
 
-    const row = await screen.findByRole("link", { name: /Ali Valiyev/ });
-    expect(row).toHaveAttribute("href", "/doctor/patients/12");
-    expect(within(row).getByText("№ 012")).toBeInTheDocument();
-    expect(within(row).getByText(/years · Male · 175 cm · 70.5 kg/)).toBeInTheDocument();
-    expect(within(row).getByText("No consent")).toBeInTheDocument();
+const registryBackend = (rows: (url: URL) => PatientRegistryRow[]) =>
+  backend({
+    "GET /api/auth/me": me,
+    "GET /api/patients": (_, url) => ok(rows(url)),
+    "GET /api/patients/summary": () => ok(summary),
   });
 
-  test("search goes into the URL after a pause and is sent to the API", async () => {
-    const fetchMock = backend({
-      "GET /api/auth/me": me,
-      "GET /api/patients": (_, url) => ok(url.searchParams.get("q") === "ali" ? [ali] : []),
-    });
+describe("patient registry", () => {
+  test("/doctor opens the registry", async () => {
+    registryBackend(() => []);
+    const router = renderAt("/doctor");
+
+    await waitFor(() => expect(router.state.location.pathname).toBe("/doctor/patients"));
+    expect(await screen.findByRole("heading", { level: 1, name: "Patient registry" })).toBeInTheDocument();
+  });
+
+  test("a row shows the patient, age · sex, last recording and a status word; Open has a full name", async () => {
+    registryBackend(() => [registryRow()]);
+    renderAt("/doctor/patients");
+
+    const row = (await screen.findByText("Ali Valiyev")).closest("tr")!;
+    expect(within(row).getByText("№ 012")).toBeInTheDocument();
+    expect(within(row).getByText(/· M$/)).toBeInTheDocument();
+    expect(within(row).getByText("Abnormal")).toBeInTheDocument();
+    // mock clinic data (mockClinic.ts): registered clinic + where the latest exam was analyzed
+    expect(within(row).getByText("Highlands Clinic")).toBeInTheDocument(); // patient 12 → index 0
+    expect(within(row).getByText(/Analyzed at .* · MurMur #1/)).toBeInTheDocument();
+    expect(within(row).getByRole("link", { name: "Open record for Ali Valiyev" })).toHaveAttribute(
+      "href",
+      "/doctor/patients/12",
+    );
+  });
+
+  test.each([
+    [{ result_status: "normal", needs_review: true }, "Normal"],
+    [{ result_status: "pending", needs_review: false, last_exam: null }, "Pending"],
+    [{ result_status: "pending", needs_review: true }, "Awaiting review"],
+    [{ result_status: "failed", needs_review: false }, "Re-record"],
+    [{ result_status: "reviewed", needs_review: false }, "Reviewed"],
+  ] as [Partial<PatientRegistryRow>, string][])("status %j shows the word “%s”", async (over, word) => {
+    registryBackend(() => [registryRow(over)]);
+    renderAt("/doctor/patients");
+
+    const row = (await screen.findByText("Ali Valiyev")).closest("tr")!;
+    expect(within(row).getByText(word)).toBeInTheDocument();
+  });
+
+  test("a patient with no exam says so", async () => {
+    registryBackend(() => [registryRow({ last_exam: null, result_status: "pending", needs_review: false })]);
+    renderAt("/doctor/patients");
+
+    expect(await screen.findByText("No recording yet")).toBeInTheDocument();
+    expect(screen.getByText("Not analyzed yet")).toBeInTheDocument();
+  });
+
+  test("summary figures show the backend numbers", async () => {
+    registryBackend(() => []);
+    renderAt("/doctor/patients");
+
+    const tiles = await screen.findByRole("group", { name: "Summary" });
+    expect(within(tiles).getByText("Assigned today").nextElementSibling).toHaveTextContent("2");
+    expect(within(tiles).getByText("Needs review").nextElementSibling).toHaveTextContent("2");
+    expect(within(tiles).getByText("Pending").nextElementSibling).toHaveTextContent("1");
+  });
+
+  test("the doctor shell: sidebar with the patient count, account menu, footer links", async () => {
+    registryBackend(() => []);
+    renderAt("/doctor/patients");
+
+    const nav = await screen.findByRole("navigation", { name: "Main navigation" });
+    expect(await within(nav).findByText("4")).toBeInTheDocument();
+    expect(within(nav).getByRole("link", { name: /Patients/ })).toHaveAttribute("aria-current", "page");
+    expect(await screen.findByRole("button", { name: "Account" })).toBeInTheDocument();
+    expect(await screen.findByText("Highlands Clinic")).toBeInTheDocument(); // the clinic chip in the header
+    expect(within(screen.getByRole("navigation", { name: "Footer" })).getAllByRole("link")).toHaveLength(4);
+  });
+
+  test("tabs and sort go into the URL and are sent to the API", async () => {
+    const fetchMock = registryBackend(() => [registryRow()]);
     const router = renderAt("/doctor/patients");
     const user = userEvent.setup();
 
-    await user.type(await screen.findByRole("searchbox", { name: "Search patients by name" }), "ali");
+    await user.click(await screen.findByRole("tab", { name: /Needs review/ }));
+    await waitFor(() => expect(router.state.location.search).toBe("?status=needs_review"));
+    await user.selectOptions(screen.getByRole("combobox", { name: "Sort" }), "priority");
+    await waitFor(() => expect(router.state.location.search).toBe("?sort=priority&status=needs_review"));
+
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url]) => String(url).includes("status=needs_review") && String(url).includes("sort=priority"),
+        ),
+      ).toBe(true),
+    );
+    expect(screen.getByRole("tab", { name: /Needs review/ })).toHaveAttribute("aria-selected", "true");
+  });
+
+  test("search goes into the URL after a pause and is sent to the API", async () => {
+    const fetchMock = registryBackend((url) => (url.searchParams.get("q") === "ali" ? [registryRow()] : []));
+    const router = renderAt("/doctor/patients");
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByRole("searchbox", { name: "Search this list" }), "ali");
 
     await waitFor(() => expect(router.state.location.search).toBe("?q=ali"));
-    expect(await screen.findByRole("link", { name: /Ali Valiyev/ })).toBeInTheDocument();
-    const searches = fetchMock.mock.calls.map(([url]) => String(url)).filter((u) => u.startsWith("/api/patients"));
+    expect(await screen.findByText("Ali Valiyev")).toBeInTheDocument();
+    const searches = fetchMock.mock.calls.map(([url]) => String(url)).filter((u) => u.startsWith("/api/patients?"));
     expect(searches.some((u) => u.includes("q=ali"))).toBe(true);
     expect(searches.some((u) => u.includes("q=a&"))).toBe(false); // no request per keystroke
   });
 
   test("first-run and no-match empty states are different", async () => {
-    backend({ "GET /api/auth/me": me, "GET /api/patients": () => ok([]) });
+    registryBackend(() => []);
     renderAt("/doctor/patients");
     expect(await screen.findByRole("heading", { name: "Add your first patient" })).toBeInTheDocument();
 
@@ -117,13 +164,24 @@ describe("patients list", () => {
     let calls = 0;
     backend({
       "GET /api/auth/me": me,
-      "GET /api/patients": () => (++calls === 1 ? { status: 404, body: { detail: "x" } } : ok([ali])),
+      "GET /api/patients": () => (++calls === 1 ? { status: 404, body: { detail: "x" } } : ok([registryRow()])),
+      "GET /api/patients/summary": () => ok(summary),
     });
     renderAt("/doctor/patients");
 
     await userEvent.setup().click(await screen.findByRole("button", { name: "Try again" }));
 
-    expect(await screen.findByRole("link", { name: /Ali Valiyev/ })).toBeInTheDocument();
+    expect(await screen.findByText("Ali Valiyev")).toBeInTheDocument();
+  });
+
+  test("Open is a keyboard-reachable link", async () => {
+    registryBackend(() => [registryRow()]);
+    renderAt("/doctor/patients");
+    const open = await screen.findByRole("link", { name: "Open record for Ali Valiyev" });
+
+    open.focus();
+
+    expect(open).toHaveFocus();
   });
 });
 

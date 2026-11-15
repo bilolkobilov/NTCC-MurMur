@@ -291,3 +291,43 @@ def test_rotate_device_key(client, admin, db):
     assert client.post("/api/device/heartbeat", headers=new_key, json={}).status_code == 200
     assert rotated.json()["api_key"] not in client.get("/api/admin/devices", headers=admin).text
     assert client.post("/api/admin/devices/9999/rotate-key", headers=admin).status_code == 404
+
+
+# --- where a doctor works (clinic) ---
+
+
+def test_clinic_is_set_on_create_listed_edited_and_cleared(client, admin):
+    created = client.post(
+        "/api/admin/doctors",
+        headers=admin,
+        json={
+            "username": "dr.clinic",
+            "password": "doctor-pass-1",
+            "full_name": "A B",
+            "clinic": "  Highlands Clinic ",
+        },
+    ).json()
+    assert created["clinic"] == "Highlands Clinic"
+    assert [d["clinic"] for d in client.get("/api/admin/doctors", headers=admin).json()] == ["Highlands Clinic"]
+
+    moved = client.patch(f"/api/admin/doctors/{created['id']}", headers=admin, json={"clinic": "Lakeside Center"})
+    assert moved.json()["clinic"] == "Lakeside Center"
+    cleared = client.patch(f"/api/admin/doctors/{created['id']}", headers=admin, json={"clinic": "  "})
+    assert cleared.json()["clinic"] is None
+
+
+def test_clinic_is_optional_and_limited(client, admin):
+    assert create_doctor(client, admin)["clinic"] is None
+    too_long = {"username": "dr.long", "password": "doctor-pass-1", "full_name": "A B", "clinic": "x" * 201}
+    assert client.post("/api/admin/doctors", headers=admin, json=too_long).status_code == 422
+
+
+def test_only_admin_edits_a_clinic_and_only_on_doctors(client, db, admin):
+    doctor = create_doctor(client, admin)
+    make_user(db, "dr.other", Role.DOCTOR)
+    patient = make_user(db, "pat.ient", Role.PATIENT)
+    other = login(client, "dr.other")
+
+    assert client.patch(f"/api/admin/doctors/{doctor['id']}", json={"clinic": "X"}).status_code == 401
+    assert client.patch(f"/api/admin/doctors/{doctor['id']}", headers=other, json={"clinic": "X"}).status_code == 403
+    assert client.patch(f"/api/admin/doctors/{patient.id}", headers=admin, json={"clinic": "X"}).status_code == 404

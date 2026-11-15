@@ -78,6 +78,7 @@
 .rd-chip--critical { background: var(--c-critical-bg); color: var(--c-critical-fg); }
 .rd-chip--pending { background: var(--c-pending-bg); color: var(--c-pending-fg); }
 .rd-chip--ai { background: var(--c-ai-bg); color: var(--c-ai-fg); }
+.rd-chip--clinic { background: var(--c-primary-tint); color: var(--c-primary-ink); }
 .rd-badge { display: inline-block; min-width: 24px; height: 20px; padding: 0 6px; border-radius: var(--r-full); background: var(--c-subtle); color: var(--c-ink-2); font: 600 12px/20px var(--font); text-align: center; }
 .rd-badge--critical { background: var(--c-critical-bg); color: var(--c-critical-fg); }
 
@@ -120,7 +121,7 @@
 .rd-card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
 .rd-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); padding: var(--s-4) var(--s-5); border-bottom: 1px solid var(--c-border); }
 .rd-card__body { padding: var(--s-5); }
-.rd-toolbar { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-5); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.rd-toolbar { display: flex; flex-direction: column; gap: var(--s-3); }
 .rd-toolbar__row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: var(--s-4); }
 .rd-toolbar__title { display: flex; flex-direction: column; gap: var(--s-1); }
 .rd-toolbar__actions { display: flex; gap: var(--s-2); }
@@ -128,6 +129,55 @@
 .rd-menu-item { display: flex; align-items: center; gap: var(--s-3); width: 100%; height: 44px; padding: 0 var(--s-3); border: 0; border-radius: var(--r-md); background: transparent; color: var(--c-ink); font: 500 14px/20px var(--font); text-align: left; cursor: pointer; }
 .rd-menu-item:hover { background: var(--c-subtle); }
 .rd-skeleton { background: var(--c-subtle); border-radius: var(--r-sm); }
+
+/* ---- Select field, summary, data table (patient registry; frame "Desktop shell 1440") ---- */
+.rd-field--select { position: relative; padding-right: var(--s-3); }
+.rd-field--select select { appearance: none; -webkit-appearance: none; padding-right: var(--s-5); font-weight: 600; cursor: pointer; }
+.rd-field--select .rd-ic { position: absolute; right: var(--s-3); pointer-events: none; }
+.rd-panel { display: flex; flex-direction: column; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: 16px; overflow: hidden; }
+.rd-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: var(--s-5); padding: var(--s-5); }
+.rd-tile { display: flex; flex-direction: column; gap: var(--s-1); }
+.rd-tile__label { display: flex; align-items: center; gap: 6px; font: 500 13px/16px var(--font); color: var(--c-ink-2); }
+.rd-tile__icon { display: inline-flex; color: var(--c-primary); }
+.rd-tile__icon--normal { color: var(--c-normal-fg); }
+.rd-tile__icon--abnormal { color: var(--c-abnormal-fg); }
+.rd-tile__icon--pending { color: var(--c-pending-fg); }
+.rd-tile__value { font: 600 32px/40px var(--font); letter-spacing: -0.02em; color: var(--c-ink); font-variant-numeric: tabular-nums; }
+.rd-panel__tabs { padding: 0 var(--s-4); border-top: 1px solid var(--c-border); }
+.rd-panel__tabs .rd-tabs { border-bottom: 0; }
+.rd-searchbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); padding: var(--s-3) var(--s-4); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.rd-table { width: 100%; border-collapse: collapse; font: 400 14px/20px var(--font); color: var(--c-ink-2); border-top: 1px solid var(--c-border); }
+.rd-table th { padding: var(--s-2) var(--s-5); text-align: left; background: var(--c-canvas); border-bottom: 1px solid var(--c-border); font: 700 11px/14px var(--font); letter-spacing: 0.04em; text-transform: uppercase; color: var(--c-ink-3); }
+.rd-table td { padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--c-border); vertical-align: middle; }
+.rd-table tbody tr:hover { background: var(--c-canvas); }
+.rd-table__cell { display: flex; flex-direction: column; min-width: 0; }
+.rd-table__who { display: flex; align-items: center; gap: var(--s-3); min-width: 0; }
+.rd-table__ink { color: var(--c-ink); }
+.rd-table__end { text-align: right; width: 80px; white-space: nowrap; }
+.rd-avatar--soft { background: var(--c-primary-tint); color: var(--c-primary-ink); }
+
+/* ---- Doctor shell (frame "Desktop shell 1440") ---- */
+.rd-shell { display: flex; min-height: 100dvh; background: var(--c-canvas); font-family: var(--font); color: var(--c-ink-2); }
+.rd-shell__side { flex: 0 0 264px; display: flex; flex-direction: column; background: var(--c-surface); border-right: 1px solid var(--c-border); }
+.rd-shell__brand { display: flex; align-items: center; gap: var(--s-3); height: 72px; padding: 0 var(--s-5); border-bottom: 1px solid var(--c-border); }
+.rd-shell__brandtext { display: flex; flex-direction: column; gap: 2px; }
+.rd-shell__nav { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-4) var(--s-3); }
+.rd-shell__section { padding: var(--s-2) var(--s-3); }
+.rd-shell__col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.rd-shell__header { display: flex; align-items: center; justify-content: flex-end; gap: var(--s-4); min-height: 72px; padding: var(--s-3) var(--s-6); background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
+.rd-shell__main { flex: 1; padding: var(--s-5) var(--s-6) var(--s-6); outline: 0; }
+.rd-shell__footer { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-4) var(--s-6); background: var(--c-surface); border-top: 1px solid var(--c-border); }
+.rd-shell__footrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3) var(--s-5); }
+.rd-shell__links { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); }
+.rd-shell__links a { font: 500 13px/44px var(--font); color: var(--c-primary); }
+.rd-shell__links a:hover { color: var(--c-primary-hover); }
+.rd-shell a:focus-visible, .rd-userbtn:focus-visible, .rd-menu-item:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
+.rd-skip { position: absolute; left: -9999px; }
+.rd-skip:focus { left: var(--s-2); top: var(--s-2); z-index: 30; padding: var(--s-2) var(--s-4); border-radius: var(--r-md); background: var(--c-ink); color: var(--c-on-primary); }
+.rd-userbtn { display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 var(--s-2) 0 var(--s-1); border: 0; border-radius: var(--r-md); background: transparent; text-align: left; cursor: pointer; color: var(--c-ink-2); }
+.rd-userbtn:hover { background: var(--c-subtle); }
+.rd-userbtn__text { display: flex; flex-direction: column; }
+.rd-menu-sep { height: 1px; margin: var(--s-1) 0; background: var(--c-border); }
 
 /* ---- Preview page only ---- */
 .rd-preview { display: flex; flex-direction: column; gap: var(--s-6); padding: var(--s-6); background: var(--c-canvas); font-family: var(--font); color: var(--c-ink-2); }

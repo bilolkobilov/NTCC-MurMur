@@ -108,11 +108,11 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 
 | Who | Endpoint | What |
 | --- | --- | --- |
-| all | `POST /api/auth/login`, `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change (returns a fresh token; older tokens die), who am I |
-| admin | `GET/POST /api/admin/doctors`, `POST /api/admin/doctors/{id}/block` · `/unblock` · `/password` | doctors, password reset |
+| all | `POST /api/auth/login` (doctor, patient), `POST /api/auth/admin/login` (admin only), `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change (returns a fresh token; older tokens die), who am I |
+| admin | `GET/POST /api/admin/doctors`, `PATCH /api/admin/doctors/{id}` (clinic), `POST /api/admin/doctors/{id}/block` · `/unblock` · `/password` | doctors, password reset |
 | admin | `GET/POST /api/admin/devices`, `PATCH /api/admin/devices/{id}`, `POST …/rotate-key` | devices, assignment, new key |
 | admin | `GET /api/admin/stats`, `GET /api/admin/audit` | counts, audit log |
-| doctor | `GET/POST /api/patients`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
+| doctor | `GET/POST /api/patients` (list = registry rows with last exam + status), `GET /api/patients/summary`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
 | doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET …/audio`, `PATCH …/review`, `POST …/cancel` | exams |
 | doctor | `GET /api/devices` | own devices with online status |
 | patient | `GET /api/me`, `GET /api/me/exams` | own data |

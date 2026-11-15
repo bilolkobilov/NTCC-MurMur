@@ -86,12 +86,22 @@ def test_full_exam_flow(client, db):
 
     assert client.get("/api/me/exams", headers=patient).json() == [], "patient must not see unreviewed exams"
 
+    def registry_row():
+        (row,) = client.get("/api/patients", headers=doctor).json()
+        return row
+
+    # the registry follows the exam: dummy AI gave no answer, so it waits for the doctor as "pending"
+    assert (registry_row()["last_exam"]["status"], registry_row()["needs_review"]) == ("analyzed", True)
+    assert client.get("/api/patients/summary", headers=doctor).json()["needs_review"] == 1
+
     reviewed = client.patch(
         f"/api/exams/{exam['id']}/review",
         headers=doctor,
         json={"note": "Normal heart sounds. No follow-up needed."},  # dummy AI gave no answer: nothing to agree with
     ).json()
     assert reviewed["status"] == "reviewed"
+    assert (registry_row()["result_status"], registry_row()["needs_review"]) == ("reviewed", False)
+    assert client.get("/api/patients/summary", headers=doctor).json()["needs_review"] == 0
 
     # --- patient: sees the reviewed exam with the note, but no AI data ---
     my_exams = client.get("/api/me/exams", headers=patient).json()

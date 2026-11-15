@@ -97,7 +97,7 @@ function NewExamForm({
         <PageHeader title={t("newExam.title")} meta={patientName} />
         <EmptyState
           title={t("newExam.noDevicesTitle")}
-          body={t("doctorHome.noDevices")}
+          body={t("newExam.noDevices")}
           action={<ButtonLink to={back}>{t("newExam.backToPatient")}</ButtonLink>}
         />
       </div>

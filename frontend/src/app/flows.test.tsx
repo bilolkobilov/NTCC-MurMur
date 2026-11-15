@@ -47,7 +47,7 @@ test("a protected page sends you to login, and back to that page afterwards", as
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 
   expect(
-    await screen.findByRole("heading", { level: 1, name: "Patients" }),
+    await screen.findByRole("heading", { level: 1, name: "Patient registry" }),
   ).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Patients" })).toHaveAttribute(
     "aria-current",
@@ -231,7 +231,7 @@ test("?next= from another role's area is ignored after login", async () => {
   const user = await fillLogin("dr", "secret-pass");
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("link", { name: "Home" })).toHaveAttribute(
+  expect(await screen.findByRole("link", { name: "Patients" })).toHaveAttribute(
     "aria-current",
     "page",
   );

@@ -73,7 +73,7 @@ describe("script and spelling", () => {
     // Checked by hand (2026-11-08): names, units and words that are the same in that language.
     const reviewed = new Set([
       "uz:app.name", "ru:app.name", "uz:roles.admin", "uz:patientForm.fullNamePlaceholder",
-      "uz:devices.wifi", "ru:devices.wifi",
+      "uz:devices.wifi", "ru:devices.wifi", "uz:registry.normal", "uz:registry.chip.normal", "uz:shell.rights", "ru:shell.rights",
     ]);
     for (const lang of ["uz", "ru"] as const) {
       for (const [key, text] of Object.entries(locales[lang])) {

@@ -8,9 +8,10 @@ from app.services.errors import NotFound
 from app.services.users import create_user, set_password
 
 
-def create_doctor(db: Session, *, username: str, password: str, full_name: str) -> User:
+def create_doctor(db: Session, *, username: str, password: str, full_name: str, clinic: str | None = None) -> User:
     """Admin sets the doctor's password; no forced change (owner decision 2026-11-08)."""
     doctor = create_user(db, username=username, password=password, role=Role.DOCTOR, full_name=full_name)
+    doctor.clinic = clinic
     db.commit()
     return doctor
 
@@ -31,6 +32,13 @@ def get_doctor(db: Session, doctor_id: int) -> User:
     doctor = db.get(User, doctor_id)
     if doctor is None or doctor.role != Role.DOCTOR:
         raise NotFound("doctor not found")
+    return doctor
+
+
+def set_doctor_clinic(db: Session, doctor_id: int, clinic: str | None) -> User:
+    doctor = get_doctor(db, doctor_id)
+    doctor.clinic = clinic
+    db.commit()
     return doctor
 
 

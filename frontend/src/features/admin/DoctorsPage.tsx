@@ -30,6 +30,7 @@ export function DoctorsPage() {
   const [creating, setCreating] = useState(false);
   const [blocking, setBlocking] = useState<Doctor | null>(null);
   const [resetting, setResetting] = useState<Doctor | null>(null);
+  const [editingClinic, setEditingClinic] = useState<Doctor | null>(null);
   const [handOver, setHandOver] = useState<{ title: string; username: string; password: string } | null>(null);
 
   return (
@@ -68,6 +69,8 @@ export function DoctorsPage() {
                       {doctor.username}
                     </span>
                     {" · "}
+                    <span className={doctor.clinic ? undefined : "italic"}>{doctor.clinic ?? t("doctors.noClinic")}</span>
+                    {" · "}
                     {t("doctors.patients", { count: doctor.patient_count, formatted: formatNumber(doctor.patient_count, i18n.language) })}
                     {" · "}
                     {t("doctors.since", { date: formatDate(doctor.created_at, i18n.language) })}
@@ -77,6 +80,9 @@ export function DoctorsPage() {
                   {doctor.is_active ? t("doctors.active") : t("doctors.blocked")}
                 </span>
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="ghost" onClick={() => setEditingClinic(doctor)}>
+                    {t("doctors.editClinic")}
+                  </Button>
                   <Button variant="ghost" onClick={() => setResetting(doctor)}>
                     {t("doctors.resetPassword")}
                   </Button>
@@ -104,6 +110,7 @@ export function DoctorsPage() {
           setHandOver({ title: t("doctors.createdTitle"), username, password });
         }}
       />
+      <ClinicDialog key={editingClinic?.id ?? "clinic-closed"} doctor={editingClinic} onClose={() => setEditingClinic(null)} />
       <BlockDialog doctor={blocking} onClose={() => setBlocking(null)} />
       <ResetPasswordDialog
         key={resetting?.id ?? "reset-closed"}
@@ -175,15 +182,20 @@ function CreateDoctorDialog({
 }) {
   const { t } = useTranslation();
   const refresh = useDoctorsRefresh();
-  const [form, setForm] = useState({ fullName: "", username: "", password: "" });
+  const [form, setForm] = useState({ fullName: "", username: "", password: "", clinic: "" });
   const [problems, setProblems] = useState<Partial<Record<keyof typeof form, string>>>({});
   const create = useMutation({
     mutationFn: () =>
-      adminApi.createDoctor({ full_name: form.fullName.trim(), username: form.username.trim(), password: form.password }),
+      adminApi.createDoctor({
+        full_name: form.fullName.trim(),
+        username: form.username.trim(),
+        password: form.password,
+        clinic: form.clinic.trim() || null,
+      }),
     onSuccess: () => {
       refresh();
       onCreated(form.username.trim(), form.password);
-      setForm({ fullName: "", username: "", password: "" });
+      setForm({ fullName: "", username: "", password: "", clinic: "" });
     },
   });
   const submit = (event: FormEvent) => {
@@ -229,6 +241,14 @@ function CreateDoctorDialog({
           onChange={(e) => set("fullName")(e.target.value)}
         />
         <TextField
+          label={t("doctors.clinic")}
+          autoComplete="off"
+          hint={t("doctors.clinicHint")}
+          maxLength={200}
+          value={form.clinic}
+          onChange={(e) => set("clinic")(e.target.value)}
+        />
+        <TextField
           label={t("login.username")}
           required
           autoComplete="off"
@@ -241,6 +261,48 @@ function CreateDoctorDialog({
           onChange={(e) => set("username")(e.target.value)}
         />
         <PasswordField value={form.password} onChange={set("password")} error={problems.password} />
+      </form>
+    </Dialog>
+  );
+}
+
+function ClinicDialog({ doctor, onClose }: { doctor: Doctor | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  const refresh = useDoctorsRefresh();
+  const [clinic, setClinic] = useState(doctor?.clinic ?? "");
+  const save = useMutation({
+    mutationFn: (d: Doctor) => adminApi.setDoctorClinic(d.id, clinic.trim() || null),
+    onSuccess: () => {
+      refresh();
+      onClose();
+    },
+  });
+  return (
+    <Dialog
+      open={!!doctor}
+      onOpenChange={(next) => !next && onClose()}
+      title={t("doctors.clinicTitle", { name: doctor?.full_name ?? "" })}
+      description={t("doctors.clinicHint")}
+      footer={
+        <>
+          <Button onClick={onClose}>{t("common.cancel")}</Button>
+          <Button type="submit" form="clinic-doctor" variant="primary" busy={save.isPending} busyText={t("common.saving")}>
+            {t("doctors.clinicSave")}
+          </Button>
+        </>
+      }
+    >
+      <form
+        id="clinic-doctor"
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (doctor) save.mutate(doctor);
+        }}
+        className="flex flex-col gap-3"
+      >
+        {save.isError && <Alert tone="danger">{t(errorMessage(save.error).key)}</Alert>}
+        <TextField label={t("doctors.clinic")} autoComplete="off" maxLength={200} value={clinic} onChange={(e) => setClinic(e.target.value)} />
       </form>
     </Dialog>
   );
