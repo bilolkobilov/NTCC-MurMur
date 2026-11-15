@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 
 from app.deps import CurrentDoctor, DbSession
 from app.models import Patient
+from app.schemas.admin import ActivityEntryOut, DoctorProfileOut
 from app.schemas.common import PathId
 from app.schemas.doctor import (
     DoctorDeviceOut,
@@ -23,7 +24,7 @@ from app.schemas.doctor import (
     PatientSummary,
     PatientUpdate,
 )
-from app.services import devices, exams, patients
+from app.services import devices, doctors, exams, patients
 
 router = APIRouter(prefix="/api", tags=["doctor"])
 
@@ -157,3 +158,22 @@ def review_exam(exam_id: PathId, body: ExamReview, db: DbSession, doctor: Curren
 def list_my_devices(db: DbSession, doctor: CurrentDoctor) -> list[DoctorDeviceOut]:
     """Devices assigned to me, with online status — to pick one when starting an exam."""
     return [DoctorDeviceOut.model_validate(d) for d in devices.list_doctor_devices(db, doctor)]
+
+
+# --- own profile ---
+
+
+@router.get("/profile")
+def my_profile(db: DbSession, doctor: CurrentDoctor) -> DoctorProfileOut:
+    """The doctor's own profile: account, workload and devices. Clinic and name are changed by the admin."""
+    return DoctorProfileOut.build(doctors.profile(db, doctor))
+
+
+@router.get("/profile/activity")
+def my_activity(
+    db: DbSession, doctor: CurrentDoctor, limit: Annotated[int, Query(ge=1, le=100)] = 30
+) -> list[ActivityEntryOut]:
+    return [
+        ActivityEntryOut.model_validate(entry, from_attributes=True)
+        for entry in doctors.activity(db, doctor.id, limit=limit)
+    ]

@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import type { AuditEntry, Device, Doctor, Stats } from "../../api/admin";
+import type { AuditEntry, Device, Doctor, DoctorProfile, Stats } from "../../api/admin";
 import { session } from "../../app/session";
 import { backend, bodyOf, ok, renderAt } from "../../test/utils";
 import { generatePassword } from "./doctorFields";
@@ -9,9 +9,24 @@ import { signalWord } from "./DevicesPage";
 
 const me = () => ok({ id: 1, username: "admin", role: "admin", full_name: "Admin" });
 const doctors: Doctor[] = [
-  { id: 2, username: "dr.aziz", full_name: "Aziz Karimov", clinic: "Highlands Clinic", is_active: true, created_at: "2026-11-01T08:00:00Z", patient_count: 4 },
-  { id: 3, username: "dr.olga", full_name: "Olga Kim", clinic: null, is_active: false, created_at: "2026-11-02T08:00:00Z", patient_count: 0 },
+  { id: 2, username: "dr.aziz", full_name: "Aziz Karimov", clinic: "Highlands Clinic", is_active: true, created_at: "2026-11-01T08:00:00Z", last_login_at: "2026-11-14T08:00:00Z", patient_count: 4, status: "active" },
+  { id: 3, username: "dr.olga", full_name: "Olga Kim", clinic: null, is_active: false, created_at: "2026-11-02T08:00:00Z", last_login_at: "2026-11-03T08:00:00Z", patient_count: 0, status: "suspended" },
+  { id: 4, username: "dr.new", full_name: "Nodira Usmonova", clinic: "Lakeside Center", is_active: true, created_at: "2026-11-10T08:00:00Z", last_login_at: null, patient_count: 0, status: "invited" },
 ];
+const profileOf = (doctor: Doctor): DoctorProfile => ({
+  ...doctor,
+  password_changed_at: null,
+  workload: { patients: doctor.patient_count, seen_today: 1, recordings_30d: 12, devices_30d: 2, needs_review: 3, median_review_minutes: 14 },
+  devices: [{ id: 1, name: "MurMur #1", serial: "MM-001", online: true, last_seen_at: new Date().toISOString() }],
+});
+const profileRoutes = () => ({
+  "GET /api/admin/doctors/2": () => ok(profileOf(doctors[0]!)),
+  "GET /api/admin/doctors/3": () => ok(profileOf(doctors[1]!)),
+  "GET /api/admin/doctors/2/patients": () => ok([{ id: 7, full_name: "Ali Valiyev", birth_year: 1980, sex: "male", last_exam_at: null }]),
+  "GET /api/admin/doctors/3/patients": () => ok([]),
+  "GET /api/admin/doctors/2/activity": () => ok([{ id: 1, action: "exam.read", object_type: "exam", created_at: "2026-11-14T09:00:00Z" }]),
+  "GET /api/admin/doctors/3/activity": () => ok([]),
+});
 const device = (overrides: Partial<Device> = {}): Device => ({
   id: 1,
   name: "MurMur #1",
@@ -118,7 +133,7 @@ test("blocking asks first and says what happens; a blocked doctor can be unblock
   const calls: string[] = [];
   backend({
     "GET /api/auth/me": me,
-    "GET /api/admin/doctors": () => ok(doctors),
+    ...profileRoutes(),
     "POST /api/admin/doctors/2/block": () => {
       calls.push("block 2");
       return ok({ ...doctors[0], is_active: false });
@@ -128,7 +143,7 @@ test("blocking asks first and says what happens; a blocked doctor can be unblock
       return ok({ ...doctors[1], is_active: true });
     },
   });
-  renderAt("/admin/doctors");
+  renderAt("/admin/doctors/2");
   const user = userEvent.setup();
 
   await user.click(await screen.findByRole("button", { name: "Block" }));
@@ -137,9 +152,25 @@ test("blocking asks first and says what happens; a blocked doctor can be unblock
   expect(calls).toEqual([]);
   await user.click(within(dialog).getByRole("button", { name: "Block" }));
   await waitFor(() => expect(calls).toEqual(["block 2"]));
+});
 
+test("a suspended doctor offers Unblock instead of Block", async () => {
+  const calls: string[] = [];
+  backend({
+    "GET /api/auth/me": me,
+    ...profileRoutes(),
+    "POST /api/admin/doctors/3/unblock": () => {
+      calls.push("unblock 3");
+      return ok({ ...doctors[1], is_active: true });
+    },
+  });
+  renderAt("/admin/doctors/3");
+  const user = userEvent.setup();
+
+  expect(await screen.findByRole("heading", { name: "Olga Kim" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Block" })).not.toBeInTheDocument();
   await user.click(screen.getByRole("button", { name: "Unblock" }));
-  await waitFor(() => expect(calls).toEqual(["block 2", "unblock 3"]));
+  await waitFor(() => expect(calls).toEqual(["unblock 3"]));
 });
 
 test("register a device: the key is shown once; then the list shows it live", async () => {
@@ -256,39 +287,77 @@ test("helpers: Wi-Fi words and generated passwords", () => {
   expect(generatePassword()).not.toBe(a);
 });
 
-test("a password typed for one doctor is gone when the reset dialog opens for another", async () => {
-  backend({ "GET /api/auth/me": me, "GET /api/admin/doctors": () => ok(doctors) });
-  renderAt("/admin/doctors");
+test("a password typed in the reset dialog is gone when it is opened again", async () => {
+  backend({ "GET /api/auth/me": me, ...profileRoutes() });
+  renderAt("/admin/doctors/2");
   const user = userEvent.setup();
 
-  const [resetA, resetB] = await screen.findAllByRole("button", { name: "Reset password" });
-  await user.click(resetA);
+  await user.click(await screen.findByRole("button", { name: "Reset password" }));
   await user.type(within(await screen.findByRole("dialog")).getByLabelText("Password"), "meant-for-aziz");
   await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
-  await user.click(resetB);
+  await user.click(screen.getByRole("button", { name: "Reset password" }));
 
-  expect(within(await screen.findByRole("dialog", { name: /Olga Kim/ })).getByLabelText("Password")).toHaveValue("");
+  expect(within(await screen.findByRole("dialog", { name: /Aziz Karimov/ })).getByLabelText("Password")).toHaveValue("");
 });
 
-test("the doctors table shows where each doctor works and the clinic can be changed", async () => {
+test("the doctors list: summary, status tabs, search and clinic filter live in the URL; a row opens the profile", async () => {
+  backend({ "GET /api/auth/me": me, "GET /api/admin/doctors": () => ok(doctors), ...profileRoutes() });
+  const router = renderAt("/admin/doctors");
+  const user = userEvent.setup();
+
+  expect(await screen.findByText("Showing 3 of 3 doctors")).toBeInTheDocument();
+  const summary = screen.getByRole("group", { name: "Summary" });
+  expect(within(summary).getAllByText("1")).toHaveLength(3); // active, invited, suspended
+  expect(screen.getByText("Never signed in")).toBeInTheDocument();
+  expect(screen.getByText("No clinic")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("tab", { name: "Invited" }));
+  await waitFor(() => expect(router.state.location.search).toBe("?status=invited"));
+  expect(screen.getByText("Showing 1 of 3 doctors")).toBeInTheDocument();
+  expect(screen.queryByText("Aziz Karimov")).not.toBeInTheDocument();
+
+  await user.click(screen.getByRole("tab", { name: "All" }));
+  await user.selectOptions(screen.getByLabelText("Clinic"), "Highlands Clinic");
+  expect(screen.getByText("Showing 1 of 3 doctors")).toBeInTheDocument();
+  await user.type(screen.getByRole("searchbox"), "zzz");
+  expect(await screen.findByText("No doctors match these filters")).toBeInTheDocument();
+  await user.click(screen.getByRole("button", { name: "Clear filters" }));
+  expect(await screen.findByText("Showing 3 of 3 doctors")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("link", { name: "Open profile of Aziz Karimov" }));
+  expect(router.state.location.pathname).toBe("/admin/doctors/2");
+});
+
+test("the admin profile: counts and a patient table without results; name and clinic are edited together", async () => {
   let sent: unknown;
   backend({
     "GET /api/auth/me": me,
-    "GET /api/admin/doctors": () => ok(doctors),
-    "PATCH /api/admin/doctors/3": (init) => {
+    ...profileRoutes(),
+    "PATCH /api/admin/doctors/2": (init) => {
       sent = bodyOf(init);
-      return ok({ ...doctors[1], clinic: "Lakeside Center" });
+      return ok({ ...doctors[0], clinic: "Lakeside Center" });
     },
   });
-  renderAt("/admin/doctors");
+  renderAt("/admin/doctors/2");
   const user = userEvent.setup();
 
-  expect(await screen.findByText("Highlands Clinic")).toBeInTheDocument();
-  expect(screen.getByText("No clinic")).toBeInTheDocument();
-  await user.click(screen.getAllByRole("button", { name: "Change clinic" })[1]!);
-  const dialog = await screen.findByRole("dialog", { name: "Clinic of Olga Kim" });
-  await user.type(within(dialog).getByLabelText("Clinic"), "Lakeside Center");
+  expect(await screen.findByRole("heading", { name: "Aziz Karimov" })).toBeInTheDocument();
+  expect(screen.getByText("Recordings, 30 days")).toBeInTheDocument();
+  expect(screen.getByText("MM-001")).toBeInTheDocument();
+  expect(screen.getByText("Last sign-in")).toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: /Patients/ }));
+  expect(await screen.findByText("Ali Valiyev")).toBeInTheDocument();
+  expect(screen.queryByRole("columnheader", { name: "Status" })).not.toBeInTheDocument(); // no results for the admin
+  expect(screen.queryByRole("link", { name: /Open record/ })).not.toBeInTheDocument();
+  await user.click(screen.getByRole("tab", { name: "Activity" }));
+  expect(await screen.findByText("Opened an exam")).toBeInTheDocument();
+
+  await user.click(screen.getByRole("button", { name: "Edit details" }));
+  const dialog = await screen.findByRole("dialog", { name: "Edit Aziz Karimov" });
+  const clinic = within(dialog).getByLabelText("Clinic");
+  await user.clear(clinic);
+  await user.type(clinic, "Lakeside Center");
   await user.click(within(dialog).getByRole("button", { name: "Save" }));
 
-  await waitFor(() => expect(sent).toEqual({ clinic: "Lakeside Center" }));
+  await waitFor(() => expect(sent).toEqual({ full_name: "Aziz Karimov", clinic: "Lakeside Center" }));
 });

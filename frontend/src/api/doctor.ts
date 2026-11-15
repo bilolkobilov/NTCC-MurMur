@@ -1,4 +1,5 @@
 /** Doctor endpoints (backend `app/api/doctor.py`). */
+import type { ActivityEntry, DoctorProfile } from "./admin";
 import { api, apiBlob } from "./client";
 
 export type Sex = "male" | "female";
@@ -87,6 +88,8 @@ export type OneTimeLogin = { username: string; temporary_password: string };
 export const PAGE_SIZE = 50;
 
 export const doctorApi = {
+  myProfile: () => api<DoctorProfile>("/profile"),
+  myActivity: () => api<ActivityEntry[]>("/profile/activity?limit=30"),
   listPatients: (params: { q: string; sort: PatientSort; status: PatientStatusFilter }, offset = 0) =>
     api<PatientRegistryRow[]>(
       `/patients?${new URLSearchParams({

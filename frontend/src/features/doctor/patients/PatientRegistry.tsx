@@ -31,7 +31,7 @@ import { mockAnalyzedClinic, mockRegisteredClinic } from "./mockClinic";
 const SORTS: PatientSort[] = ["recent", "name", "priority"];
 const STATUSES: PatientStatusFilter[] = ["all", "needs_review", "pending"];
 
-const initials = (name: string) =>
+export const initials = (name: string) =>
   name
     .split(/\s+/)
     .filter(Boolean)
@@ -270,7 +270,7 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
 }
 
 /** The word comes from the backend's `result_status`. Borderline / critical never appear: the model gives yes / no only. */
-function ResultChip({ patient }: { patient: PatientRegistryRow }) {
+export function ResultChip({ patient }: { patient: PatientRegistryRow }) {
   const { t } = useTranslation();
   const { result_status: result, needs_review: needsReview } = patient;
   const [status, word]: [Status, string] =

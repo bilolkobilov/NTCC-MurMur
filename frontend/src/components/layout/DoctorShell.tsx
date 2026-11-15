@@ -59,6 +59,11 @@ export function DoctorShell() {
             <span style={{ flex: 1 }}>{t("nav.patients")}</span>
             {summary.data && <CountBadge value={summary.data.total} />}
           </NavLink>
+          <div className="rd-cap rd-shell__section">{t("shell.account")}</div>
+          <NavLink to="/doctor/profile" className="rd-nav-item">
+            <Icon name="user" />
+            <span style={{ flex: 1 }}>{t("nav.myProfile")}</span>
+          </NavLink>
         </nav>
       </aside>
 
@@ -84,6 +89,9 @@ export function DoctorShell() {
             </Menu.Trigger>
             <Menu.Portal>
               <Menu.Content align="end" sideOffset={6} className="rd-menu">
+                <Menu.Item onSelect={() => navigate("/doctor/profile")} className="rd-menu-item">
+                  {t("nav.myProfile")}
+                </Menu.Item>
                 <Menu.Item onSelect={() => navigate("/change-password")} className="rd-menu-item">
                   {t("nav.changePassword")}
                 </Menu.Item>

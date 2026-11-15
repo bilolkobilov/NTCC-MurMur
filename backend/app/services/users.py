@@ -1,5 +1,6 @@
 """Creating accounts and changing passwords."""
 
+from datetime import UTC, datetime
 from functools import lru_cache
 
 from sqlalchemy import select
@@ -73,4 +74,11 @@ def set_password(db: Session, user: User, password: str, *, must_change: bool) -
     user.password_hash = hash_password(password)
     user.must_change_password = must_change
     user.token_version += 1
+    user.password_changed_at = datetime.now(UTC)
+    db.commit()
+
+
+def record_login(db: Session, user: User) -> None:
+    """Remember when the user last signed in (the admin's \"last active\" and \"invited\" = never signed in)."""
+    user.last_login_at = datetime.now(UTC)
     db.commit()

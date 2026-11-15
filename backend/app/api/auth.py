@@ -55,6 +55,7 @@ def _login(
     limiter.reset(key)
     if not user.is_active:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "account is blocked")
+    users.record_login(db, user)
     return _token_response(user)
 
 

@@ -179,6 +179,34 @@
 .rd-userbtn__text { display: flex; flex-direction: column; }
 .rd-menu-sep { height: 1px; margin: var(--s-1) 0; background: var(--c-border); }
 
+/* ---- Doctor profile (frame "Doctors: list and profile page") ---- */
+.rd-avatar--xl { width: 72px; height: 72px; font-size: 24px; line-height: 28px; }
+.rd-chip--plain { background: var(--c-subtle); color: var(--c-ink-2); }
+.rd-profile { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-5); }
+.rd-profile__main { flex: 2 1 560px; min-width: 0; display: flex; flex-direction: column; gap: var(--s-5); }
+.rd-profile__rail { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--s-5); }
+.rd-ident { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-5); padding: var(--s-5); }
+.rd-ident__body { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.rd-ident__row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
+.rd-ident__facts { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-5); }
+.rd-ident__actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
+.rd-card--flush > .rd-card__body { padding: 0; }
+.rd-stat { display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
+.rd-stat__value { font: 600 28px/32px var(--font); letter-spacing: -0.02em; color: var(--c-ink); font-variant-numeric: tabular-nums; }
+.rd-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--s-3); }
+.rd-kv { display: grid; grid-template-columns: 132px 1fr; gap: var(--s-3) var(--s-4); margin: 0; padding: var(--s-5); }
+.rd-kv dt { font: 500 13px/20px var(--font); color: var(--c-ink-3); }
+.rd-kv dd { margin: 0; font: 500 14px/20px var(--font); color: var(--c-ink); min-width: 0; overflow-wrap: anywhere; }
+.rd-list { list-style: none; margin: 0; padding: 0; }
+.rd-list > li { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) var(--s-5); border-bottom: 1px solid var(--c-border); }
+.rd-list > li:last-child { border-bottom: 0; }
+.rd-tl { display: flex; gap: var(--s-3); padding: var(--s-3) var(--s-5); }
+.rd-tl__rail { display: flex; flex-direction: column; align-items: center; gap: var(--s-1); padding-top: 6px; }
+.rd-tl__dot { width: 10px; height: 10px; border-radius: var(--r-full); background: var(--c-primary); flex: none; }
+.rd-tl__line { flex: 1; width: 2px; background: var(--c-border); min-height: 20px; }
+.rd-linkbtn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 var(--s-2); border: 0; background: transparent; color: var(--c-primary-ink); font: 600 13px/16px var(--font); cursor: pointer; border-radius: var(--r-md); }
+.rd-linkbtn:hover { background: var(--c-primary-tint); }
+
 /* ---- Preview page only ---- */
 .rd-preview { display: flex; flex-direction: column; gap: var(--s-6); padding: var(--s-6); background: var(--c-canvas); font-family: var(--font); color: var(--c-ink-2); }
 .rd-preview section { display: flex; flex-direction: column; gap: var(--s-3); }

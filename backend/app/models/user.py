@@ -1,4 +1,6 @@
-from sqlalchemy import String
+from datetime import datetime
+
+from sqlalchemy import DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base, CreatedAtMixin
@@ -20,3 +22,5 @@ class User(CreatedAtMixin, Base):
     must_change_password: Mapped[bool] = mapped_column(default=False)
     # Goes up on every password change; tokens carry it, so older tokens stop working at once.
     token_version: Mapped[int] = mapped_column(default=0, server_default="0")
+    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))  # None = never signed in
+    password_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
