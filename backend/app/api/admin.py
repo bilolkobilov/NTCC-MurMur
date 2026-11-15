@@ -6,15 +6,18 @@ from fastapi import APIRouter, Query, status
 
 from app.deps import CurrentAdmin, DbSession
 from app.schemas.admin import (
+    ActivityEntryOut,
     AuditEntryOut,
     DeviceAssign,
     DeviceCreate,
     DeviceCreated,
     DeviceOut,
-    DoctorClinic,
     DoctorCreate,
     DoctorOut,
     DoctorPasswordReset,
+    DoctorPatientRow,
+    DoctorProfileOut,
+    DoctorUpdate,
     StatsOut,
 )
 from app.schemas.common import PathId
@@ -42,10 +45,39 @@ def list_doctors(db: DbSession, _: CurrentAdmin) -> list[DoctorOut]:
     ]
 
 
+@router.get("/doctors/{doctor_id}")
+def get_doctor(doctor_id: PathId, db: DbSession, _: CurrentAdmin) -> DoctorProfileOut:
+    return DoctorProfileOut.build(doctors.profile(db, doctors.get_doctor(db, doctor_id)))
+
+
+@router.get("/doctors/{doctor_id}/patients")
+def doctor_patients(
+    doctor_id: PathId,
+    db: DbSession,
+    admin: CurrentAdmin,
+    limit: Annotated[int, Query(ge=1, le=200)] = 50,
+    offset: Annotated[int, Query(ge=0)] = 0,
+) -> list[DoctorPatientRow]:
+    """Who the doctor treats (name, age, sex, last exam date). No recordings, AI results or notes."""
+    return [DoctorPatientRow(**row) for row in doctors.patients_of(db, admin, doctor_id, limit=limit, offset=offset)]
+
+
+@router.get("/doctors/{doctor_id}/activity")
+def doctor_activity(
+    doctor_id: PathId, db: DbSession, _: CurrentAdmin, limit: Annotated[int, Query(ge=1, le=100)] = 30
+) -> list[ActivityEntryOut]:
+    doctors.get_doctor(db, doctor_id)
+    return [
+        ActivityEntryOut.model_validate(entry, from_attributes=True)
+        for entry in doctors.activity(db, doctor_id, limit=limit)
+    ]
+
+
 @router.patch("/doctors/{doctor_id}")
-def set_doctor_clinic(doctor_id: PathId, body: DoctorClinic, db: DbSession, _: CurrentAdmin) -> DoctorOut:
-    """Set or clear where the doctor works."""
-    return DoctorOut.model_validate(doctors.set_doctor_clinic(db, doctor_id, body.clinic))
+def update_doctor(doctor_id: PathId, body: DoctorUpdate, db: DbSession, _: CurrentAdmin) -> DoctorOut:
+    """Change the doctor's name and/or clinic (blank clinic = not set)."""
+    changes = body.model_dump(include=body.model_fields_set)
+    return DoctorOut.model_validate(doctors.update_doctor(db, doctor_id, changes))
 
 
 @router.post("/doctors/{doctor_id}/block")

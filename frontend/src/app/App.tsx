@@ -3,6 +3,7 @@ import { Fragment, lazy, type ReactNode, useEffect, useState } from "react";
 import { createBrowserRouter, Navigate, type RouteObject, RouterProvider } from "react-router";
 
 import { ApiError } from "../api/client";
+import { AdminShell } from "../components/layout/AdminShell";
 import { AppShell } from "../components/layout/AppShell";
 import { DoctorShell } from "../components/layout/DoctorShell";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
@@ -30,6 +31,10 @@ const DoctorsPage = lazy(() => import("../features/admin/DoctorsPage").then((m) 
 const DoctorFormPage = lazy(() =>
   import("../features/admin/DoctorFormPage").then((m) => ({ default: m.DoctorFormPage })),
 );
+const DoctorProfilePage = lazy(() =>
+  import("../features/admin/DoctorProfilePage").then((m) => ({ default: m.DoctorProfilePage })),
+);
+const MyProfilePage = lazy(() => import("../features/profile/MyProfilePage").then((m) => ({ default: m.MyProfilePage })));
 const DevicesPage = lazy(() => import("../features/admin/DevicesPage").then((m) => ({ default: m.DevicesPage })));
 const AuditPage = lazy(() => import("../features/admin/AuditPage").then((m) => ({ default: m.AuditPage })));
 const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
@@ -76,6 +81,7 @@ export const routes: RouteObject[] = [
       { path: "patients/:patientId/edit", element: <PatientFormPage /> },
       { path: "patients/:patientId/exam", element: <NewExamPage /> },
       { path: "exams/:examId", element: <ExamPage /> },
+      { path: "profile", element: <MyProfilePage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
@@ -83,13 +89,14 @@ export const routes: RouteObject[] = [
     path: "/admin",
     element: (
       <RequireRole role="admin">
-        <AppShell />
+        <AdminShell />
       </RequireRole>
     ),
     children: [
       { index: true, element: <AdminHome /> },
       { path: "doctors", element: <DoctorsPage /> },
       { path: "doctors/new", element: <DoctorFormPage /> },
+      { path: "doctors/:doctorId", element: <DoctorProfilePage /> },
       { path: "devices", element: <DevicesPage /> },
       { path: "audit", element: <AuditPage /> },
       { path: "*", element: <NotFoundPage /> },

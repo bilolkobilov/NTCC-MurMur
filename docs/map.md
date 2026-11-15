@@ -39,7 +39,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/users.py` — create user, authenticate (equal timing), change/set password (bumps token_version)
 - `backend/app/services/login_limiter.py` — in-memory brute-force guard: 5 wrong passwords per (IP, username) / 15 min
 - `backend/app/api/admin.py` — `/api/admin/*`: doctors, devices (+ one-time key), stats, audit
-- `backend/app/services/doctors.py` — create / list (with patient count) / block doctors, reset a doctor's password
+- `backend/app/services/doctors.py` — create / list / edit / block doctors, reset password; profile (workload counts, devices), admin's patient list, activity
 - `backend/app/services/devices.py` — register device + key, rotate key, assign to doctor, list a doctor's devices
 - `backend/app/services/stats.py` — admin counts; "today" uses `APP_TIMEZONE`
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
@@ -119,9 +119,11 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,
   saved conclusion), HeartStrip (wavesurfer on chart paper, close-up, spectrogram), `aiOutcome.ts`
-- `frontend/src/api/admin.ts`, `frontend/src/features/admin/` — AdminHome (counts, devices, AI model), DoctorsPage (list, block, reset),
-  DoctorFormPage (`/admin/doctors/new`: details → credentials shown once), `doctorFields.tsx` (password field + generator),
+- `frontend/src/api/admin.ts`, `frontend/src/features/admin/` — AdminHome (counts, devices, AI model), DoctorsPage (summary, filters, status tabs, table),
+  DoctorProfilePage (`/admin/doctors/:id`: edit, block, reset), `doctorDialogs.tsx`, DoctorFormPage (`/admin/doctors/new`: details → credentials shown once), `doctorFields.tsx` (password field + generator),
   DevicesPage (key shown once, assign, rotate), AuditPage (pages of 50, action filter in the URL)
+- `frontend/src/features/profile/` — `DoctorProfileView` (one profile page for the admin and the doctor), `MyProfilePage` (`/doctor/profile`)
+- `frontend/src/components/layout/AdminShell.tsx` — admin shell (sidebar, header, footer); patient still uses `AppShell`
 - `frontend/src/api/patient.ts`, `frontend/src/features/patient/` — patient phone pages: PatientHome (reviewed results),
   ResultPage (doctor's conclusion + where listened); never any AI field
 - `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests

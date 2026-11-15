@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, computed_field, field_validator, model_validator
 
 from app.schemas.common import FullName, NewPassword, RefId, Username
 
@@ -21,13 +21,24 @@ class DoctorCreate(BaseModel):
         return value or None
 
 
-class DoctorClinic(BaseModel):
-    clinic: Clinic
+class DoctorUpdate(BaseModel):
+    """Only the fields that are sent change. A blank clinic clears it."""
+
+    full_name: FullName | None = None
+    clinic: Clinic = None
 
     @field_validator("clinic")
     @classmethod
     def blank_is_none(cls, value):
         return value or None
+
+    @model_validator(mode="after")
+    def something_to_change(self):
+        if not self.model_fields_set:
+            raise ValueError("nothing to change")
+        if "full_name" in self.model_fields_set and self.full_name is None:
+            raise ValueError("full_name cannot be empty")
+        return self
 
 
 class DoctorOut(BaseModel):
@@ -39,7 +50,72 @@ class DoctorOut(BaseModel):
     clinic: str | None
     is_active: bool
     created_at: datetime
+    last_login_at: datetime | None = None
     patient_count: int = 0
+
+    @computed_field
+    @property
+    def status(self) -> Literal["active", "invited", "suspended"]:
+        """Suspended = blocked by the admin; invited = the account never signed in yet."""
+        if not self.is_active:
+            return "suspended"
+        return "invited" if self.last_login_at is None else "active"
+
+
+class DoctorWorkload(BaseModel):
+    """Counts about the doctor's work. Numbers only."""
+
+    patients: int
+    seen_today: int
+    recordings_30d: int
+    devices_30d: int
+    needs_review: int
+    median_review_minutes: int | None
+
+
+class DoctorDeviceRow(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    serial: str
+    online: bool
+    last_seen_at: datetime | None
+
+
+class DoctorProfileOut(DoctorOut):
+    password_changed_at: datetime | None
+    workload: DoctorWorkload
+    devices: list[DoctorDeviceRow]
+
+    @classmethod
+    def build(cls, data: dict) -> DoctorProfileOut:
+        """From `services.doctors.profile()`."""
+        doctor = data["doctor"]
+        return cls(
+            **DoctorOut.model_validate(doctor).model_dump(exclude={"status", "patient_count"}),
+            patient_count=data["patient_count"],
+            password_changed_at=doctor.password_changed_at,
+            workload=data["workload"],
+            devices=data["devices"],
+        )
+
+
+class DoctorPatientRow(BaseModel):
+    """One patient of a doctor, as the admin sees them: who and when — no recordings, AI results or notes."""
+
+    id: int
+    full_name: str
+    birth_year: int
+    sex: Literal["male", "female"]
+    last_exam_at: datetime | None
+
+
+class ActivityEntryOut(BaseModel):
+    id: int
+    action: str
+    object_type: str
+    created_at: datetime
 
 
 class DeviceCreate(BaseModel):
