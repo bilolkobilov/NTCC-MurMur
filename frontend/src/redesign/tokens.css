@@ -1,0 +1,79 @@
+/*
+ * TEMPORARY — REDESIGN STAGING AREA. REMOVE `src/redesign/` once all mockups are applied.
+ *
+ * Source: "Murmur — Common Layout Components Redesign.html" (palette frame #6, navigation #4, header/toolbars #5).
+ * Values are copied unchanged from the mockup `:root`; the names are the mockup's own (`--c-*`, `--s-*`, `--r-*`) so a
+ * mockup and this file can be compared line by line. None of them collide with the live tokens in `src/index.css`
+ * (`--color-*`, `--text-*`, `--radius-*`), so loading this file changes nothing on existing pages.
+ *
+ * When the mockups are applied: move these into the `@theme` block of `src/index.css` (as `--color-*` etc.), delete
+ * the old palette, delete this folder.
+ */
+:root {
+  /* Neutrals */
+  --c-canvas: #f6f8f9; /* page background */
+  --c-surface: #ffffff; /* cards, inputs, tables */
+  --c-subtle: #edf1f3; /* hover rows, filled controls */
+  --c-border: #dfe5e9; /* dividers, card outlines (decorative only) */
+  --c-input-border: #7d8c97; /* control borders, 3.46:1 on surface */
+  --c-ink: #0e1a22; /* headings, primary text */
+  --c-ink-2: #41525e; /* body text */
+  --c-ink-3: #5a6b77; /* captions, units, timestamps — never lighter */
+
+  /* Brand: petrol blue is the only accent */
+  --c-primary: #0b6e8a;
+  --c-primary-hover: #095a72;
+  --c-primary-tint: #e4f2f6; /* selected row, active nav fill */
+  --c-primary-ink: #0a5c74; /* text on primary-tint */
+  --c-on-primary: #ffffff;
+
+  /* Clinical status — always chip = icon + word + colour. `-dot` is for dots/icons, never text. */
+  --c-normal-fg: #15663d;
+  --c-normal-bg: #e7f5ec;
+  --c-normal-dot: #1e9556;
+  --c-borderline-fg: #7a4d00;
+  --c-borderline-bg: #fff3d6;
+  --c-borderline-dot: #b87500;
+  --c-abnormal-fg: #a33f00;
+  --c-abnormal-bg: #ffeadb;
+  --c-abnormal-dot: #e2601a;
+  --c-critical-fg: #b0231a;
+  --c-critical-bg: #fdebe9;
+  --c-critical-dot: #d92d20;
+  --c-critical-solid: #c42a1f; /* solid buttons, count badge */
+  --c-pending-fg: #47576a;
+  --c-pending-bg: #edf0f4;
+  --c-pending-dot: #8493a3;
+
+  /* AI results only */
+  --c-ai-fg: #5238b8;
+  --c-ai-bg: #f0edfb;
+
+  /* Waveform containers only */
+  --c-wave-bg: #0a141a;
+  --c-wave-line: #4cc9e0;
+  --c-wave-caliper: #f5b83d;
+  --c-wave-heat: #a99bf5;
+  --c-wave-text: #9fb3bf;
+
+  /* Inter is the mockup's font and is NOT installed yet (needs @fontsource/inter — owner decision, see
+     docs/redesign/REDESIGN.md). Until then the stack falls through to the live fonts, keeping the Uzbek okina fix. */
+  --font: "Inter", "Uzbek Okina", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  /* 4 pt spacing grid */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  --r-sm: 4px;
+  --r-md: 8px; /* buttons, inputs, nav */
+  --r-lg: 12px; /* cards, alerts, menus */
+  --r-full: 9999px;
+
+  --shadow-pop: 0 8px 24px rgb(14 26 34 / 0.12); /* menus, dialogs: the only shadow */
+}
