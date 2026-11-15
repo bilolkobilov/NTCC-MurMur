@@ -4,30 +4,20 @@ import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import { adminApi, type Doctor } from "../../api/admin";
-import { ApiError, errorMessage } from "../../api/client";
+import { errorMessage } from "../../api/client";
 import { Alert } from "../../components/ui/Alert";
-import { Button } from "../../components/ui/Button";
+import { Button, ButtonLink } from "../../components/ui/Button";
 import { Dialog } from "../../components/ui/Dialog";
 import { SecretDialog } from "../../components/ui/SecretDialog";
 import { EmptyState, ErrorState, PageHeader, SkeletonRows } from "../../components/ui/States";
 import { TextField } from "../../components/ui/TextField";
 import { formatDate, formatNumber } from "../../lib/format";
-
-const USERNAME = /^[A-Za-z0-9._-]{3,64}$/;
-const MIN_PASSWORD = 8; // backend NewPassword
-
-/** A readable random password (no look-alike characters), for the admin to hand to the doctor. */
-export function generatePassword(length = 12): string {
-  const alphabet = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
-  const bytes = crypto.getRandomValues(new Uint32Array(length));
-  return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join("");
-}
+import { MIN_PASSWORD, PasswordField } from "./doctorFields";
 
 /** Doctors: create (admin sets the password), block / unblock, reset a forgotten password. */
 export function DoctorsPage() {
   const { t, i18n } = useTranslation();
   const doctors = useQuery({ queryKey: ["admin", "doctors"], queryFn: adminApi.doctors });
-  const [creating, setCreating] = useState(false);
   const [blocking, setBlocking] = useState<Doctor | null>(null);
   const [resetting, setResetting] = useState<Doctor | null>(null);
   const [editingClinic, setEditingClinic] = useState<Doctor | null>(null);
@@ -39,9 +29,9 @@ export function DoctorsPage() {
         title={t("doctors.title")}
         meta={doctors.data && t("doctors.count", { count: doctors.data.length })}
         actions={
-          <Button variant="primary" onClick={() => setCreating(true)}>
+          <ButtonLink to="/admin/doctors/new" variant="primary">
             {t("doctors.add")}
-          </Button>
+          </ButtonLink>
         }
       />
       <div className="overflow-hidden rounded-card border border-line bg-surface">
@@ -52,9 +42,9 @@ export function DoctorsPage() {
             title={t("doctors.emptyTitle")}
             body={t("doctors.emptyBody")}
             action={
-              <Button variant="primary" onClick={() => setCreating(true)}>
+              <ButtonLink to="/admin/doctors/new" variant="primary">
                 {t("doctors.add")}
-              </Button>
+              </ButtonLink>
             }
           />
         )}
@@ -100,16 +90,6 @@ export function DoctorsPage() {
         )}
       </div>
 
-      {/* key: a closed dialog forgets what was typed (a password must never carry over to the next doctor) */}
-      <CreateDoctorDialog
-        key={creating ? "create-open" : "create-closed"}
-        open={creating}
-        onClose={() => setCreating(false)}
-        onCreated={(username, password) => {
-          setCreating(false);
-          setHandOver({ title: t("doctors.createdTitle"), username, password });
-        }}
-      />
       <ClinicDialog key={editingClinic?.id ?? "clinic-closed"} doctor={editingClinic} onClose={() => setEditingClinic(null)} />
       <BlockDialog doctor={blocking} onClose={() => setBlocking(null)} />
       <ResetPasswordDialog
@@ -146,124 +126,6 @@ function useDoctorsRefresh() {
     void queryClient.invalidateQueries({ queryKey: ["admin", "doctors"] });
     void queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
   };
-}
-
-function PasswordField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-end gap-2">
-      <TextField
-        className="flex-1"
-        label={t("login.password")}
-        required
-        autoComplete="new-password"
-        spellCheck={false}
-        translate="no"
-        hint={t("doctors.passwordRule", { min: MIN_PASSWORD })}
-        error={error}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-      <Button className="mb-[22px] shrink-0" onClick={() => onChange(generatePassword())}>
-        {t("doctors.generate")}
-      </Button>
-    </div>
-  );
-}
-
-function CreateDoctorDialog({
-  open,
-  onClose,
-  onCreated,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCreated: (username: string, password: string) => void;
-}) {
-  const { t } = useTranslation();
-  const refresh = useDoctorsRefresh();
-  const [form, setForm] = useState({ fullName: "", username: "", password: "", clinic: "" });
-  const [problems, setProblems] = useState<Partial<Record<keyof typeof form, string>>>({});
-  const create = useMutation({
-    mutationFn: () =>
-      adminApi.createDoctor({
-        full_name: form.fullName.trim(),
-        username: form.username.trim(),
-        password: form.password,
-        clinic: form.clinic.trim() || null,
-      }),
-    onSuccess: () => {
-      refresh();
-      onCreated(form.username.trim(), form.password);
-      setForm({ fullName: "", username: "", password: "", clinic: "" });
-    },
-  });
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    const found: typeof problems = {};
-    if (!form.fullName.trim()) found.fullName = t("doctors.nameRequired");
-    if (!USERNAME.test(form.username.trim())) found.username = t("patient.usernameRule");
-    if (form.password.length < MIN_PASSWORD) found.password = t("doctors.passwordRule", { min: MIN_PASSWORD });
-    setProblems(found);
-    if (Object.keys(found).length === 0) create.mutate();
-  };
-  const failure =
-    create.error instanceof ApiError && create.error.status === 409
-      ? t("patient.usernameTaken")
-      : create.isError
-        ? t(errorMessage(create.error).key)
-        : null;
-  const set = (key: keyof typeof form) => (value: string) => setForm((f) => ({ ...f, [key]: value }));
-
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => !next && onClose()}
-      title={t("doctors.add")}
-      description={t("doctors.addBody")}
-      footer={
-        <>
-          <Button onClick={onClose}>{t("common.cancel")}</Button>
-          <Button type="submit" form="create-doctor" variant="primary" busy={create.isPending} busyText={t("common.saving")}>
-            {t("doctors.create")}
-          </Button>
-        </>
-      }
-    >
-      <form id="create-doctor" noValidate onSubmit={submit} className="flex flex-col gap-4">
-        {failure && <Alert tone="danger">{failure}</Alert>}
-        <TextField
-          label={t("doctors.fullName")}
-          required
-          autoComplete="off"
-          error={problems.fullName}
-          value={form.fullName}
-          onChange={(e) => set("fullName")(e.target.value)}
-        />
-        <TextField
-          label={t("doctors.clinic")}
-          autoComplete="off"
-          hint={t("doctors.clinicHint")}
-          maxLength={200}
-          value={form.clinic}
-          onChange={(e) => set("clinic")(e.target.value)}
-        />
-        <TextField
-          label={t("login.username")}
-          required
-          autoComplete="off"
-          autoCapitalize="none"
-          spellCheck={false}
-          translate="no"
-          hint={t("patient.usernameRule")}
-          error={problems.username}
-          value={form.username}
-          onChange={(e) => set("username")(e.target.value)}
-        />
-        <PasswordField value={form.password} onChange={set("password")} error={problems.password} />
-      </form>
-    </Dialog>
-  );
 }
 
 function ClinicDialog({ doctor, onClose }: { doctor: Doctor | null; onClose: () => void }) {
