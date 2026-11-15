@@ -5,6 +5,7 @@ export type Doctor = {
   id: number;
   username: string;
   full_name: string;
+  clinic: string | null;
   is_active: boolean;
   created_at: string;
   patient_count: number;
@@ -52,8 +53,10 @@ export const AUDIT_PAGE = 50;
 export const adminApi = {
   stats: () => api<Stats>("/admin/stats"),
   doctors: () => api<Doctor[]>("/admin/doctors"),
-  createDoctor: (body: { username: string; password: string; full_name: string }) =>
+  createDoctor: (body: { username: string; password: string; full_name: string; clinic: string | null }) =>
     api<Doctor>("/admin/doctors", { body }),
+  setDoctorClinic: (id: number, clinic: string | null) =>
+    api<Doctor>(`/admin/doctors/${id}`, { method: "PATCH", body: { clinic } }),
   setDoctorActive: (id: number, active: boolean) =>
     api<Doctor>(`/admin/doctors/${id}/${active ? "unblock" : "block"}`, { method: "POST" }),
   resetDoctorPassword: (id: number, password: string) =>

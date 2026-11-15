@@ -9,8 +9,8 @@ import { signalWord } from "./DevicesPage";
 
 const me = () => ok({ id: 1, username: "admin", role: "admin", full_name: "Admin" });
 const doctors: Doctor[] = [
-  { id: 2, username: "dr.aziz", full_name: "Aziz Karimov", is_active: true, created_at: "2026-11-01T08:00:00Z", patient_count: 4 },
-  { id: 3, username: "dr.olga", full_name: "Olga Kim", is_active: false, created_at: "2026-11-02T08:00:00Z", patient_count: 0 },
+  { id: 2, username: "dr.aziz", full_name: "Aziz Karimov", clinic: "Highlands Clinic", is_active: true, created_at: "2026-11-01T08:00:00Z", patient_count: 4 },
+  { id: 3, username: "dr.olga", full_name: "Olga Kim", clinic: null, is_active: false, created_at: "2026-11-02T08:00:00Z", patient_count: 0 },
 ];
 const device = (overrides: Partial<Device> = {}): Device => ({
   id: 1,
@@ -80,6 +80,7 @@ test("create a doctor: validation, then the credentials are shown once to hand o
   expect(sent).toBeUndefined();
 
   await user.type(within(dialog).getByLabelText("Full name"), "Nodira Usmonova");
+  await user.type(within(dialog).getByLabelText("Clinic"), "Lakeside Center");
   await user.type(within(dialog).getByLabelText("Username"), "dr.new");
   await user.click(within(dialog).getByRole("button", { name: "Generate" }));
   const password = (within(dialog).getByLabelText("Password") as HTMLInputElement).value;
@@ -87,7 +88,7 @@ test("create a doctor: validation, then the credentials are shown once to hand o
   await user.click(within(dialog).getByRole("button", { name: "Create doctor" }));
 
   const secret = await screen.findByRole("dialog", { name: "Doctor created" });
-  expect(sent).toEqual({ full_name: "Nodira Usmonova", username: "dr.new", password });
+  expect(sent).toEqual({ full_name: "Nodira Usmonova", username: "dr.new", password, clinic: "Lakeside Center" });
   expect(within(secret).getByDisplayValue(password)).toBeInTheDocument();
   await user.click(within(secret).getByRole("button", { name: "I have handed it over" }));
   expect(screen.queryByDisplayValue(password)).not.toBeInTheDocument(); // gone for good
@@ -267,4 +268,27 @@ test("a password typed for one doctor is gone when the reset dialog opens for an
   await user.click(resetB);
 
   expect(within(await screen.findByRole("dialog", { name: /Olga Kim/ })).getByLabelText("Password")).toHaveValue("");
+});
+
+test("the doctors table shows where each doctor works and the clinic can be changed", async () => {
+  let sent: unknown;
+  backend({
+    "GET /api/auth/me": me,
+    "GET /api/admin/doctors": () => ok(doctors),
+    "PATCH /api/admin/doctors/3": (init) => {
+      sent = bodyOf(init);
+      return ok({ ...doctors[1], clinic: "Lakeside Center" });
+    },
+  });
+  renderAt("/admin/doctors");
+  const user = userEvent.setup();
+
+  expect(await screen.findByText("Highlands Clinic")).toBeInTheDocument();
+  expect(screen.getByText("No clinic")).toBeInTheDocument();
+  await user.click(screen.getAllByRole("button", { name: "Change clinic" })[1]!);
+  const dialog = await screen.findByRole("dialog", { name: "Clinic of Olga Kim" });
+  await user.type(within(dialog).getByLabelText("Clinic"), "Lakeside Center");
+  await user.click(within(dialog).getByRole("button", { name: "Save" }));
+
+  await waitFor(() => expect(sent).toEqual({ clinic: "Lakeside Center" }));
 });

@@ -57,6 +57,12 @@ const PATHS = {
     </>
   ),
   sparkles: <path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16v4M17 18h4" />,
+  building: (
+    <>
+      <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" />
+      <path d="M10 6h4M10 10h4M10 14h4M10 18h4" />
+    </>
+  ),
   plus: <path d="M5 12h14M12 5v14" />,
   download: <path d="M12 3v12m0 0 4-4m-4 4-4-4M4 19h16" />,
   x: <path d="M18 6 6 18M6 6l12 12" />,

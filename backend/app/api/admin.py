@@ -11,6 +11,7 @@ from app.schemas.admin import (
     DeviceCreate,
     DeviceCreated,
     DeviceOut,
+    DoctorClinic,
     DoctorCreate,
     DoctorOut,
     DoctorPasswordReset,
@@ -27,7 +28,9 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.post("/doctors", status_code=status.HTTP_201_CREATED)
 def create_doctor(body: DoctorCreate, db: DbSession, _: CurrentAdmin) -> DoctorOut:
-    doctor = doctors.create_doctor(db, username=body.username, password=body.password, full_name=body.full_name)
+    doctor = doctors.create_doctor(
+        db, username=body.username, password=body.password, full_name=body.full_name, clinic=body.clinic
+    )
     return DoctorOut.model_validate(doctor)
 
 
@@ -37,6 +40,12 @@ def list_doctors(db: DbSession, _: CurrentAdmin) -> list[DoctorOut]:
         DoctorOut.model_validate(doctor).model_copy(update={"patient_count": count})
         for doctor, count in doctors.list_doctors(db)
     ]
+
+
+@router.patch("/doctors/{doctor_id}")
+def set_doctor_clinic(doctor_id: PathId, body: DoctorClinic, db: DbSession, _: CurrentAdmin) -> DoctorOut:
+    """Set or clear where the doctor works."""
+    return DoctorOut.model_validate(doctors.set_doctor_clinic(db, doctor_id, body.clinic))
 
 
 @router.post("/doctors/{doctor_id}/block")

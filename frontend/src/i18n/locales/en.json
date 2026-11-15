@@ -12,7 +12,6 @@
     "en": "English"
   },
   "nav": {
-    "doctorHome": "Home",
     "patients": "Patients",
     "adminOverview": "Overview",
     "doctors": "Doctors",
@@ -138,20 +137,6 @@
     "lastSeen": "Last seen {{when}}",
     "never": "Never connected"
   },
-  "doctorHome": {
-    "queueLabel": "Review queue",
-    "queueLoading": "Checking your queue…",
-    "queueNone": "No exams wait for your review",
-    "queueCount_one": "{{count}} exam waits for your review",
-    "queueCount_other": "{{count}} exams wait for your review",
-    "queueEmptyTitle": "All caught up",
-    "queueEmptyBody": "Finished exams appear here until you write your conclusion.",
-    "openPatients": "Open patients",
-    "devices": "Your devices",
-    "noDevices": "No device is assigned to you yet. Ask the administrator to assign one.",
-    "recent": "Recent exams",
-    "noRecent": "No exams yet."
-  },
   "patients": {
     "title": "Patients",
     "add": "Add patient",
@@ -170,6 +155,64 @@
     "noConsent": "No consent",
     "hasLogin": "Has login",
     "deleted": "{{name}} was deleted with all their exams and recordings."
+  },
+  "registry": {
+    "crumbRoot": "Doctor portal",
+    "crumbsLabel": "Breadcrumb",
+    "title": "Patient registry",
+    "newPatient": "New patient",
+    "searchLabel": "Search this list",
+    "sortLabel": "Sort",
+    "sort": {
+      "recent": "Most recent",
+      "name": "Name A–Z",
+      "priority": "Priority"
+    },
+    "summaryLabel": "Summary",
+    "assignedToday": "Assigned today",
+    "normal": "Normal",
+    "needsReview": "Needs review",
+    "pending": "Pending",
+    "tabsLabel": "Show patients by status",
+    "tabAll": "All",
+    "tableLabel": "Patients",
+    "colPatient": "Patient",
+    "colAgeSex": "Age · Sex",
+    "colLastRecording": "Last recording",
+    "colStatus": "Status",
+    "colOpen": "Open",
+    "open": "Open",
+    "openRecord": "Open record for {{name}}",
+    "chip": {
+      "normal": "Normal",
+      "abnormal": "Abnormal",
+      "pending": "Pending",
+      "failed": "Re-record",
+      "awaitingReview": "Awaiting review",
+      "reviewed": "Reviewed"
+    },
+    "sexShort": {
+      "male": "M",
+      "female": "F"
+    },
+    "analysisInProgress": "Analysis in progress",
+    "noRecording": "No recording yet",
+    "noneInTab": "Nothing in this tab",
+    "colClinic": "Registered clinic",
+    "analyzedAt": "Analyzed at {{clinic}} · {{device}}",
+    "notAnalyzed": "Not analyzed yet"
+  },
+  "shell": {
+    "tagline": "Clinical telemetry",
+    "suite": "Clinical suite",
+    "rights": "© 2026 MurMur",
+    "footerNav": "Footer",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "accessibility": "Accessibility",
+    "support": "Support",
+    "note": "Research prototype and screening aid, not a medical device.",
+    "clinicTitle": "Clinic where you work"
   },
   "sex": {
     "male": "Male",
@@ -259,7 +302,8 @@
     "whatHappens": "Keep the stethoscope on the point and the patient still for {{seconds}} s.",
     "start": "Start recording",
     "starting": "Starting…",
-    "backToPatient": "Back to the patient"
+    "backToPatient": "Back to the patient",
+    "noDevices": "No device is assigned to you yet. Ask the administrator to assign one."
   },
   "chest": {
     "patientRightShort": "R",
@@ -433,7 +477,13 @@
     "handOverBody": "Give these to the doctor in person. The password is not shown again.",
     "handOverDone": "I have handed it over",
     "emptyTitle": "No doctors yet",
-    "emptyBody": "Add the first doctor; they can then add patients and start exams."
+    "emptyBody": "Add the first doctor; they can then add patients and start exams.",
+    "clinic": "Clinic",
+    "clinicHint": "Where the doctor works. Optional.",
+    "noClinic": "No clinic",
+    "editClinic": "Change clinic",
+    "clinicTitle": "Clinic of {{name}}",
+    "clinicSave": "Save"
   },
   "devices": {
     "title": "Devices",

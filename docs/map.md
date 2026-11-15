@@ -33,7 +33,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/security.py` — bcrypt passwords, JWT tokens, device API key generation + SHA-256 hash
 - `backend/app/deps.py` — auth dependencies: `CurrentUser/Admin/Doctor/Patient`, `CurrentDevice` (X-Device-Key)
 - `backend/app/cli.py` — `python -m app.cli create-admin` (first admin from env, idempotent)
-- `backend/app/api/auth.py` — login, change-password, `/api/auth/me`
+- `backend/app/api/auth.py` — login (doctor/patient), admin login (`/api/auth/admin/login`), change-password, `/api/auth/me`
 - `backend/app/schemas/` — request/response shapes; `common.py` has password/username field rules
 - `backend/app/services/errors.py` — `NotFound`/`Conflict`/`BadRequest`; mapped to HTTP in `main.py`
 - `backend/app/services/users.py` — create user, authenticate (equal timing), change/set password (bumps token_version)
@@ -45,6 +45,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/audit.py` — `record()` a read of patient data, list entries
 - `backend/app/api/doctor.py` — `/api/patients/*`, `/api/exams/*`, `/api/devices` (own devices) for the doctor
 - `backend/app/services/patients.py` — doctor's own patients: create/edit/delete (erases all), consent, login + reset; audits
+- `backend/app/services/result_status.py` — pure: latest exam + AI answer → registry status (normal/abnormal/pending/failed/reviewed), priority rank
 - `backend/app/services/exams.py` — doctor's own exams: start, read, audio path, review, cancel; audits reads
 - `backend/app/services/exam_flow.py` — the ONLY place exam status changes; allowed transitions table
 - `backend/app/services/storage.py` — WAV files on disk as `<uuid>.wav` in `RECORDINGS_DIR`
@@ -61,6 +62,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
 - `backend/alembic/versions/` — migrations, numbered `0001_…`
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
+- `backend/tests/test_result_status.py` — every row of the registry status mapping
 - `backend/tests/test_migrations.py` — tables exist, models match migrations, downgrade/upgrade round trip
 - `backend/tests/helpers.py` — `make_user`, `login`, `make_device`, `make_patient`, `make_wav` builders shared by tests
 - `backend/tests/test_web_app.py` — built web app served next to the API: client routes, cache, no traversal
@@ -78,6 +80,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
 - `docs/glossary.md` — medical terms in uz/ru/en with sources and confidence
+- `docs/redesign/REDESIGN.md` — UI/UX redesign master file (analysis, gaps, phases, progress); details in `design-tokens.md`,
+  `components.md`, `api-changes.md`, `ai-changes.md` next to it
 
 ## Frontend
 
@@ -87,13 +91,16 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
 - `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
 - `frontend/scripts/check-offline.mjs` — `npm run check:offline`: fails if the build would load anything from the internet
+- `frontend/src/redesign/` — TEMPORARY staging for the redesign: new palette (`tokens.css`), `rd-` component styles,
+  components, fake `sampleData.ts`, unrouted `RedesignPreview`. Not used by any page; delete when all mockups are applied
 - `frontend/src/main.tsx` — entry: CSS, i18n, `<App/>`
 - `frontend/src/app/App.tsx` — data router, role pages lazy-loaded, QueryClient (retries only network/5xx),
   ForgetDataOnUserChange (cache cleared + pages remounted when the user changes)
 - `frontend/src/app/session.ts` — token + role in sessionStorage; `useSession()`; why the session ended
 - `frontend/src/app/guards.tsx` — `RequireRole`, `RequireSession`, `HomeRedirect`, safe `?next=`
 - `frontend/src/api/client.ts` — `api()`: Bearer token, 401 → session expired, 403 → change password; `errorMessage()`
-- `frontend/src/api/auth.ts` — login, change password, me
+- `frontend/src/api/auth.ts` — login (role card), admin login, change password, me
+- `frontend/src/components/auth/AuthControls.tsx` — controls of the redesigned sign-in card (field with eye, alert, small segmented, logo)
 - `frontend/src/i18n/` — uz/ru/en JSON, auto-detect (`detect.ts`), `changeLanguage()`; test checks key parity and `ʻ`
 - `frontend/src/components/ui/` — Button (busy = double-click guard), TextField, Alert
 - `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
@@ -105,7 +112,9 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
 - `frontend/src/components/device/OnlineBadge.tsx` — online dot + word (doctor and admin pages)
 - `frontend/src/components/exam/ChestDiagram.tsx` — chest outline + 4 points (shared: doctor picker, patient map)
-- `frontend/src/features/doctor/` — DoctorHome (review queue), `patients/` list, form, patient page; `shared.tsx`
+- `frontend/src/components/layout/DoctorShell.tsx` — doctor's shell (sidebar, header, footer); admin/patient still use `AppShell`
+- `frontend/src/features/doctor/patients/mockClinic.ts` — MOCK clinic names for the registry column; delete when real data exists
+- `frontend/src/features/doctor/` — `patients/` PatientRegistry (the doctor's main page), form, patient page; `shared.tsx`
   (RecordNo, PointLabel, useOneTimeState for once-only banners)
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
   (status → screen state, polling speed, backend failure text → i18n keys); ResultView (AI card, review form,

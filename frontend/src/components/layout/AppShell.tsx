@@ -13,7 +13,6 @@ import { SkeletonRows } from "../ui/States";
 
 const NAV: Record<Role, { to: string; key: string; end?: boolean }[]> = {
   doctor: [
-    { to: "/doctor", key: "nav.doctorHome", end: true },
     { to: "/doctor/patients", key: "nav.patients" },
   ],
   admin: [

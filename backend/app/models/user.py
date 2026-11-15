@@ -15,6 +15,7 @@ class User(CreatedAtMixin, Base):
     password_hash: Mapped[str] = mapped_column(String(100))
     role: Mapped[Role] = mapped_column(str_enum(Role, "role"))
     full_name: Mapped[str] = mapped_column(String(200))
+    clinic: Mapped[str | None] = mapped_column(String(200))  # where a doctor works; set by the admin
     is_active: Mapped[bool] = mapped_column(default=True)
     must_change_password: Mapped[bool] = mapped_column(default=False)
     # Goes up on every password change; tokens carry it, so older tokens stop working at once.

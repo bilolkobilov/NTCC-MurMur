@@ -2,10 +2,9 @@
 
 from pathlib import Path
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session, joinedload
 
-from app.models import AuscultationPoint, Device, Exam, ExamStatus, Patient, User
+from app.models import AuscultationPoint, Device, Exam, User
 from app.services import audit, exam_flow, storage
 from app.services.errors import NotFound
 from app.services.patients import get_patient_for_exam
@@ -66,17 +65,3 @@ def cancel_exam(db: Session, doctor: User, exam_id: int) -> Exam:
     exam_flow.cancel(db, exam)
     audit.record(db, doctor, "exam.cancel", "exam", exam.id)
     return exam
-
-
-def list_exams(
-    db: Session, doctor: User, *, status: ExamStatus | None, limit: int, offset: int
-) -> list[tuple[Exam, str]]:
-    """The doctor's own exams across all patients, newest first, with the patient's name (e.g. "needs review")."""
-    query = (
-        select(Exam, Patient.full_name).join(Patient, Patient.id == Exam.patient_id).where(Exam.doctor_id == doctor.id)
-    )
-    if status is not None:
-        query = query.where(Exam.status == status)
-    rows = db.execute(query.order_by(Exam.created_at.desc(), Exam.id.desc()).limit(limit).offset(offset)).all()
-    audit.record_read(db, doctor, "exam.list", "exam", None)
-    return [(exam, name) for exam, name in rows]

@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Fragment, lazy, type ReactNode, useEffect, useState } from "react";
-import { createBrowserRouter, type RouteObject, RouterProvider } from "react-router";
+import { createBrowserRouter, Navigate, type RouteObject, RouterProvider } from "react-router";
 
 import { ApiError } from "../api/client";
 import { AppShell } from "../components/layout/AppShell";
+import { DoctorShell } from "../components/layout/DoctorShell";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
 import { NotFoundPage } from "../pages/StatusPages";
@@ -11,9 +12,8 @@ import { HomeRedirect, RequireRole, RequireSession } from "./guards";
 import { session } from "./session";
 
 // Each role's pages load only when that role opens them (a patient's phone never downloads doctor code).
-const DoctorHome = lazy(() => import("../features/doctor/DoctorHome").then((m) => ({ default: m.DoctorHome })));
-const PatientsPage = lazy(() =>
-  import("../features/doctor/patients/PatientsPage").then((m) => ({ default: m.PatientsPage })),
+const PatientRegistry = lazy(() =>
+  import("../features/doctor/patients/PatientRegistry").then((m) => ({ default: m.PatientRegistry })),
 );
 const PatientFormPage = lazy(() =>
   import("../features/doctor/patients/PatientFormPage").then((m) => ({ default: m.PatientFormPage })),
@@ -62,12 +62,12 @@ export const routes: RouteObject[] = [
     path: "/doctor",
     element: (
       <RequireRole role="doctor">
-        <AppShell />
+        <DoctorShell />
       </RequireRole>
     ),
     children: [
-      { index: true, element: <DoctorHome /> },
-      { path: "patients", element: <PatientsPage /> },
+      { index: true, element: <Navigate to="/doctor/patients" replace /> },
+      { path: "patients", element: <PatientRegistry /> },
       { path: "patients/new", element: <PatientFormPage /> },
       { path: "patients/:patientId", element: <PatientPage /> },
       { path: "patients/:patientId/edit", element: <PatientFormPage /> },

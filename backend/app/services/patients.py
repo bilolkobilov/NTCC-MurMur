@@ -1,15 +1,20 @@
 """Patients as seen by their doctor. Every read of patient data is written to the audit log."""
 
 import logging
-from datetime import UTC, datetime
+from dataclasses import dataclass
+from datetime import UTC, datetime, time
+from zoneinfo import ZoneInfo
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import and_, delete, func, select
+from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
-from app.models import AIResult, DeviceCommand, Exam, Patient, Recording, Role, Sex, User
+from app.config import get_settings
+from app.models import AIResult, Device, DeviceCommand, Exam, Patient, Recording, Role, Sex, User
 from app.security import generate_temp_password
 from app.services import audit, storage
 from app.services.errors import Conflict, NotFound
+from app.services.result_status import RegistryStatus, derive, priority_rank
 from app.services.users import create_user, set_password
 
 log = logging.getLogger(__name__)
@@ -52,16 +57,93 @@ def _own_patient(db: Session, doctor: User, patient_id: int, *, for_update: bool
     return patient
 
 
-def list_patients(db: Session, doctor: User, *, search: str | None, limit: int, offset: int) -> list[Patient]:
-    """Own patients sorted by name; `search` matches any part of the name, case-insensitive."""
-    query = select(Patient).where(Patient.doctor_id == doctor.id)
+@dataclass(frozen=True)
+class RegistryRow:
+    patient: Patient
+    last_exam: Exam | None
+    device_name: str | None
+    status: RegistryStatus
+
+
+def _registry(db: Session, doctor: User, search: str | None = None) -> list[RegistryRow]:
+    """Every own patient with the latest exam and the status derived from it (one query, no N+1).
+
+    A doctor's roster is small, so filtering, sorting and paging happen in Python after the status is derived.
+    """
+    latest = (
+        select(Exam.id)
+        .where(Exam.doctor_id == doctor.id)
+        .ext(distinct_on(Exam.patient_id))
+        .order_by(Exam.patient_id, Exam.created_at.desc(), Exam.id.desc())
+        .scalar_subquery()
+    )
+    query = (
+        select(Patient, Exam, AIResult, Device.name)
+        .outerjoin(Exam, and_(Exam.patient_id == Patient.id, Exam.id.in_(latest)))
+        .outerjoin(AIResult, AIResult.exam_id == Exam.id)
+        .outerjoin(Device, Device.id == Exam.device_id)
+        .where(Patient.doctor_id == doctor.id)
+    )
     if search:
         escaped = search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")  # % and _ match literally
         query = query.where(Patient.full_name.ilike(f"%{escaped}%", escape="\\"))
-    query = query.order_by(func.lower(Patient.full_name), Patient.id).limit(limit).offset(offset)
-    patients = list(db.scalars(query))
+    rows = []
+    for patient, exam, ai, device_name in db.execute(query):
+        status = derive(
+            exam.status if exam else None,
+            ai_quality=ai.quality if ai else None,
+            ai_label=ai.label if ai else None,
+            doctor_agrees=exam.doctor_agrees_with_ai if exam else None,
+        )
+        rows.append(RegistryRow(patient, exam, device_name, status))
+    return rows
+
+
+def list_patients(
+    db: Session, doctor: User, *, search: str | None, sort: str, status: str, limit: int, offset: int
+) -> list[RegistryRow]:
+    """Own patients for the registry. `search` matches any part of the name, case-insensitive.
+
+    sort: "recent" (latest exam first, no exam last), "name", "priority" (what needs the doctor first).
+    status: "all", "needs_review" or "pending".
+    """
+    rows = _registry(db, doctor, search)
+    if status == "needs_review":
+        rows = [r for r in rows if r.status.needs_review]
+    elif status == "pending":
+        rows = [r for r in rows if r.status.result_status == "pending"]
+    rows.sort(key=lambda r: (r.patient.full_name.lower(), r.patient.id))  # the tie-break for every sort
+    if sort == "recent":
+        rows.sort(key=lambda r: r.last_exam.created_at.timestamp() if r.last_exam else float("-inf"), reverse=True)
+    elif sort == "priority":
+        rows.sort(
+            key=lambda r: (
+                priority_rank(r.status),
+                -(r.last_exam.created_at.timestamp() if r.last_exam else float("-inf")),
+            )
+        )
     audit.record_read(db, doctor, "patient.list", "patient", None)
-    return patients
+    return rows[offset : offset + limit]
+
+
+def summary(db: Session, doctor: User) -> dict[str, int]:
+    """Counts over the whole roster (the list is paged, so they cannot come from its rows)."""
+    rows = _registry(db, doctor)
+    local_zone = ZoneInfo(get_settings().app_timezone)
+    start_of_day = datetime.combine(datetime.now(UTC).astimezone(local_zone).date(), time.min, tzinfo=local_zone)
+    assigned_today = db.scalar(
+        select(func.count(Exam.patient_id.distinct())).where(
+            Exam.doctor_id == doctor.id, Exam.created_at >= start_of_day
+        )
+    )
+    audit.record_read(db, doctor, "patient.summary", "patient", None)
+    return {
+        "total": len(rows),
+        "assigned_today": assigned_today or 0,
+        "normal": sum(r.status.result_status == "normal" for r in rows),
+        "needs_review": sum(r.status.needs_review for r in rows),
+        "pending": sum(r.status.result_status == "pending" for r in rows),
+    }
 
 
 def read_patient(db: Session, doctor: User, patient_id: int) -> Patient:

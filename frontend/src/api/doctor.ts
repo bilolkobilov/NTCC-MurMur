@@ -17,6 +17,25 @@ export type Patient = {
   created_at: string;
 };
 
+export type ResultStatus = "normal" | "abnormal" | "pending" | "failed" | "reviewed";
+export type PatientSort = "recent" | "name" | "priority";
+export type PatientStatusFilter = "all" | "needs_review" | "pending";
+
+/** A patient in the registry: the patient plus the latest exam and the status the backend derived from it. */
+export type PatientRegistryRow = Patient & {
+  last_exam: { id: number; point: Point; status: ExamStatus; created_at: string; device_name: string | null } | null;
+  result_status: ResultStatus;
+  needs_review: boolean;
+};
+
+export type PatientSummary = {
+  total: number;
+  assigned_today: number;
+  normal: number;
+  needs_review: number;
+  pending: number;
+};
+
 export type PatientInput = {
   full_name: string;
   birth_year: number;
@@ -34,8 +53,6 @@ export type ExamSummary = {
   created_at: string;
   reviewed_at: string | null;
 };
-
-export type ExamListItem = ExamSummary & { patient_full_name: string };
 
 export type RecordingInfo = {
   sample_rate: number;
@@ -70,10 +87,17 @@ export type OneTimeLogin = { username: string; temporary_password: string };
 export const PAGE_SIZE = 50;
 
 export const doctorApi = {
-  listPatients: (search: string, offset = 0) =>
-    api<Patient[]>(
-      `/patients?${new URLSearchParams({ ...(search ? { q: search } : {}), limit: String(PAGE_SIZE), offset: String(offset) })}`,
+  listPatients: (params: { q: string; sort: PatientSort; status: PatientStatusFilter }, offset = 0) =>
+    api<PatientRegistryRow[]>(
+      `/patients?${new URLSearchParams({
+        ...(params.q ? { q: params.q } : {}),
+        sort: params.sort,
+        status: params.status,
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+      })}`,
     ),
+  patientSummary: () => api<PatientSummary>("/patients/summary"),
   getPatient: (id: number) => api<Patient>(`/patients/${id}`),
   createPatient: (input: PatientInput & { consent_given: boolean }) => api<Patient>("/patients", { body: input }),
   updatePatient: (id: number, input: Partial<PatientInput>) =>
@@ -83,8 +107,6 @@ export const doctorApi = {
   createLogin: (id: number, username: string) => api<OneTimeLogin>(`/patients/${id}/login`, { body: { username } }),
   resetPassword: (id: number) => api<OneTimeLogin>(`/patients/${id}/reset-password`, { method: "POST" }),
   patientExams: (id: number) => api<ExamSummary[]>(`/patients/${id}/exams`),
-  listExams: (status?: ExamStatus, limit = 20) =>
-    api<ExamListItem[]>(`/exams?${new URLSearchParams({ ...(status ? { status } : {}), limit: String(limit) })}`),
   myDevices: () => api<DoctorDevice[]>("/devices"),
   startExam: (patientId: number, deviceId: number, point: Point) =>
     api<ExamDetail>("/exams", { body: { patient_id: patientId, device_id: deviceId, point } }),
