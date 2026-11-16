@@ -58,7 +58,7 @@ tests/
 - **Exam status changes in one place:** `services/exam_flow.py`. Flow: `waiting → recording → uploaded → analyzed →
   reviewed` (or `failed`).
 - **Access is data-shaped.** Admin sees counts only, never medical data. A doctor sees only their own patients. A
-  patient sees only their own `reviewed` exams, with no AI fields. Reads of patient data go through
+  patient sees only their own `reviewed` exams, with the AI yes / no label but no score, model or agreement; they edit only their contact details. Reads of patient data go through
   `audit.record_read` (same user + record logged once per 5 min).
 - **Auth.** No public signup. A password change bumps `token_version` (old JWTs stop working). Login is rate-limited
   in memory. Device keys are shown once and stored as SHA-256 hashes.
@@ -70,7 +70,7 @@ tests/
 | `/api/auth/*` | everyone | login, change password, `me` |
 | `/api/admin/*` | admin | doctors, devices (+ one-time key, health, disconnect, self-test), stats, audit log |
 | `/api/patients/*`, `/api/exams/*`, `/api/devices` | doctor | own patients, exams, own devices |
-| `/api/me`, `/api/me/exams` | patient | own profile, reviewed exams |
+| `/api/me` (+ PATCH), `/api/me/exams` | patient | own profile and contact details, reviewed exams |
 | `/api/device/*` | device (`X-Device-Key`) | heartbeat, command poll (204 = nothing), self-test result, WAV upload (403 once the admin disconnected the device) |
 
 ### Device round trip

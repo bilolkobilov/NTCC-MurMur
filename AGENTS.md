@@ -53,7 +53,7 @@ on a website. Research prototype and screening aid, NOT a medical device.
   patient (temporary password shown once; the patient must change it on first login). Sees ONLY their own patients.
   Creates exams on devices assigned to them, adds a note + agree/disagree with the AI, and marks an exam `reviewed`.
 - **patient**: created by a doctor. Sees ONLY their own profile and their own exams with status `reviewed` (including
-  the doctor's note). Never sees unreviewed or raw AI results, never sees other patients.
+  the doctor's note). Sees the AI's yes / no label only on reviewed exams (never the score, model or agreement); never sees unreviewed exams or other patients. Edits only own contact details.
 - **device**: authenticates with header `X-Device-Key`. Can only send heartbeats, poll its own commands, and upload
   audio for exams assigned to it.
 

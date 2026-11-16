@@ -50,7 +50,7 @@ After changing a model: `uv run python -m alembic revision --autogenerate -m "..
   `features/doctor/exam/aiOutcome.ts`; change both together. `AI_MODEL=dummy` is the default and the fallback when
   weights in `models/cardiophon/` are missing.
 - **Access control is data-shaped, not only route-shaped.** Admin sees counts, never medical data; doctors see only their
-  patients; patients get `reviewed` exams with no AI fields (`patient_portal.py`). `tests/test_access_rules.py` and
+  patients; patients get `reviewed` exams with the AI yes / no label but no score / model / agreement (`patient_portal.py`). `tests/test_access_rules.py` and
   `tests/test_full_flow.py` pin this — extend them with any new endpoint. Reads of patient data go through
   `audit.record_read` (deduped per user/record per 5 min).
 - **Auth details.** A password change bumps `token_version` (invalidates old JWTs); login is rate-limited in memory

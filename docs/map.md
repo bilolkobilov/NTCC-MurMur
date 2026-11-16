@@ -55,8 +55,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/ai/cardiophon.py` — CardioPHON encoder (BYOL-A port), log-mel, resample, `CardiophonAnalyzer`
 - `backend/app/services/analyzer.py` — `Analyzer` interface, `DummyAnalyzer`, `get_analyzer()` (AI_MODEL switch);
   answer vocabulary `ANSWER_LABELS` / `gave_answer()` (mirrored by frontend `aiOutcome.ts`)
-- `backend/app/api/patient.py` — `/api/me`, `/api/me/exams` (reviewed only, no AI fields)
-- `backend/app/services/patient_portal.py` — patient's own profile and reviewed exams; audits reads
+- `backend/app/api/patient.py` — `/api/me` (GET, PATCH contact details), `/api/me/exams` (reviewed only, AI label but no score)
+- `backend/app/services/patient_portal.py` — patient's own profile, contact edit, reviewed exams, recording; audits reads and edits
 - `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
 - `backend/app/models/` — one file per table (9 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
@@ -106,7 +106,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/i18n/` — uz/ru/en JSON, auto-detect (`detect.ts`), `changeLanguage()`; test checks key parity and `ʻ`
 - `frontend/src/components/ui/` — Button (busy = double-click guard), TextField, Alert
 - `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
-- `frontend/src/components/layout/` — AppShell (header, role nav, account menu), AuthLayout (login frame)
+- `frontend/src/components/layout/` — PatientShell (left sidebar + header, phone tab bar, `patient.css` for all patient pages), AuthLayout (login frame)
 - `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found)
 - `frontend/src/api/doctor.ts` — doctor endpoints + types (patients, exams list, devices, logins)
 - `frontend/src/lib/format.ts` — dates (Asia/Tashkent), relative time, numbers per language, age
@@ -114,7 +114,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/exam/StatusMark.tsx` — exam status as mini trace + word
 - `frontend/src/components/device/OnlineBadge.tsx` — online dot + word (doctor and admin pages)
 - `frontend/src/components/exam/ChestDiagram.tsx` — chest outline + 4 points (shared: doctor picker, patient map)
-- `frontend/src/components/layout/DoctorShell.tsx` — doctor's shell (sidebar, header, footer); admin/patient still use `AppShell`
+- `frontend/src/components/layout/DoctorShell.tsx` — doctor's shell (sidebar, header, footer)
 - `frontend/src/features/doctor/` — `patients/` PatientRegistry (the doctor's main page), PatientFormPage (new / edit, "Patient created" dialog), PatientPage (`/doctor/patients/:id`: AI flag, VitalsCard + `vitalStatus.ts` (vital signs, record dialog), identity, overview / recordings tabs, device, details, consent, login, delete); `shared.tsx`
   (RecordNo, PointLabel, useOneTimeState for once-only banners)
 - `frontend/src/features/doctor/exam/` — NewExamPage (device + ChestPointPicker), ExamPage (live), `liveState.ts`
@@ -125,9 +125,9 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
   DevicesPage (fleet summary, filters in the URL, table, Details opens the device page), DeviceFormPage (`/admin/devices/new`: details → key shown once),
   DeviceDetailPage (`/admin/devices/:id`: network, checks, self-test, disconnect/reconnect, assign, new key), `deviceUi.tsx` (chips, filters, masks), AuditPage (pages of 50, action filter in the URL)
 - `frontend/src/features/profile/` — `DoctorProfileView` (one profile page for the admin and the doctor), `MyProfilePage` (`/doctor/profile`)
-- `frontend/src/components/layout/AdminShell.tsx` — admin shell (sidebar, header, footer); patient still uses `AppShell`
-- `frontend/src/api/patient.ts`, `frontend/src/features/patient/` — patient phone pages: PatientHome (reviewed results),
-  ResultPage (doctor's conclusion + where listened); never any AI field
+- `frontend/src/components/layout/AdminShell.tsx` — admin shell (sidebar, header, footer)
+- `frontend/src/api/patient.ts`, `frontend/src/features/patient/` — patient pages: ResultsPage (latest visit, positions,
+  earlier visits, note on the right), ProfilePage (clinic data + editable contact), RecordsPage (printable), `visits.ts`; no AI score
 - `frontend/src/test/utils.tsx` — fake backend + `renderAt()` for page tests
 
 ## Scripts

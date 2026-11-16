@@ -68,12 +68,16 @@ def test_patient_sees_only_own_reviewed_exams(client, db, world):
     assert "Vali" not in str(exams)
 
 
-def test_patient_never_sees_raw_ai_results(client, db, world):
-    add_exam(db, world["ali"], world["device_a"], ExamStatus.REVIEWED, note="ok")
+def test_patient_never_sees_the_ai_score_model_or_agreement(client, db, world):
+    exam = add_exam(db, world["ali"], world["device_a"], ExamStatus.REVIEWED, note="ok")
+    db.get(AIResult, exam.ai_result.id).score = 0.8123
+    db.commit()
 
-    body = client.get("/api/me/exams", headers=login(client, "ali")).text
+    exams = client.get("/api/me/exams", headers=login(client, "ali")).json()
+    body = str(exams)
 
-    for hidden in ("murmur", "dummy", "label", "ai_result", "quality", "agrees"):
+    assert exams[0]["ai_label"] == "murmur"  # the yes/no label is shown, after the doctor's review
+    for hidden in ("dummy", "0.8123", "score", "model", "ai_result", "agrees"):
         assert hidden not in body
 
 
