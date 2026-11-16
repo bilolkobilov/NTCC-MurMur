@@ -101,7 +101,7 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 | --- | --- | --- |
 | admin | username + password (created by the CLI) | create/block doctors, register devices (API key shown once), assign devices, see stats and the audit log — never patient medical data |
 | doctor | username + password set by the admin | own patients only: create, record consent, create patient login, start exams, listen, review |
-| patient | username + temporary password from the doctor (must change on first login) | own profile and own **reviewed** exams with the doctor's note — never raw AI results |
+| patient | username + temporary password from the doctor (must change on first login) | own profile and own **reviewed** exams with the doctor's note and the AI's yes / no label — never the score or unreviewed exams; edits own contact details |
 | device | `X-Device-Key` header | heartbeat, poll its commands, upload WAV for its own exams |
 
 ## API overview
@@ -116,7 +116,7 @@ from the Alembic migrations on every run, and emptied after each test. The main 
 | doctor | `GET/POST /api/patients` (list = registry rows with last exam + status), `GET /api/patients/summary`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
 | doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET …/audio`, `PATCH …/review`, `POST …/cancel` | exams |
 | doctor | `GET /api/devices` | own devices with online status |
-| patient | `GET /api/me`, `GET /api/me/exams` | own data |
+| patient | `GET`/`PATCH /api/me`, `GET /api/me/exams` | own data |
 | device | `POST /api/device/heartbeat` (+ battery, microphone noise, network), `GET /api/device/command` (`record` or `self_test`), `POST /api/device/self-test`, `POST /api/device/upload/{exam_id}` | device link |
 
 Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`: cancelled, analysis error, or

@@ -39,7 +39,7 @@ src/
   features/
     admin/              counts, doctors, devices (fleet list, register, detail), audit
     doctor/             review queue, patients, exam flow (new exam, live status, result + review)
-    patient/            reviewed results only, never AI fields
+    patient/            reviewed results, profile, printable records; AI label only, never the score
   pages/, components/   login, change password, status pages; ui / brand / layout / exam / device components
   i18n/                 uz / ru / en JSON files
   lib/                  formatting (dates in Asia/Tashkent), synthetic heart trace
@@ -55,6 +55,6 @@ src/
   Medical terms: `docs/glossary.md`.
 - **The AI answer vocabulary is mirrored** in `src/features/doctor/exam/aiOutcome.ts` and the backend
   `analyzer.py` (`ANSWER_LABELS`, `gave_answer()`). Change both together.
-- **Patients never see AI fields,** and the admin never sees medical data. The backend enforces it; do not add UI that
+- **Patients never see the AI score, model or agreement (only the yes / no label of reviewed exams),** and the admin never sees medical data. The backend enforces it; do not add UI that
   depends on the opposite.
 - UI follows `.interface-design/system.md`; no new dependencies without asking.

@@ -4,7 +4,7 @@ import { createBrowserRouter, Navigate, type RouteObject, RouterProvider } from 
 
 import { ApiError } from "../api/client";
 import { AdminShell } from "../components/layout/AdminShell";
-import { AppShell } from "../components/layout/AppShell";
+import { PatientShell } from "../components/layout/PatientShell";
 import { DoctorShell } from "../components/layout/DoctorShell";
 import { ChangePasswordPage } from "../pages/ChangePasswordPage";
 import { LoginPage } from "../pages/LoginPage";
@@ -41,8 +41,9 @@ const DeviceDetailPage = lazy(() =>
 );
 const DevicesPage = lazy(() => import("../features/admin/DevicesPage").then((m) => ({ default: m.DevicesPage })));
 const AuditPage = lazy(() => import("../features/admin/AuditPage").then((m) => ({ default: m.AuditPage })));
-const PatientHome = lazy(() => import("../features/patient/PatientHome").then((m) => ({ default: m.PatientHome })));
-const ResultPage = lazy(() => import("../features/patient/ResultPage").then((m) => ({ default: m.ResultPage })));
+const ResultsPage = lazy(() => import("../features/patient/ResultsPage").then((m) => ({ default: m.ResultsPage })));
+const ProfilePage = lazy(() => import("../features/patient/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const RecordsPage = lazy(() => import("../features/patient/RecordsPage").then((m) => ({ default: m.RecordsPage })));
 
 export function createQueryClient(): QueryClient {
   return new QueryClient({
@@ -112,12 +113,13 @@ export const routes: RouteObject[] = [
     path: "/patient",
     element: (
       <RequireRole role="patient">
-        <AppShell />
+        <PatientShell />
       </RequireRole>
     ),
     children: [
-      { index: true, element: <PatientHome /> },
-      { path: "results/:examId", element: <ResultPage /> },
+      { index: true, element: <ResultsPage /> },
+      { path: "profile", element: <ProfilePage /> },
+      { path: "records", element: <RecordsPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

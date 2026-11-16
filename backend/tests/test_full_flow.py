@@ -108,7 +108,7 @@ def test_full_exam_flow(client, db):
     assert len(my_exams) == 1
     assert my_exams[0]["id"] == exam["id"]
     assert my_exams[0]["doctor_note"] == "Normal heart sounds. No follow-up needed."
-    for hidden in ("ai_result", "label", "model_name", "score", "doctor_agrees_with_ai", "quality"):
+    for hidden in ("ai_result", "model_name", "score", "doctor_agrees_with_ai"):
         assert hidden not in str(my_exams)
 
     # --- admin: counts and an audit trail, but no medical data ---

@@ -104,9 +104,7 @@ test("a one-time password forces a new password before anything else", async () 
   await user.type(screen.getByLabelText("Repeat new password"), "my-own-pass");
   await user.click(screen.getByRole("button", { name: "Save password" }));
 
-  expect(
-    await screen.findByRole("link", { name: "Your results" }),
-  ).toBeInTheDocument();
+  expect((await screen.findAllByRole("link", { name: "Results" })).length).toBeGreaterThan(0);
   expect(session.get()).toEqual({
     token: "fresh",
     role: "patient",

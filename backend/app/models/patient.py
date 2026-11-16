@@ -22,6 +22,12 @@ class Patient(CreatedAtMixin, Base):
     height_cm: Mapped[float | None]
     weight_kg: Mapped[float | None]
     clinic: Mapped[str | None] = mapped_column(String(200))  # the doctor's clinic when the patient was registered
+    # Contact details: the patient edits these themselves (`PATCH /api/me`); all optional.
+    phone: Mapped[str | None] = mapped_column(String(32))
+    email: Mapped[str | None] = mapped_column(String(200))
+    city: Mapped[str | None] = mapped_column(String(100))
+    emergency_contact_name: Mapped[str | None] = mapped_column(String(200))
+    emergency_contact_phone: Mapped[str | None] = mapped_column(String(32))
     consent_given_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
     doctor: Mapped[User] = relationship(foreign_keys=[doctor_id])

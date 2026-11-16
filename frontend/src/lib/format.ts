@@ -109,3 +109,12 @@ export function formatClock(seconds: number, language: string): string {
   const separator = language === "en" ? "." : ",";
   return `${minutes}:${String(Math.floor(rest / 10)).padStart(2, "0")}${separator}${rest % 10}`;
 }
+
+/** "Ali Valiyev" → "AV": the first letters of the first two words, for avatars. */
+export const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]!.toUpperCase())
+    .join("");

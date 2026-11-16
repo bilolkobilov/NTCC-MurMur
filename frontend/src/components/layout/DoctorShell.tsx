@@ -22,7 +22,7 @@ const initials = (name: string) =>
 
 /**
  * The doctor's shell (design "Desktop shell 1440"): full-height sidebar, a right-aligned header with the account
- * menu, the page, and a footer. Admin and patient keep `AppShell` until their own frames are applied.
+ * menu, the page, and a footer. Admin and patient have their own shells.
  * The sidebar lists only the pages that exist; "New recording", "Analysis results" and "Clinical reports" have none.
  */
 export function DoctorShell() {

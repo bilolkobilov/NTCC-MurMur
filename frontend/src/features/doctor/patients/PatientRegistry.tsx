@@ -12,7 +12,7 @@ import {
 } from "../../../api/doctor";
 import { Alert } from "../../../components/ui/Alert";
 import { EmptyState, ErrorState, SkeletonRows } from "../../../components/ui/States";
-import { ageFromBirthYear, formatRelative } from "../../../lib/format";
+import { ageFromBirthYear, formatRelative, initials } from "../../../lib/format";
 import {
   Avatar,
   Button,
@@ -30,13 +30,7 @@ import { PointLabel, useOneTimeState } from "../shared";
 const SORTS: PatientSort[] = ["recent", "name", "priority"];
 const STATUSES: PatientStatusFilter[] = ["all", "needs_review", "pending"];
 
-export const initials = (name: string) =>
-  name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]!.toUpperCase())
-    .join("");
+export { initials };
 
 /**
  * The doctor's main page: the patient registry (design frame #0). Search, sort and the status tab live in the URL so
