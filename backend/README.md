@@ -81,7 +81,7 @@ tests/
 1. Doctor `POST /api/exams` creates a `device_commands` row.
 2. The device polls `GET /api/device/command` every 1-2 s (row-locked, so a command is handed out once).
 3. The device records ~20 s and `POST /api/device/upload/{exam_id}` (multipart `audio` WAV + `meta` JSON). The request
-   needs `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 64 KB get 413. A retried upload gets 409.
+   needs `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 1 MB 64 KB (meta + ECG) get 413. A retried upload gets 409.
 4. A BackgroundTask runs `services/analysis.py`: quality rules first (too short / silent / clipped / motion → `failed`
    with a re-record reason), then the `Analyzer` from `get_analyzer()`. The `AIResult` stores model name + version.
 

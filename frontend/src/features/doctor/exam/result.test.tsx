@@ -408,3 +408,14 @@ describe("ECG card", () => {
     expect(screen.queryByRole("region", { name: "ECG" })).not.toBeInTheDocument();
   });
 });
+
+test("a broken ECG from the device: the card says why, and no strip is fetched", async () => {
+  const result = ecgResult({ quality: "bad", problem: "invalid", heart_rate: null, rr_cv: null, rhythm_label: null, channel: null });
+  const fetchSpy = backend({ ...common, "GET /api/exams/7": () => ok(exam({ has_ecg: false, ecg_result: result })) });
+  renderAt("/doctor/exams/7");
+
+  const card = await screen.findByRole("region", { name: "ECG" });
+  expect(card).toHaveTextContent("The device sent a broken or too short ECG");
+  expect(card).toHaveTextContent("The sound was kept.");
+  expect(fetchSpy.mock.calls.some(([url]) => String(url).endsWith("/ecg"))).toBe(false);
+});

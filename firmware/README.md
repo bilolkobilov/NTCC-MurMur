@@ -141,6 +141,7 @@ upload done
 | `ECG: ADS1292R ID 0xFF` | MISO open or module unpowered | check MISO wire and module power |
 | `ECG: register write failed` | MOSI/SCK | check MOSI 11 / SCK 12 |
 | `an electrode was OFF` | lead-off detector | re-stick the electrodes, check the AUX plug |
+| `ECG: … - too short, sending sound only` | the chip stopped during the recording | check the ADS wiring and GPIO48; the sound is still uploaded |
 | ECG "cannot judge" on the doctor's page | weak or moving signal | electrodes per the table above, RL connected, person still, laptop on battery |
 | `Wi-Fi: not connected yet` forever | 5 GHz network, wrong password | use 2.4 GHz |
 | `heartbeat 401` | key wrong or rotated | new key from Admin → Devices into `secrets.h` |
@@ -166,6 +167,7 @@ When the device is back:
 3. Start an exam on the website; the log shows `ECG: ~5000 frames (20.0 s)` and `HTTP 202`.
 4. The exam page shows the ECG strip under the sound, the heart rate, and the sound and ECG beats line up.
 5. Pull one electrode off and record again: the log says `an electrode was OFF`, the page says "cannot judge".
+6. With the electrodes on, the ECG card shows a rhythm answer (`ecg-rhythm 1.0.0`); a healthy person should get "no AF".
 
 ## Upload format (for developers)
 

@@ -74,7 +74,8 @@ def run_analysis(exam_id: int) -> None:
 
 def _analyze_ecg(db: Session, exam: Exam) -> None:
     """Measure the ECG and store it. Whatever happens here, the sound analysis still runs: a bad or broken ECG only
-    makes the ECG part say "cannot judge", it never fails the exam (owner, 2026-11-17)."""
+    makes the ECG part say "cannot judge", it never fails the exam (owner, 2026-11-17). A failing rhythm model only
+    leaves the rhythm empty; the heart rate already measured is kept."""
     rec = exam.ecg_recording
     try:
         source = ecg.EcgInput(
@@ -86,33 +87,52 @@ def _analyze_ecg(db: Session, exam: Exam) -> None:
             rec.lead_off,
         )
         measured = ecg.analyze(source)
-        row = EcgResult(
-            exam_id=exam.id,
-            method_version=ecg.METHOD_VERSION,
-            quality=measured.quality,
-            problem=measured.problem,
-            channel=measured.channel,
-            heart_rate=measured.heart_rate,
-            rr_cv=measured.rr_cv,
-            beats=measured.beats,
-            snr=measured.snr,
-            r_peaks_s=measured.r_peaks_s,
-        )
-        model = ecg.get_rhythm_model()
-        if model is not None and measured.quality == "good":
-            import numpy as np  # only with the AI group installed, which the model needs anyway
-
-            rhythm = model.predict(np.asarray(ecg.channel_mv(source, measured.channel)), rec.sample_rate)
-            row.rhythm_label = rhythm.label
-            row.rhythm_p_af = round(float(rhythm.p_af), 4)
-            row.rhythm_model_name = rhythm.model_name
-            row.rhythm_model_version = rhythm.model_version
     except Exception:
-        log.exception("ECG analysis failed for exam %s", exam.id)
+        log.exception("ECG measurement failed for exam %s", exam.id)
+        _store_ecg(db, exam.id, quality="bad", problem=ecg.ERROR)
+        return
+
+    fields = {
+        "quality": measured.quality,
+        "problem": measured.problem,
+        "channel": measured.channel,
+        "heart_rate": measured.heart_rate,
+        "rr_cv": measured.rr_cv,
+        "beats": measured.beats,
+        "snr": measured.snr,
+        "r_peaks_s": measured.r_peaks_s,
+    }
+    if measured.quality == "good":
+        try:
+            model = ecg.get_rhythm_model()
+            if model is not None:
+                import numpy as np  # only with the AI group installed, which the model needs anyway
+
+                rhythm = model.predict(np.asarray(ecg.channel_mv(source, measured.channel)), rec.sample_rate)
+                fields |= {
+                    "rhythm_label": str(rhythm.label)[:30],
+                    "rhythm_p_af": round(float(rhythm.p_af), 4),
+                    "rhythm_model_name": str(rhythm.model_name)[:100],
+                    "rhythm_model_version": str(rhythm.model_version)[:50],
+                }
+        except Exception:
+            log.exception("ECG rhythm model failed for exam %s; heart rate kept", exam.id)
+    _store_ecg(db, exam.id, **fields)
+
+
+def _store_ecg(db: Session, exam_id: int, **fields) -> None:
+    try:
+        db.add(EcgResult(exam_id=exam_id, method_version=ecg.METHOD_VERSION, **fields))
+        db.commit()
+    except Exception:  # e.g. the database went away: keep a plain "cannot judge" row if at all possible
+        log.exception("could not store the ECG result for exam %s", exam_id)
         db.rollback()
-        row = EcgResult(exam_id=exam.id, method_version=ecg.METHOD_VERSION, quality="bad", problem=ecg.ERROR)
-    db.add(row)
-    db.commit()
+        try:
+            db.add(EcgResult(exam_id=exam_id, method_version=ecg.METHOD_VERSION, quality="bad", problem=ecg.ERROR))
+            db.commit()
+        except Exception:
+            log.exception("could not store even the ECG error for exam %s", exam_id)
+            db.rollback()
 
 
 def _fail(db: Session, exam_id: int, reason: str) -> None:

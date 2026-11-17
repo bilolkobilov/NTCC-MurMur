@@ -7,7 +7,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CommandStatus, Device, DeviceCommand, EcgRecording, Exam, ExamStatus, Recording
+from app.models import CommandStatus, Device, DeviceCommand, EcgRecording, EcgResult, Exam, ExamStatus, Recording
 from app.schemas.device import UploadMeta
 from app.services import ecg as ecg_service
 from app.services import exam_flow, storage
@@ -134,11 +134,17 @@ def accept_upload(
     if exam.status != ExamStatus.RECORDING:
         raise Conflict(f"exam is '{exam.status.value}', not waiting for a recording")
     sample_rate, duration_s = read_wav_info(data)
-    ecg_seconds = check_ecg(ecg, meta) if ecg is not None else None
+    ecg_seconds, ecg_invalid = None, False
+    if ecg is not None:
+        try:
+            ecg_seconds = check_ecg(ecg, meta)
+        except BadRequest:  # a broken ECG must never cost the heart sound (owner, 2026-11-17)
+            ecg_invalid = True
 
-    file_name = storage.save_recording(data)
-    ecg_file = storage.save_recording(ecg, ".ecg") if ecg is not None else None
+    file_name, ecg_file = storage.save_recording(data), None
     try:
+        if ecg_seconds is not None:
+            ecg_file = storage.save_recording(ecg, ".ecg")
         db.add(
             Recording(
                 exam_id=exam.id,
@@ -163,6 +169,15 @@ def accept_upload(
                     lead_off=meta.ecg_lead_off,
                 )
             )
+        if ecg_invalid:  # nothing worth keeping: the doctor sees "cannot judge" with this reason
+            db.add(
+                EcgResult(
+                    exam_id=exam.id,
+                    method_version=ecg_service.METHOD_VERSION,
+                    quality="bad",
+                    problem=ecg_service.INVALID,
+                )
+            )
         command = db.scalar(
             select(DeviceCommand).where(DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN)
         )
@@ -173,8 +188,8 @@ def accept_upload(
         db.commit()
     except Exception:
         db.rollback()
-        storage.delete_recording(file_name)  # never leave a file on disk that no row points to
-        if ecg_file is not None:
-            storage.delete_recording(ecg_file)
+        for saved in (file_name, ecg_file):  # never leave a file on disk that no row points to
+            if saved is not None:
+                storage.delete_recording(saved)
         raise
     return exam

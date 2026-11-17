@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.models import AuscultationPoint, ExamStatus, Sex
 from app.schemas.common import FullName, RefId, Username
@@ -162,6 +162,12 @@ class EcgResultOut(BaseModel):
     created_at: datetime
 
 
+class EcgRecordingRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sample_rate: int
+
+
 class EcgTraceOut(BaseModel):
     """The filtered strip (0.5-40 Hz, 50 Hz removed) in millivolts, with the heartbeats the server found."""
 
@@ -202,8 +208,14 @@ class ExamDetail(ExamSummary):
     updated_at: datetime
     recording: RecordingOut | None
     ai_result: AIResultOut | None
-    has_ecg: bool = False
+    ecg_recording: EcgRecordingRef | None = Field(default=None, exclude=True)
     ecg_result: EcgResultOut | None = None
+
+    @computed_field
+    @property
+    def has_ecg(self) -> bool:
+        """The device sent a usable ECG (its strip can be drawn). False with an `ecg_result` = the ECG was broken."""
+        return self.ecg_recording is not None
 
 
 class DoctorDeviceOut(BaseModel):

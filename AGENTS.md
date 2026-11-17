@@ -87,7 +87,7 @@ Fields: the models in `backend/app/models/` (PLAN.md section 4 is the original s
   exam X) or nothing.
 - `POST /api/device/upload/{exam_id}` — multipart: `audio` (WAV) + optional `ecg` (int32 LE, CH1/CH2 interleaved,
   ADS1292R codes) + `meta` (JSON: sample rate, motion flag, ECG rate / channels / gain / vref / lead-off).
-  The upload request must carry `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 64 KB get 413 before they
+  The upload request must carry `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 1 MB 64 KB (meta + ECG) get 413 before they
   are read (`app/upload_limit.py`). A retried upload of an already uploaded exam gets 409 — firmware treats 409 as
   "already done".
 - Save WAV as `storage/recordings/<uuid>.wav`. File names never contain patient names.

@@ -23,7 +23,8 @@ type Zoom = "whole" | "closeUp";
  */
 export function EcgCard({ examId, hasEcg, result }: { examId: number; hasEcg: boolean; result: EcgResult | null }) {
   const { t } = useTranslation();
-  if (!hasEcg) {
+  // `hasEcg` = a usable strip exists; a result without it means the device sent a broken ECG ("cannot judge").
+  if (!hasEcg && !result) {
     return <p className="rd-sm">{t("ecg.notRecorded")}</p>;
   }
   const outcome = ecgOutcome(result);
@@ -40,7 +41,7 @@ export function EcgCard({ examId, hasEcg, result }: { examId: number; hasEcg: bo
       </div>
       <div className="rd-dcard__body">
         <EcgVerdict outcome={outcome} />
-        <EcgTraceView examId={examId} />
+        {hasEcg && <EcgTraceView examId={examId} />}
         <p className="rd-sm">{t("ecg.disclaimer")}</p>
       </div>
     </section>

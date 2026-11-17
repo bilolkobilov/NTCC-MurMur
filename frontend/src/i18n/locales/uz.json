@@ -772,7 +772,8 @@
     "tileClinics_one": "{{count}} klinika",
     "tileClinics_other": "{{count}} klinika",
     "fixFields_one": "Davom etish uchun quyidagi {{count}} maydonni tuzating.",
-    "fixFields_other": "Davom etish uchun quyidagi {{count}} maydonni tuzating."
+    "fixFields_other": "Davom etish uchun quyidagi {{count}} maydonni tuzating.",
+    "keyDestroyed": "Bu qurilma yoʻqolgan yoki xavfsizlik sababli uzilgan, shuning uchun uning eski kaliti oʻchirilgan. Qayta ulagandan keyin «Yangi kalit» bilan yangi kalit chiqarib, qurilmaga yozing."
   },
   "audit": {
     "title": "Kirishlar jurnali",
@@ -821,7 +822,8 @@
       "device_disconnect_maintenance": "Qurilmani uzdi (taʼmirlash)",
       "device_disconnect_lost": "Qurilmani uzdi (yoʻqolgan yoki oʻgʻirlangan)",
       "device_disconnect_security": "Qurilmani uzdi (xavfsizlik)",
-      "device_disconnect_retired": "Qurilmani uzdi (xizmatdan chiqarilgan)"
+      "device_disconnect_retired": "Qurilmani uzdi (xizmatdan chiqarilgan)",
+      "exam_ecg": "EKG chizigʻini ochdi"
     },
     "objects": {
       "exam": "Tekshiruv",
@@ -1034,7 +1036,8 @@
       "no_beats": "Ishonchli yurak urishlari topilmadi. Elektrodlar joyini va kontaktini tekshiring.",
       "noisy": "Shovqin juda koʻp. Bemor qimirlamasin, noutbuk batareyada ishlasin.",
       "error": "EKG tahlilida xatolik yuz berdi.",
-      "unknown": "Sabab nomaʼlum."
+      "unknown": "Sabab nomaʼlum.",
+      "invalid": "Qurilma buzilgan yoki juda qisqa EKG yubordi (masalan, chip yozuv oʻrtasida toʻxtagan). Tovush saqlandi."
     },
     "noRhythmModel": "Ritm modeli ulanmagan: faqat yurak urish tezligi koʻrsatiladi.",
     "rhythm": {

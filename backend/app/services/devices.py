@@ -105,8 +105,17 @@ def _close_waiting_exams(db: Session, device: Device, reason: str) -> None:
         exam_flow.cancel(db, exam, reason, commit=False)
 
 
+def _lock_device(db: Session, device_id: int) -> Device:
+    """The device row first, then its exams: the same order as a polling device (`take_next_command` touches the
+    device, then locks the exam), so the two can never deadlock; and `busy_ids` read under this lock is current."""
+    device = db.get(Device, device_id, with_for_update=True, populate_existing=True)
+    if device is None:
+        raise NotFound("device not found")
+    return device
+
+
 def assign_device(db: Session, admin: User, device_id: int, doctor_id: int | None) -> Device:
-    device = get_device(db, device_id)
+    device = _lock_device(db, device_id)
     _check_assignable_doctor(db, doctor_id)
     if doctor_id != device.doctor_id:
         if device.id in busy_ids(db):
@@ -134,7 +143,7 @@ def disconnect(db: Session, admin: User, device_id: int, reason: str) -> Device:
     Its waiting exams fail. For a lost or compromised device the key is also destroyed: after a reconnect the admin
     issues a new one with "rotate key", so a stolen key never works again.
     """
-    device = get_device(db, device_id)
+    device = _lock_device(db, device_id)
     if device.disconnected_at is not None:
         raise Conflict("device is already disconnected")
     if device.id in busy_ids(db):

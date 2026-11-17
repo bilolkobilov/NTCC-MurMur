@@ -97,10 +97,17 @@ static void readerLoop(void*) {
     digitalWrite(ECG_PIN_CS, HIGH);
     spi.endTransaction();
     const uint32_t status = ((uint32_t)b[0] << 16) | ((uint32_t)b[1] << 8) | b[2];
-    if ((status & 0xF00000) != 0xC00000) continue;  // not a data frame (sync lost for one sample)
-    if (status & (0x0FUL << 15)) leadOffFrames = leadOffFrames + 1;  // IN1P/IN1N/IN2P/IN2N lead-off flags
     const uint32_t n = frames;
     if (n >= capacity) continue;
+    if ((status & 0xF00000) != 0xC00000) {
+      // Not a data frame (sync lost for one sample): repeat the previous sample instead of dropping it, so the ECG
+      // stays exactly 250 samples per second and its beats keep lining up with the sound.
+      samples[2 * n] = n ? samples[2 * n - 2] : 0;
+      samples[2 * n + 1] = n ? samples[2 * n - 1] : 0;
+      frames = n + 1;
+      continue;
+    }
+    if (status & (0x0FUL << 15)) leadOffFrames = leadOffFrames + 1;  // IN1P/IN1N/IN2P/IN2N lead-off flags
     samples[2 * n] = signExtend24(((uint32_t)b[3] << 16) | ((uint32_t)b[4] << 8) | b[5]);
     samples[2 * n + 1] = signExtend24(((uint32_t)b[6] << 16) | ((uint32_t)b[7] << 8) | b[8]);
     frames = n + 1;

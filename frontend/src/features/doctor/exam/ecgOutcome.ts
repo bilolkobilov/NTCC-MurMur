@@ -6,7 +6,7 @@
  */
 import type { EcgResult } from "../../../api/doctor";
 
-export const ECG_PROBLEMS = ["lead_off", "saturated", "flat", "no_beats", "noisy", "error"] as const;
+export const ECG_PROBLEMS = ["lead_off", "saturated", "flat", "no_beats", "noisy", "invalid", "error"] as const;
 export const RHYTHM_LABELS = ["af_suspected", "no_af", "unclear"] as const;
 
 export type EcgProblem = (typeof ECG_PROBLEMS)[number] | "unknown";

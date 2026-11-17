@@ -168,8 +168,7 @@ def start_exam(body: ExamCreate, db: DbSession, doctor: CurrentDoctor) -> ExamDe
 @router.get("/exams/{exam_id}")
 def get_exam(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> ExamDetail:
     """The web page polls this every ~2 s while the device records and the analyzer runs."""
-    exam = exams.read_exam(db, doctor, exam_id)
-    return ExamDetail.model_validate(exam).model_copy(update={"has_ecg": exam.ecg_recording is not None})
+    return ExamDetail.model_validate(exams.read_exam(db, doctor, exam_id))
 
 
 @router.get("/exams/{exam_id}/ecg")

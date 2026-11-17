@@ -45,12 +45,14 @@ static bool recordAndUpload(const Command& command) {
     Serial.println("microphone gave no data: check the I2S wiring (BCLK/WS/SD) and that L/R is on GND");
     return false;  // the exam stays "recording"; the doctor sees "overdue" and can cancel
   }
-  // Never more ECG than sound (the reader may have stored one frame after the mic stopped).
-  const uint32_t ecgKept = min<uint32_t>(ecgFrames, (uint32_t)ECG_SAMPLE_RATE * seconds);
+  // Never more ECG than sound (the reader may have stored one frame after the mic stopped). Less than 5 s is not
+  // worth sending (the chip stopped early): the server would only say "cannot judge", so send the sound alone.
+  uint32_t ecgKept = min<uint32_t>(ecgFrames, (uint32_t)ECG_SAMPLE_RATE * seconds);
+  if (ecgKept < (uint32_t)ECG_SAMPLE_RATE * 5) ecgKept = 0;
   const bool leadOff = ecg::leadOff(ecgFrames);
   if (ecg::present) {
-    Serial.printf("ECG: %lu frames (%.1f s)%s\n", (unsigned long)ecgKept, ecgKept / (float)ECG_SAMPLE_RATE,
-                  leadOff ? ", an electrode was OFF" : "");
+    Serial.printf("ECG: %lu frames (%.1f s)%s%s\n", (unsigned long)ecgFrames, ecgFrames / (float)ECG_SAMPLE_RATE,
+                  leadOff ? ", an electrode was OFF" : "", ecgKept ? "" : " - too short, sending sound only");
   }
   const size_t total = buildUpload(buffer, wavBytes, ecg::samples, ecg::bytesFor(ecgKept), motion, leadOff);
   for (int attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt++) {

@@ -94,6 +94,21 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 7. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
    Bump `MODEL_VERSION` in `train_head.py` on every retrain (it is stored with every result).
 
+## ECG rhythm model ("AF suspected")
+
+Heart rate and ECG quality need nothing (pure Python). The rhythm model is optional: without `models/ecg/` the ECG
+card says "No rhythm model is connected". To get it (details, licences, citations: `scripts/ai/ecg/README.md`):
+
+```bash
+cd backend
+uv run python -X utf8 -I ../scripts/ai/ecg/download.py   # ~100 MB CinC 2017 + ~68 MB PTB-XL subset into samples/ecg/
+uv run python -X utf8 -I ../scripts/ai/ecg/train.py      # ~50 min CPU → models/ecg/ecg_rhythm.pt (1.7 MB) + .json
+uv run python -X utf8 -I ../scripts/ai/ecg/evaluate.py   # once per model → docs/specs/ecg-ai-results.md
+```
+
+The split (`split.py`) is already committed in `scripts/ai/ecg/split/`; never re-split and never tune on test data.
+Restart the server after new weights (the model is loaded once).
+
 ## Device firmware (ESP32-S3)
 
 Everything about the device — wiring, why the RGB LED (GPIO48) is never used, ECG electrodes on the AUX jack, build and

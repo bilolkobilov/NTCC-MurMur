@@ -63,6 +63,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `backend/app/services/patient_portal.py` — patient's own profile, contact edit, reviewed exams, recording; audits reads and edits
 - `backend/app/services/ecg.py` — single-lead ECG (pure Python): decode device bytes, filter, R peaks, heart rate, quality,
   channel choice, the doctor's strip; loads the optional rhythm model
+- `backend/app/services/ai/ecg_rhythm.py` — ECG rhythm model (1-D ResNet, "AF suspected"): preprocessing, `load()`,
+  `predict()`; weights + threshold in `models/ecg/`
 - `backend/app/models/ecg.py` — `EcgRecording` (the `.ecg` file next to the WAV) and `EcgResult` (what was measured)
 - `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
@@ -151,5 +153,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
   (ADS1292R ECG, recorded with the sound), `net.h` (Wi-Fi + device API), `config.h` (pins, rates, gain),
   `secrets.example.h` (copy to gitignored `secrets.h`)
 - `scripts/ai/README.md` — AI model: how it works, results, setup, train / evaluate
+- `scripts/ai/ecg/` — ECG rhythm model: download (CinC 2017, PTB-XL subset), readers, committed split, train, evaluate
+  (→ `docs/specs/ecg-ai-results.md`)
 - `scripts/ai/` — CirCor labels + split (`circor.py`), shared training/metrics (`learn.py`), `experiment.py` (5-fold CV →
   `docs/specs/ai-experiments.md`), `train_head.py` (final head + threshold), `evaluate.py` (→ `docs/specs/ai-results.md`)

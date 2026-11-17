@@ -39,6 +39,7 @@ FLAT = "flat"
 NO_BEATS = "no_beats"
 NOISY = "noisy"
 ERROR = "error"
+INVALID = "invalid"  # the device sent bytes that cannot be an ECG (broken length, too short or long)
 
 
 # --- decoding ---
@@ -291,5 +292,5 @@ def get_rhythm_model():
         from app.services.ai import ecg_rhythm
     except ImportError:  # server installed without the AI group
         return None
-    model_dir: Path = get_settings().ai_model_dir / "ecg"
+    model_dir: Path = get_settings().ai_model_path / "ecg"  # resolved from the repo root, like the sound model
     return ecg_rhythm.load(model_dir)

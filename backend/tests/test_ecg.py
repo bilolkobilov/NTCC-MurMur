@@ -10,6 +10,8 @@ from app.models import AuditLog, EcgRecording, EcgResult, Exam, ExamStatus, Role
 from app.services import ecg, storage
 from tests.helpers import login, make_device, make_ecg, make_patient, make_user, make_wav
 
+REAL_GET_RHYTHM_MODEL = ecg.get_rhythm_model  # before the autouse fixture below replaces it
+
 
 def measure(data: bytes, *, lead_off: bool = False) -> ecg.EcgAnalysis:
     return ecg.analyze(ecg.EcgInput(data, 2, 250, 6, 2420.0, lead_off))
@@ -172,23 +174,67 @@ def test_an_exam_without_ecg_works_as_before(client, world):
 
 
 @pytest.mark.parametrize(
-    ("ecg_bytes", "meta"),
+    "ecg_bytes",
     [
-        (b"\x00" * 10, {}),  # not whole samples
-        (make_ecg(seconds=2), {}),  # too short to judge
-        (make_ecg(), {"ecg_channels": 3}),  # the ADS1292R has two
+        b"\x00" * 10,  # not whole samples
+        make_ecg(seconds=2),  # too short to judge (e.g. the chip stopped after 2 s)
     ],
 )
-def test_a_broken_ecg_part_is_refused_and_nothing_is_kept(client, db, world, ecg_bytes, meta):
+def test_a_broken_ecg_never_costs_the_heart_sound(client, db, world, ecg_bytes):
+    folder = storage.recording_path("x.ecg").parent
+    ecg_files_before = set(folder.glob("*.ecg"))
+
+    response = upload(client, world, ecg_bytes)
+
+    assert response.status_code == 202, response.text
+    exam = client.get(f"/api/exams/{world['exam_id']}", headers=world["doctor"]).json()
+    assert exam["status"] == "analyzed" and exam["recording"] is not None  # the sound is kept and analysed
+    assert exam["has_ecg"] is False
+    assert (exam["ecg_result"]["quality"], exam["ecg_result"]["problem"]) == ("bad", "invalid")
+    assert set(folder.glob("*.ecg")) == ecg_files_before  # nothing unusable kept on disk
+    assert client.get(f"/api/exams/{world['exam_id']}/ecg", headers=world["doctor"]).status_code == 404
+
+
+def test_a_malformed_meta_is_refused_and_nothing_is_kept(client, db, world):
     folder = storage.recording_path("x.ecg").parent
     files_before = set(folder.glob("*"))
 
-    response = upload(client, world, ecg_bytes, **meta)
+    response = upload(client, world, make_ecg(), ecg_channels=3)  # the ADS1292R has two
 
-    assert response.status_code in (400, 422)
+    assert response.status_code == 422
     assert db.get(Exam, world["exam_id"]).status == ExamStatus.RECORDING  # the device can retry
-    assert db.scalar(select(EcgRecording)) is None
-    assert set(folder.glob("*")) == files_before  # neither the WAV nor the ECG was left on disk
+    assert set(folder.glob("*")) == files_before
+
+
+def test_a_failing_rhythm_model_keeps_the_heart_rate(client, world, monkeypatch):
+    class Broken:
+        def predict(self, signal_mv, sample_rate):
+            raise RuntimeError("bad weights")
+
+    monkeypatch.setattr(ecg, "get_rhythm_model", lambda: Broken())
+    upload(client, world, make_ecg(heart_rate=66))
+
+    result = client.get(f"/api/exams/{world['exam_id']}", headers=world["doctor"]).json()["ecg_result"]
+    assert result["quality"] == "good" and result["heart_rate"] == pytest.approx(66, abs=2)
+    assert result["rhythm_label"] is None
+
+
+def test_every_exam_response_says_whether_it_has_an_ecg(client, world):
+    """The review response replaces the polled exam on the page: it must keep the ECG card."""
+    upload(client, world, make_ecg())
+    reviewed = client.patch(
+        f"/api/exams/{world['exam_id']}/review", headers=world["doctor"], json={"note": "Fine.", "agrees_with_ai": None}
+    )
+
+    assert reviewed.status_code == 200, reviewed.text
+    assert reviewed.json()["has_ecg"] is True and reviewed.json()["ecg_result"]["quality"] == "good"
+
+
+def test_a_missing_ecg_file_is_404_not_500(client, db, world):
+    upload(client, world, make_ecg())
+    storage.recording_path(db.scalar(select(EcgRecording.file_name))).unlink()
+
+    assert client.get(f"/api/exams/{world['exam_id']}/ecg", headers=world["doctor"]).status_code == 404
 
 
 def test_only_the_exams_own_doctor_sees_the_ecg(client, db, world):
@@ -204,9 +250,10 @@ def test_only_the_exams_own_doctor_sees_the_ecg(client, db, world):
 
 def test_patients_never_see_the_ecg(client, db, world):
     upload(client, world, make_ecg())
-    client.post(
+    reviewed = client.patch(
         f"/api/exams/{world['exam_id']}/review", headers=world["doctor"], json={"note": "Fine.", "agrees_with_ai": None}
     )
+    assert reviewed.status_code == 200, reviewed.text  # the patient must really have a reviewed exam to look at
     user = make_user(db, "ali", Role.PATIENT)
     world["patient"].user_id = user.id
     db.commit()
@@ -266,3 +313,18 @@ def test_the_firmware_body_layout_is_accepted(client, world):
     assert response.status_code == 202, response.text
     exam = client.get(f"/api/exams/{world['exam_id']}", headers=world["doctor"]).json()
     assert exam["ecg_result"]["heart_rate"] == pytest.approx(72, abs=2)
+
+
+def test_the_rhythm_model_is_looked_for_in_the_repo_models_folder(monkeypatch, tmp_path):
+    """A relative AI_MODEL_DIR is resolved from the repo root (like the sound model), not from the server's folder."""
+    from app.config import get_settings
+    from app.services.ai import ecg_rhythm
+
+    seen = []
+    monkeypatch.setattr(ecg_rhythm, "load", lambda folder: seen.append(folder))
+    REAL_GET_RHYTHM_MODEL.cache_clear()
+    try:
+        REAL_GET_RHYTHM_MODEL()
+    finally:
+        REAL_GET_RHYTHM_MODEL.cache_clear()
+    assert seen == [get_settings().ai_model_path / "ecg"] and seen[0].is_absolute()

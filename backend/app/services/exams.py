@@ -59,8 +59,11 @@ def exam_ecg_trace(db: Session, doctor: User, exam_id: int) -> tuple[int, int, l
     rec, result = exam.ecg_recording, exam.ecg_result
     if rec is None:
         raise NotFound("exam has no ECG")
+    path = storage.recording_path(rec.file_name)
+    if not path.is_file():
+        raise NotFound("ECG file is missing on the server")
     source = ecg.EcgInput(
-        storage.recording_path(rec.file_name).read_bytes(),
+        path.read_bytes(),
         rec.channels,
         rec.sample_rate,
         rec.gain,

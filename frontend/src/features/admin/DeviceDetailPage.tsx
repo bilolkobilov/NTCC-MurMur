@@ -182,6 +182,11 @@ export function DeviceDetailPage() {
                     {t(errorMessage(reconnect.error).key)}
                   </DAlert>
                 )}
+                {(d.disconnect_reason === "lost" || d.disconnect_reason === "security") && (
+                  <DAlert tone="warn" icon="alertTriangle">
+                    {t("devices.keyDestroyed")}
+                  </DAlert>
+                )}
               </div>
               <dl className="m-0" style={{ borderTop: "1px solid var(--c-border)" }}>
                 <KvRow label={t("devices.statusLabel")}>{disconnected ? t("devices.disconnectedBy") : t(`devices.state.${d.state}`)}</KvRow>
