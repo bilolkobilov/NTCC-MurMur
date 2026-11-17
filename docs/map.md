@@ -74,16 +74,13 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Docs
 
 - `docs/context.md` — who MurMur is for, where it runs (offline laptop demo), languages, constraints
-- `docs/specs/` — feature specs; `mockups/` holds static HTML mockups for design decisions; `screens/` = screenshots of
-  the full demo run (1440 / 375 px, uz / ru / en; headless Chrome, 2026-11-08)
+- `docs/specs/` — feature specs; `mockups/` holds static HTML mockups for design decisions
 
 - `docs/PLAN.md` — full MVP plan in Uzbek (hardware, AI, roles, weekly plan)
 - `docs/map.md` — this file
 - `docs/runbook.md` — how to run and test
 - `docs/decisions/` — owner's decisions by month
 - `docs/glossary.md` — medical terms in uz/ru/en with sources and confidence
-- `docs/redesign/REDESIGN.md` — UI/UX redesign master file (analysis, gaps, phases, progress); details in `design-tokens.md`,
-  `components.md`, `api-changes.md`, `ai-changes.md` next to it
 
 ## Frontend
 
@@ -93,8 +90,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/index.css` — design tokens (visual system A), bundled fonts, Uzbek okina font fix
 - `frontend/eslint.config.js` — ESLint (oxlint is blocked by Smart App Control)
 - `frontend/scripts/check-offline.mjs` — `npm run check:offline`: fails if the build would load anything from the internet
-- `frontend/src/redesign/` — TEMPORARY staging for the redesign: new palette (`tokens.css`), `rd-` component styles,
-  components, fake `sampleData.ts`, unrouted `RedesignPreview`. Not used by any page; delete when all mockups are applied
+- `frontend/src/redesign/` — the redesign palette (`tokens.css`), `rd-` component styles, components and icons used by the
+  shells and most pages (being merged into one design system in v2)
 - `frontend/src/main.tsx` — entry: CSS, i18n, `<App/>`
 - `frontend/src/app/App.tsx` — data router, role pages lazy-loaded, QueryClient (retries only network/5xx),
   ForgetDataOnUserChange (cache cleared + pages remounted when the user changes)
@@ -105,7 +102,6 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `frontend/src/components/auth/AuthControls.tsx` — controls of the redesigned sign-in card (field with eye, alert, small segmented, logo)
 - `frontend/src/i18n/` — uz/ru/en JSON, auto-detect (`detect.ts`), `changeLanguage()`; test checks key parity and `ʻ`
 - `frontend/src/components/ui/` — Button (busy = double-click guard), TextField, Alert
-- `frontend/src/components/brand/` — Logo, ChartTrace (millimetre grid signature); `src/lib/heart.ts` synthetic trace
 - `frontend/src/components/layout/` — PatientShell (left sidebar + header, phone tab bar, `patient.css` for all patient pages), AuthLayout (login frame)
 - `frontend/src/pages/` — Login, ChangePassword, status pages (not available / not found)
 - `frontend/src/api/doctor.ts` — doctor endpoints + types (patients, exams list, devices, logins)

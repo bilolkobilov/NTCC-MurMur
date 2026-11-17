@@ -16,9 +16,9 @@ services:
       POSTGRES_USER: murmur
       POSTGRES_PASSWORD: murmur-demo
       POSTGRES_DB: murmur
-    # Published for local development (`uvicorn` on the host). If 5433 is taken: POSTGRES_PORT=5434 docker compose up
+    # Loopback only (the demo password is public). If 5433 is taken: POSTGRES_PORT=5434 docker compose -f docker-compose.demo.yml up
     ports:
-      - "5433:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
