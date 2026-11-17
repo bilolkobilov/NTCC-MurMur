@@ -103,7 +103,29 @@ export type ExamDetail = ExamSummary & {
   updated_at: string;
   recording: RecordingInfo | null;
   ai_result: AIResult | null;
+  /** The device sent an ECG with the sound (doctor only; patients and admin never see it). */
+  has_ecg: boolean;
+  ecg_result: EcgResult | null;
 };
+
+/** What the server measured in the ECG (backend `EcgResultOut`). */
+export type EcgResult = {
+  method_version: string;
+  quality: "good" | "bad";
+  problem: string | null;
+  channel: number | null;
+  heart_rate: number | null;
+  rr_cv: number | null;
+  beats: number;
+  rhythm_label: string | null;
+  rhythm_p_af: number | null;
+  rhythm_model_name: string | null;
+  rhythm_model_version: string | null;
+  created_at: string;
+};
+
+/** The filtered ECG strip (0.5-40 Hz, 50 Hz removed), millivolts, with the heartbeats the server found. */
+export type EcgTrace = { sample_rate: number; channel: number; samples_mv: number[]; r_peaks_s: number[] };
 
 export type DoctorDevice = {
   id: number;
@@ -153,6 +175,7 @@ export const doctorApi = {
   getExam: (id: number) => api<ExamDetail>(`/exams/${id}`),
   cancelExam: (id: number) => api<ExamDetail>(`/exams/${id}/cancel`, { method: "POST" }),
   examAudio: (id: number, signal?: AbortSignal) => apiBlob(`/exams/${id}/audio`, { signal }),
+  examEcg: (id: number) => api<EcgTrace>(`/exams/${id}/ecg`),
   /** `agreesWithAi` must be null when the AI gave no answer (backend checks it). */
   reviewExam: (id: number, note: string, agreesWithAi: boolean | null) =>
     api<ExamDetail>(`/exams/${id}/review`, {

@@ -91,10 +91,13 @@ def _run(section: Biquad, x: list[float]) -> list[float]:
 
 
 def filtfilt(sections: list[Biquad], x: list[float], pad: int) -> list[float]:
-    """Zero-phase filtering with odd reflection at both ends (no start-up transient over the first beats)."""
+    """Zero-phase filtering with mirrored ends, so the first and last beats get no start-up transient.
+
+    A mirror (not the usual odd reflection about the first sample) because one noisy first sample would otherwise
+    shift the whole padding and draw a jump at the start of the strip."""
     pad = min(pad, len(x) - 1)
-    head = [2 * x[0] - v for v in reversed(x[1 : pad + 1])]
-    tail = [2 * x[-1] - v for v in reversed(x[-pad - 1 : -1])]
+    head = list(reversed(x[1 : pad + 1]))
+    tail = list(reversed(x[-pad - 1 : -1]))
     y = head + x + tail
     for section in sections:
         y = _run(section, y)
@@ -271,7 +274,7 @@ def channel_mv(ecg: EcgInput, channel: int) -> list[float]:
 
 def display_trace(ecg: EcgInput, channel: int, max_rate: int = 250) -> tuple[int, list[float]]:
     """The filtered strip the doctor sees: (sample rate, millivolts), at most `max_rate` samples per second."""
-    trace = filtfilt(_display_filter(ecg.sample_rate), channel_mv(ecg, channel), pad=ecg.sample_rate)
+    trace = filtfilt(_display_filter(ecg.sample_rate), channel_mv(ecg, channel), pad=2 * ecg.sample_rate)
     step = max(1, ecg.sample_rate // max_rate)
     return ecg.sample_rate // step, [round(v, 4) for v in trace[::step]]
 

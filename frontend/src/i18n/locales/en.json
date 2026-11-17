@@ -22,7 +22,11 @@
     "logOut": "Log out",
     "main": "Main navigation",
     "skip": "Skip to content",
-    "myProfile": "My profile"
+    "myProfile": "My profile",
+    "profileShort": "Profile",
+    "overviewShort": "Overview",
+    "auditShort": "Audit",
+    "tabBar": "Sections"
   },
   "roles": {
     "admin": "Administrator",
@@ -171,7 +175,7 @@
     },
     "summaryLabel": "Summary",
     "assignedToday": "Assigned today",
-    "normal": "Normal",
+    "normal": "No murmur (AI)",
     "needsReview": "Needs review",
     "pending": "Pending",
     "tabsLabel": "Show patients by status",
@@ -185,8 +189,8 @@
     "open": "Open",
     "openRecord": "Open record for {{name}}",
     "chip": {
-      "normal": "Normal",
-      "abnormal": "Abnormal",
+      "normal": "No murmur (AI)",
+      "abnormal": "Murmur suspected (AI)",
       "pending": "Pending",
       "failed": "Re-record",
       "awaitingReview": "Awaiting review",
@@ -208,11 +212,6 @@
     "tagline": "Clinical telemetry",
     "suite": "Clinical suite",
     "rights": "© 2026 MurMur",
-    "footerNav": "Footer",
-    "privacy": "Privacy",
-    "terms": "Terms",
-    "accessibility": "Accessibility",
-    "support": "Support",
     "note": "Research prototype and screening aid, not a medical device.",
     "clinicTitle": "Clinic where you work",
     "account": "Account",
@@ -888,7 +887,6 @@
     "save": "Save vitals",
     "measured": "Measured {{when}} · {{by}}",
     "none": "Not measured yet",
-    "ref": "Ref. {{range}}",
     "heartRate": "Heart rate",
     "bloodPressure": "Blood pressure",
     "systolic": "Systolic pressure",
@@ -902,9 +900,6 @@
       "perMin": "/min"
     },
     "level": {
-      "normal": "Normal",
-      "borderline": "Borderline",
-      "abnormal": "Abnormal",
       "none": "No data"
     },
     "errors": {
@@ -931,11 +926,8 @@
       "emptyBody": "When your doctor has reviewed an exam, the conclusion appears here.",
       "hrTitle": "Heart rate",
       "hrUnit": "bpm",
-      "hrRef": "Reference range: 60–100 bpm at rest",
       "hrNone": "Not recorded yet",
       "hrMeasured": "Measured {{date}}",
-      "hrNormal": "Normal",
-      "hrOutside": "Outside range",
       "murmurTitle": "Murmur screening",
       "murmurNone": "None",
       "murmurCount": "{{count}} of {{total}}",
@@ -1025,5 +1017,41 @@
       "generated": "Created {{date}}",
       "empty": "There are no reviewed results yet."
     }
+  },
+  "ecg": {
+    "title": "ECG",
+    "subtitle": "Single lead, recorded together with the sound",
+    "notRecorded": "No ECG was recorded with this exam (the device sent sound only).",
+    "heartRate": "Heart rate",
+    "perMin": "/min",
+    "spread": "Beat-to-beat variation",
+    "pending": "The ECG is being analysed…",
+    "cannotJudge": "The ECG cannot be judged.",
+    "problem": {
+      "lead_off": "An electrode came off during the recording. Re-attach the electrodes and record again.",
+      "saturated": "The signal went off the scale (poor electrode contact with the skin).",
+      "flat": "There is no signal on the electrodes.",
+      "no_beats": "No reliable heartbeats were found. Check where the electrodes sit and their contact.",
+      "noisy": "Too much noise. The patient should lie still and the laptop run on battery.",
+      "error": "The ECG analysis failed.",
+      "unknown": "Unknown reason."
+    },
+    "noRhythmModel": "No rhythm model is connected: only the heart rate is shown.",
+    "rhythm": {
+      "af_suspected": "Atrial fibrillation suspected.",
+      "confirm": "Confirm with a 12-lead ECG.",
+      "no_af": "No atrial fibrillation found",
+      "unclear": "Rhythm unclear",
+      "probability": "AF probability {{value}} %",
+      "model": "Model: {{model}}"
+    },
+    "disclaimer": "Screening aid, not a diagnosis. Your conclusion is the final one.",
+    "loadError": "Could not load the ECG strip. Reload the page.",
+    "scale": "1 big square = {{seconds}} s · horizontal lines every 0.8 mV",
+    "zoom": "Zoom",
+    "whole": "Whole",
+    "closeUp": "Close-up",
+    "markers": "Ticks along the top: {{count}} heartbeats the server found",
+    "traceLabel": "ECG strip, {{seconds}} seconds, {{beats}} beats"
   }
 }

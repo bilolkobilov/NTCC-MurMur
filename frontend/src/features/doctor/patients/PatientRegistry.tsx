@@ -110,7 +110,7 @@ export function PatientRegistry() {
           onChange={(e) => setText(e.target.value)}
         />
         <SelectField
-          className="w-[180px] shrink-0"
+          className="w-full sm:w-[180px] sm:shrink-0"
           label={t("registry.sortLabel")}
           value={sort}
           onChange={(e) => change({ sort: e.target.value as PatientSort })}
@@ -171,7 +171,7 @@ export function PatientRegistry() {
           />
         )}
         {rows.length > 0 && (
-          <table className="rd-table" aria-label={t("registry.tableLabel")}>
+          <table className="rd-table rd-table--stack" aria-label={t("registry.tableLabel")}>
             <thead>
               <tr>
                 <th scope="col">{t("registry.colPatient")}</th>
@@ -220,10 +220,10 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
           </div>
         </div>
       </td>
-      <td className="tabular-nums">
+      <td className="tabular-nums" data-label={t("registry.colAgeSex")}>
         {ageFromBirthYear(patient.birth_year)} · {t(`registry.sexShort.${patient.sex}`)}
       </td>
-      <td>
+      <td data-label={t("registry.colClinic")}>
         <div className="rd-table__cell">
           <span className="rd-label">{patient.clinic ?? "—"}</span>
           <span className="rd-sm">
@@ -233,7 +233,7 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
           </span>
         </div>
       </td>
-      <td>
+      <td data-label={t("registry.colLastRecording")}>
         {exam ? (
           <div className="rd-table__cell">
             <span className="rd-table__ink">
@@ -245,7 +245,7 @@ function RegistryRow({ patient }: { patient: PatientRegistryRow }) {
           <span className="rd-sm">{t("registry.noRecording")}</span>
         )}
       </td>
-      <td>
+      <td data-label={t("registry.colStatus")}>
         <ResultChip patient={patient} />
       </td>
       <td className="rd-table__end">

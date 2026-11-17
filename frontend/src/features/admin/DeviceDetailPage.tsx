@@ -279,7 +279,7 @@ export function DeviceDetailPage() {
           </DCard>
         </div>
 
-        <div className="flex flex-col gap-4" style={{ flex: "0 0 360px" }}>
+        <div className="flex flex-col gap-4" style={{ flex: "1 1 340px", minWidth: 0 }}>
           <section className="rd-dcard" aria-labelledby="bat-h">
             <div className="rd-dcard__body" style={{ gap: "var(--s-3)" }}>
               <div className="flex items-baseline justify-between">

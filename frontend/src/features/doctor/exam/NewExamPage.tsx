@@ -61,7 +61,9 @@ function NewExamForm({
   const queryClient = useQueryClient();
   const sorted = [...devices].sort((a, b) => Number(b.online) - Number(a.online) || a.name.localeCompare(b.name));
   const online = sorted.filter((d) => d.online);
-  const [deviceId, setDeviceId] = useState<number | null>(online.length === 1 ? online[0].id : null);
+  // Until the doctor picks one, the only online device is chosen — also when it comes online while the page polls.
+  const [picked, setDeviceId] = useState<number | null>(null);
+  const deviceId = picked ?? (online.length === 1 ? online[0].id : null);
   const [point, setPoint] = useState<Point | null>(null);
   const [problems, setProblems] = useState<{ device?: string; point?: string }>({});
   const deviceRef = useRef<HTMLInputElement>(null);

@@ -1,72 +1,90 @@
 # MurMur interface system
 
-Source of truth for every screen. Spec: `docs/specs/2026-11-08-web-frontend.md` §12. Tokens live in
-`frontend/src/index.css` (`@theme`). If a screen needs a value that is not here, add it here first.
+Source of truth for every screen. Tokens live in `frontend/src/index.css` (`@theme`); the `rd-` component styles in
+`frontend/src/redesign/redesign.css` read the same values through `redesign/tokens.css`. If a screen needs a value
+that is not here, add it here first.
+
+**2026-11-17 (owner):** one design system for the whole app — the redesign's petrol-blue palette on cool neutrals
+(used by most pages since the 2026-11-14…16 redesign), made phone-first; the older "ink + chart paper" pages were moved
+onto it. The chart paper stays as the signature of the heart-sound and ECG strips.
 
 ## Direction
 
-- **World:** the printed ECG/phonocardiogram strip on a clinic desk — millimetre paper, ink, one red trace,
-  the doctor's handwritten conclusion. Calm, exact, clinical; never playful, never "dashboard-y".
-- **Who:** a doctor in front of a patient with a device on the chest (laptop or phone, hands busy), a patient at home
-  on a phone, an admin preparing the session. NTCC commission watches on a projector.
-- **Signature:** the millimetre grid + trace (1 big square = 0.2 s). Appears on: login, live recording sweep,
-  exam result waveform, status marks in lists (mini trace), empty states. Nowhere else red.
+- **World:** the printed ECG/phonocardiogram strip on a clinic desk — millimetre paper, one red trace, the doctor's
+  conclusion — inside a calm, exact clinical tool. Never playful.
+- **Who:** a doctor in front of a patient with the device strapped on the chest (laptop **or phone**, hands busy), a
+  patient at home on a phone, an admin preparing the session. NTCC commission watches on a projector.
+- **Signature:** the millimetre grid + red trace, on the heart-sound strip, the ECG strip under it and the live
+  recording sweep. Red (`signal`) appears nowhere else.
 
 ## Rejected defaults
 
 | Default | Instead | Why |
 | --- | --- | --- |
-| Row of 4 KPI cards on every home page | One focal sentence + the queue it describes ("3 exams wait for your review") | The doctor came to do one thing: review |
-| Avatar circles with initials for patients | Mono record number `№ 012` + name | A patient is a clinical record, not a social profile |
-| Coloured status pills only | Mini trace mark + word (colour never alone) | Signature reuse; colour-blind safe |
-| Zebra tables | Hairline-separated dense rows | Chart paper is lines, not stripes |
-| Confirm dialogs for everything | Confirm only irreversible (delete); undo-free otherwise | Fewer interruptions |
+| Colour alone for status | Chip = icon + word + colour | Colour-blind safe |
+| Zebra tables | Hairline-separated rows; **stacked label/value rows on a phone** | Lines, not stripes; no sideways scrolling |
+| Sidebar that never collapses | Sidebar ≥ 900 px, **bottom tab bar** below | The doctor uses a phone as much as a laptop |
+| Links to pages that do not exist (privacy, terms) | No link until the page exists | Never fake working UI |
+| "Normal / Abnormal" for an AI answer nobody reviewed | "Murmur suspected (AI)" / "No murmur (AI)" | Only a doctor says normal |
+| Invented reference ranges for vitals | Plain numbers until a doctor sets ranges (owner, 2026-11-17) | No medical rules without a doctor |
+| Confirm dialogs for everything | Confirm only irreversible (delete) | Fewer interruptions |
 
 ## Tokens
 
-**Colour** (`--color-*`): `ink-900/700/500/300` text tiers (primary / secondary / meta / disabled-placeholder) ·
-`line`, `line-strong` hairlines · `canvas` page · `surface` cards · `field` inputs (inset, darker than surface) ·
-`grid-minor`, `grid-major` chart paper · `signal` trace + logo only · `finding`(+`-bg`) AI finding / needs review ·
-`clear`(+`-bg`) reviewed / no murmur · `danger` failed / destructive. One accent for actions: `ink-900`.
+**Colour** (`--color-*` in `index.css`; `--c-*` in `redesign/tokens.css` point at them):
 
-**Type** — IBM Plex Sans (+ Noto for `ʻ`), IBM Plex Mono for data. Ratio ≈ 1.25:
-
-| Token | Size / line | Use |
+| Token | Value | Use |
 | --- | --- | --- |
-| `text-caption` | 12 / 16 | meta, timestamps, axis labels (mono) |
-| `text-label` | 13 / 18 | form labels, table headers, chips |
-| `text-body` | 15 / 23 | default text |
-| `text-title` | 19 / 26 | card and section titles (600) |
-| `text-headline` | 24 / 30 | page titles (600, −1 % tracking) |
-| `text-display` | 30 / 36 | one focal number/sentence per screen (600, −2 %) |
+| `ink-900` / `700` / `500` | #0e1a22 / #41525e / #5a6b77 | text: primary / body / captions (never lighter) |
+| `ink-300`, `line-strong` | #7d8c97 | control borders (3.46:1), icons — not text |
+| `line` | #dfe5e9 | dividers, card outlines |
+| `canvas` / `surface` / `subtle` | #f6f8f9 / #fff / #edf1f3 | page / cards and inputs / hover rows |
+| `primary` (+`-hover`, `-tint`, `-ink`) | #0b6e8a | the only accent: actions, links, active navigation |
+| `clear` (+`-bg`) | #15663d | no murmur / done |
+| `finding` (+`-bg`) | #a33f00 | AI finding / needs review / ECG "cannot judge" |
+| `danger` (+`-bg`, `-dot`) | #b0231a | failed, destructive |
+| `ai` (+`-bg`) | #5238b8 | AI-generated content only |
+| `grid-minor`, `grid-major`, `signal` | #f8dde1, #efb3bc, #c1121f | chart paper and the trace only |
 
-Hierarchy comes from weight + ink tier first, size second. Numbers that change: `tabular-nums`.
+**Type** — IBM Plex Sans (+ Noto for `ʻ`), IBM Plex Mono for codes. `rd-h1` 28/36 (22/30 on a phone), `rd-h2` 22/30,
+`rd-h3` 16/24, `rd-body` 14/20, `rd-sm` 12/16, `rd-cap` 11/14 caps. Tailwind `text-*` tokens (caption 12 … display 30)
+stay for the older pages. Numbers that change: `tabular-nums`.
 
-**Spacing**: 4 px base. Dense zones (lists, tables): 8–12 px row padding. Decision zones (review form, dialogs):
-24 px. Between page sections: 32 px. Page gutter 16 px phone / 24 px laptop; content max 1152 px.
+**Spacing**: 4 px grid (`--s-1` … `--s-7`). Page gutter **16 px below 900 px**, 24–32 px above. Dense zones (lists,
+tables) 8–12 px rows; decision zones (review form, dialogs) 24 px.
 
-**Radius**: 6 controls inside groups · 8 buttons/inputs · 12 cards · 16 dialogs. Nested: outer = inner + padding.
+**Radius**: 4 small · 8 buttons/inputs · 12 cards · 16 large cards and dialogs. Nested: outer = inner + padding.
 
-**Depth — borders only.** Hairlines (`line`) separate; no card shadows. The only shadow is on floating layers
-(menus, dialogs): `0 8px 24px rgba(20,33,61,.12)`. Chart paper is made of lines; so is the UI.
+**Depth — borders only.** Hairlines separate; the only shadow is on floating layers (menus, dialogs).
+
+## Layout
+
+- **Frames:** doctor and admin share `components/layout/AppFrame.tsx` (sidebar + header + footer; below 900 px:
+  header with logo, bottom tab bar, no sidebar). The patient has `PatientShell` (sidebar ≥ 720 px, tab bar below).
+- **Breakpoints:** 640 px (phone rules in `redesign.css`: stacked tables, wrapping buttons, one-column forms),
+  900 px (frame switch).
+- **Tables:** `rd-table rd-table--stack` + `data-label` on every cell except the first and the action; wide history
+  tables also `rd-table--wide` (820 px min, scroll inside the card on tablets). Scroll wrappers are
+  `position: relative` so hidden screen-reader text cannot widen the page.
+- **Check:** every route at 375 / 768 / 1440 px has no element wider than the viewport (v2 measured all 3 roles).
 
 ## Behaviour rules
 
-- Submit buttons stay enabled until the request starts; then `busy` (spinner + "…ing…" text, no double submit).
+- One `Button` (`components/ui/Button` = redesign `rd-btn`), one `Alert` (= `DAlert`), 44 px controls.
+- Submit buttons stay enabled until the request starts; then `busy` (spinner + text, no double submit).
   Invalid on submit → inline error under the field + focus the first invalid field.
 - Every list: loading (skeleton rows, no layout shift), empty (what + why + one action), error (what + retry).
-- Search/filter/paging state lives in the URL (`?q=`), so reload/back keeps it.
+- Search/filter/paging state lives in the URL, so reload/back keeps it.
 - Unsaved form → warn before leaving (router blocker + `beforeunload`).
-- One-time secrets (temporary password, device key): dialog, mono, Copy, cannot be dismissed by Esc/overlay,
-  closes only with "I saved it". Never in URL, logs or toasts.
+- One-time secrets (temporary password, device key): dialog, mono, Copy, closes only with "I saved it".
 - Destructive + irreversible → dialog naming the thing and the consequence; type the patient's name to enable.
-- Brand, codes (AV/PV/TV/MV), usernames, serials: `translate="no"`.
-- Numbers through `Intl.NumberFormat` (70,5 кг in ru/uz); plural text through i18next plural keys (ru needs one/few/many/other).
-- A background refetch error never hides data already on screen; show the error only when there is no data.
-- Language menu: flag + the language's own name, never a flag alone (a flag names a country).
-- Motion: press `scale(.97)`; popovers 150–200 ms ease-out `cubic-bezier(.23,1,.32,1)`; the only orchestrated motion
-  is the 20 s recording sweep. All movement off under `prefers-reduced-motion`.
-- `rem` stays 16 px: body text size is set on `<body>`, never on `:root` (a 15 px root shrank every token by 6 %).
-- Hit areas ≥ 44 px on touch; focus ring 2 px `ink-900`, offset 2; skip link to main content.
-- Copy: sentence case; verbs on buttons ("Add patient", not "Submit"); errors = what happened + what to do; no
-  "please", no "successfully". Medical words follow `docs/glossary.md`.
+- Brand, codes (AV/PV/TV/MV), usernames, serials, model names: `translate="no"`.
+- Numbers through `Intl.NumberFormat`; plurals through i18next plural keys (ru needs one/few/many/other).
+- A background refetch error never hides data already on screen.
+- Language menu: flag + the language's own name.
+- Motion: popovers 150–200 ms ease-out; the only orchestrated motion is the 20 s recording sweep. All movement off
+  under `prefers-reduced-motion`.
+- `rem` stays 16 px.
+- Copy: sentence case; verbs on buttons; errors = what happened + what to do. Medical words follow `docs/glossary.md`.
+- ECG card: under the sound strip; numbers only when the ECG is good, otherwise "cannot judge" + the reason; rhythm
+  answer always says "screening aid, not a diagnosis" and AF asks for a 12-lead confirmation. Doctors only.

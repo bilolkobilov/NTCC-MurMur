@@ -90,10 +90,10 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
   return (
     <AuthLayout>
       <div className="flex flex-col gap-2">
-        <h1 className="text-[28px] leading-9 font-semibold tracking-tight">
+        <h1 className="text-headline font-semibold sm:text-display">
           {t("login.title")}
         </h1>
-        <p className="text-[16px] text-auth-ink-2">{t(`login.sub.${role}`)}</p>
+        <p className="text-body text-ink-700">{t(`login.sub.${role}`)}</p>
       </div>
       <form
         onSubmit={submit}
@@ -116,6 +116,23 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
           <AuthAlert tone="critical">
             {t(failure.key, failure.values ?? {})}
           </AuthAlert>
+        )}
+        {!admin && (
+          <div className="flex items-center gap-3">
+            <span className="text-caption text-ink-500">
+              {t("login.roleLabel")}
+            </span>
+            <AuthSegmented
+              label={t("login.roleLabel")}
+              value={role}
+              disabled={pending}
+              onChange={setRole}
+              options={ROLES.map((value) => ({
+                value,
+                label: t(`roles.${value}`),
+              }))}
+            />
+          </div>
         )}
         <AuthField
           ref={usernameRef}
@@ -145,23 +162,6 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        {!admin && (
-          <div className="flex items-center gap-3">
-            <span className="text-caption text-auth-ink-3">
-              {t("login.roleLabel")}
-            </span>
-            <AuthSegmented
-              label={t("login.roleLabel")}
-              value={role}
-              disabled={pending}
-              onChange={setRole}
-              options={ROLES.map((value) => ({
-                value,
-                label: t(`roles.${value}`),
-              }))}
-            />
-          </div>
-        )}
         <AuthButton
           type="submit"
           busy={pending}
@@ -170,12 +170,12 @@ export function LoginPage({ admin = false }: { admin?: boolean }) {
           {t("login.title")}
         </AuthButton>
         {pending && (
-          <p role="status" className="text-center text-caption text-auth-ink-3">
+          <p role="status" className="text-center text-caption text-ink-500">
             {t("login.verifying")}
           </p>
         )}
         {!admin && (
-          <p className="text-center text-caption text-auth-ink-3">
+          <p className="text-center text-caption text-ink-500">
             {t("login.noSignup")}
           </p>
         )}

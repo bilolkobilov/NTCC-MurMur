@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { backend, bodyOf, type Handler, renderAt } from "../test/utils";
@@ -49,7 +49,8 @@ test("a protected page sends you to login, and back to that page afterwards", as
   expect(
     await screen.findByRole("heading", { level: 1, name: "Patient registry" }),
   ).toBeInTheDocument();
-  expect(screen.getByRole("link", { name: "Patients" })).toHaveAttribute(
+  const sidebar = screen.getByRole("navigation", { name: "Main navigation" });
+  expect(within(sidebar).getByRole("link", { name: "Patients" })).toHaveAttribute(
     "aria-current",
     "page",
   );
@@ -229,10 +230,10 @@ test("?next= from another role's area is ignored after login", async () => {
   const user = await fillLogin("dr", "secret-pass");
   await user.click(screen.getByRole("button", { name: "Sign in" }));
 
-  expect(await screen.findByRole("link", { name: "Patients" })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
+  const sidebar = await screen.findByRole("navigation", { name: "Main navigation" });
+  const patients = within(sidebar).getByRole("link", { name: "Patients" });
+  // the doctor's home redirects to the patient list a moment later
+  await waitFor(() => expect(patients).toHaveAttribute("aria-current", "page"));
   expect(
     screen.queryByText("Not available for your account"),
   ).not.toBeInTheDocument();

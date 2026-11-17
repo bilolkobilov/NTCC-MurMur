@@ -11,12 +11,14 @@ import { Button, ButtonLink } from "../../../components/ui/Button";
 import { Dialog } from "../../../components/ui/Dialog";
 import { formatDateTime, formatNumber } from "../../../lib/format";
 import { aiAnswered, type AiOutcome, aiOutcome } from "./aiOutcome";
+import { EcgCard } from "./EcgStrip";
 import { HeartStrip } from "./HeartStrip";
 
 const NOTE_MAX = 5000; // backend ExamReview.note max_length
 
 /**
- * An analysed or reviewed exam: the recording is the spine; the AI opinion and the doctor's conclusion sit beside it.
+ * An analysed or reviewed exam: the recording is the spine, the ECG recorded with it right under it; the AI opinion
+ * and the doctor's conclusion sit beside them.
  * Dense where read (AI card), generous where the decision is made (review form).
  */
 export function ResultView({ exam }: { exam: ExamDetail }) {
@@ -26,6 +28,7 @@ export function ResultView({ exam }: { exam: ExamDetail }) {
   return (
     <div className="mt-6 flex flex-col gap-6">
       <HeartStrip examId={exam.id} />
+      <EcgCard examId={exam.id} hasEcg={exam.has_ecg} result={exam.ecg_result} />
       <div className="grid items-start gap-6 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <AiCard outcome={outcome} patientId={exam.patient_id} />
         {exam.status === "reviewed" ? (

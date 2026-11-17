@@ -1,9 +1,6 @@
 /*
- * TEMPORARY — REDESIGN STAGING AREA. REMOVE `src/redesign/` once all mockups are applied.
- *
- * Component styles from the mockup, every class prefixed `rd-` so nothing here can touch existing Tailwind pages.
- * No global selectors (no `*`, `body`, `a`, `:focus-visible`). Desktop only — responsive variants are out of scope.
- * Imported by `index.ts`; the app itself does not import it yet.
+ * The app's component styles (`rd-` prefix), on the tokens in tokens.css / index.css. Phone-first rules for small
+ * screens are at the end of this file (owner, 2026-11-17: every page must work at 375 px).
  */
 @import "./tokens.css";
 
@@ -166,11 +163,7 @@
 .rd-shell__col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .rd-shell__header { display: flex; align-items: center; justify-content: flex-end; gap: var(--s-4); min-height: 72px; padding: var(--s-3) var(--s-6); background: var(--c-surface); border-bottom: 1px solid var(--c-border); }
 .rd-shell__main { flex: 1; padding: var(--s-5) var(--s-6) var(--s-6); outline: 0; }
-.rd-shell__footer { display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-4) var(--s-6); background: var(--c-surface); border-top: 1px solid var(--c-border); }
-.rd-shell__footrow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-3) var(--s-5); }
-.rd-shell__links { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); }
-.rd-shell__links a { font: 500 13px/44px var(--font); color: var(--c-primary); }
-.rd-shell__links a:hover { color: var(--c-primary-hover); }
+.rd-shell__footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-1) var(--s-5); padding: var(--s-4) var(--s-6); background: var(--c-surface); border-top: 1px solid var(--c-border); }
 .rd-shell a:focus-visible, .rd-userbtn:focus-visible, .rd-menu-item:focus-visible { outline: 2px solid var(--c-primary); outline-offset: 2px; }
 .rd-skip { position: absolute; left: -9999px; }
 .rd-skip:focus { left: var(--s-2); top: var(--s-2); z-index: 30; padding: var(--s-2) var(--s-4); border-radius: var(--r-md); background: var(--c-ink); color: var(--c-on-primary); }
@@ -204,18 +197,6 @@
 .rd-tl__rail { display: flex; flex-direction: column; align-items: center; gap: var(--s-1); padding-top: 6px; }
 .rd-tl__dot { width: 10px; height: 10px; border-radius: var(--r-full); background: var(--c-primary); flex: none; }
 .rd-tl__line { flex: 1; width: 2px; background: var(--c-border); min-height: 20px; }
-.rd-linkbtn { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 var(--s-2); border: 0; background: transparent; color: var(--c-primary-ink); font: 600 13px/16px var(--font); cursor: pointer; border-radius: var(--r-md); }
-.rd-linkbtn:hover { background: var(--c-primary-tint); }
-
-/* ---- Preview page only ---- */
-.rd-preview { display: flex; flex-direction: column; gap: var(--s-6); padding: var(--s-6); background: var(--c-canvas); font-family: var(--font); color: var(--c-ink-2); }
-.rd-preview section { display: flex; flex-direction: column; gap: var(--s-3); }
-.rd-preview .rd-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
-.rd-swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: var(--s-3); }
-.rd-swatch { overflow: hidden; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--r-lg); }
-.rd-swatch__chip { height: 48px; border-bottom: 1px solid var(--c-border); }
-.rd-swatch__meta { display: flex; flex-direction: column; padding: var(--s-2) var(--s-3); }
-.rd-swatch__meta code { font: 400 12px/16px var(--mono); color: var(--c-ink-3); }
 
 /* ---- Admin devices (frames "IoT devices", "Register device", "Device detail") ---- */
 .rd-btn--dangerline { background: var(--c-surface); color: var(--c-critical-fg); border-color: var(--c-critical-dot); }
@@ -300,7 +281,6 @@
 .rd-consent { display: flex; align-items: flex-start; gap: var(--s-3); padding: var(--s-4); border: 1px solid var(--c-border); border-radius: var(--r-lg); background: var(--c-canvas); cursor: pointer; }
 .rd-consent:has(input:checked) { border-color: var(--c-normal-dot); background: var(--c-normal-bg); }
 .rd-consent input { width: 20px; height: 20px; margin-top: 2px; flex: none; accent-color: var(--c-normal-dot); }
-.rd-avatar--xl { width: 72px; height: 72px; font-size: 24px; line-height: 28px; }
 .rd-banner { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3) var(--s-4); padding: var(--s-4) var(--s-5); border: 1px solid var(--c-abnormal-dot); border-radius: var(--r-lg); background: var(--c-abnormal-bg); color: var(--c-abnormal-fg); }
 .rd-banner__text { flex: 1 1 320px; display: flex; flex-direction: column; gap: 2px; font: 400 14px/20px var(--font); }
 .rd-banner__text strong { font-weight: 700; }
@@ -313,4 +293,78 @@
 .rd-fact strong { color: var(--c-ink); font-weight: 600; }
 .rd-linkbtn { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 var(--s-2); border: 0; border-radius: var(--r-md); background: transparent; color: var(--c-primary-ink); font: 600 13px/16px var(--font); cursor: pointer; text-decoration: none; }
 .rd-linkbtn:hover { background: var(--c-primary-tint); }
-.rd-scroll { overflow-x: auto; }
+.rd-scroll { position: relative; overflow-x: auto; }
+
+
+/* ---- Header pieces shared by both frames ---- */
+.rd-shell__header { justify-content: space-between; }
+.rd-shell__mobilebrand { display: none; align-items: center; gap: var(--s-2); }
+.rd-shell__headtools { display: flex; align-items: center; gap: var(--s-4); margin-left: auto; min-width: 0; }
+.rd-menu-who { display: none; flex-direction: column; padding: var(--s-2) var(--s-3); }
+.rd-tabbar { display: none; }
+
+/* ---- Tables that become stacked cards on a phone (add data-label to each td) ---- */
+.rd-table td[data-label]::before { content: none; }
+
+@media (min-width: 641px) {
+  .rd-table--wide { min-width: 820px; } /* many columns: scroll sideways inside its card instead of squeezing */
+}
+
+/* ---- Phones and small tablets: no sidebar, a bottom tab bar, 16 px gutters ---- */
+@media (max-width: 899px) {
+  .rd-shell__side { display: none; }
+  .rd-shell__col { padding-bottom: 64px; } /* room for the tab bar */
+  .rd-shell__header { min-height: 60px; padding: var(--s-2) var(--s-4); gap: var(--s-2); }
+  .rd-shell__mobilebrand { display: inline-flex; }
+  .rd-shell__headtools { gap: var(--s-2); }
+  .rd-hide-sm { display: none !important; }
+  .rd-menu-who { display: flex; }
+  .rd-shell__main { padding: var(--s-4); }
+  .rd-shell__footer { padding: var(--s-3) var(--s-4); }
+  .rd-tabbar {
+    display: flex; position: fixed; inset: auto 0 0 0; z-index: 20; height: 64px;
+    padding-bottom: env(safe-area-inset-bottom); background: var(--c-surface); border-top: 1px solid var(--c-border);
+  }
+  .rd-tabbar__item {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: var(--c-ink-2); font: 600 12px/16px var(--font); text-decoration: none; text-align: center;
+  }
+  .rd-tabbar__item[aria-current="page"] { color: var(--c-primary-ink); box-shadow: inset 0 3px 0 var(--c-primary); }
+  .rd-tabbar__item:focus-visible { outline: 2px solid var(--c-primary); outline-offset: -4px; }
+  .rd-tabbar__icon { position: relative; display: inline-flex; }
+  .rd-tabbar__badge {
+    position: absolute; top: -6px; left: 14px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--r-full);
+    background: var(--c-critical-solid); color: var(--c-on-primary); font: 700 11px/18px var(--font);
+  }
+  .rd-profile__main, .rd-profile__rail { flex-basis: 100%; }
+}
+
+@media (max-width: 640px) {
+  .rd-h1 { font-size: 22px; line-height: 30px; }
+  .rd-h2 { font-size: 19px; line-height: 26px; }
+  .rd-btn { height: auto; min-height: 44px; padding: var(--s-2) var(--s-4); white-space: normal; text-align: center; }
+  .rd-toolbar__row { align-items: stretch; }
+  .rd-toolbar__actions { flex-wrap: wrap; width: 100%; }
+  .rd-toolbar__actions > * { flex: 1 1 auto; }
+  .rd-card__head, .rd-dcard__head, .rd-card__body, .rd-dcard__body, .rd-sec, .rd-ident { padding: var(--s-4); }
+  .rd-kv { grid-template-columns: 1fr; gap: 2px; padding: var(--s-4); }
+  .rd-kv dd { margin-bottom: var(--s-2); }
+  .rd-opts { grid-template-columns: 1fr; }
+  .rd-tiles, .rd-metrics { padding: var(--s-4); gap: var(--s-3); grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .rd-tile__value { font-size: 26px; line-height: 32px; }
+  .rd-list > li, .rd-tl { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .rd-searchbar > * { flex: 1 1 100%; }
+  .rd-chip { white-space: normal; height: auto; min-height: 24px; }
+  .rd-fgrid { grid-template-columns: 1fr; }
+  .rd-dev-row { grid-template-columns: minmax(0, 1fr) auto 44px; }
+  .rd-dev-row .rd-col-x, .rd-dev-row .rd-col-y { display: none; }
+
+  /* stacked rows: every cell on its own line with its column name */
+  .rd-table--stack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .rd-table--stack, .rd-table--stack tbody, .rd-table--stack tr, .rd-table--stack td { display: block; width: auto; }
+  .rd-table--stack tr { padding: var(--s-3) var(--s-4); border-bottom: 1px solid var(--c-border); }
+  .rd-table--stack td { display: flex; justify-content: space-between; gap: var(--s-3); padding: var(--s-1) 0; border: 0; text-align: right; }
+  .rd-table--stack td[data-label]::before { content: attr(data-label); flex: none; color: var(--c-ink-3); font: 600 12px/20px var(--font); text-align: left; }
+  .rd-table--stack td:first-child { text-align: left; }
+  .rd-table--stack .rd-table__end { width: auto; justify-content: flex-end; padding-top: var(--s-2); }
+}

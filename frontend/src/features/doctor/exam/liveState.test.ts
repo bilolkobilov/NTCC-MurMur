@@ -15,6 +15,8 @@ const base: ExamDetail = {
   updated_at: "2026-11-08T10:00:00Z",
   recording: null,
   ai_result: null,
+  has_ecg: false,
+  ecg_result: null,
 };
 const t0 = Date.parse(base.created_at);
 

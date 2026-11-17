@@ -63,7 +63,8 @@ export function PatientPage() {
     return <SkeletonRows rows={4} label={t("common.loading")} />;
   }
   const p = patient.data;
-  const flagged = latest && latest.result_status === "abnormal" && latest.needs_review ? latest : undefined;
+  // A newer failed or waiting exam must not hide an older one that still waits for review with a murmur answer.
+  const flagged = rows.find((e) => e.result_status === "abnormal" && e.needs_review);
   const device =
     devices.data?.find((d) => d.id === latest?.device_id) ?? (devices.data?.length === 1 ? devices.data[0] : undefined);
 
@@ -90,7 +91,7 @@ export function PatientPage() {
             <strong>{t("patient.flagTitle")}</strong>
             <span>
               {t("patient.flagBody", {
-                point: flagged.point,
+                point: `${flagged.point} · ${t(`exam.point.${flagged.point}`)}`,
                 when: formatDateTime(flagged.created_at, i18n.language),
               })}
             </span>
@@ -232,16 +233,12 @@ function LatestCard({
         </span>
       }
     >
-      {!exam ? (
+      {!exam && loading ? (
+        <SkeletonRows rows={2} label={t("common.loading")} />
+      ) : !exam ? (
         <EmptyState
           title={t("patient.noExamsTitle")}
-          body={
-            loading
-              ? t("common.loading")
-              : patient.consent_given_at
-                ? t("patient.noExamsBody")
-                : t("patient.noExamsNeedConsent")
-          }
+          body={patient.consent_given_at ? t("patient.noExamsBody") : t("patient.noExamsNeedConsent")}
           action={
             patient.consent_given_at ? (
               <ButtonLink to={`/doctor/patients/${patient.id}/exam`} variant="primary" icon="mic">
@@ -335,7 +332,7 @@ function HistoryCard({
       )}
       {rows.length > 0 && (
         <div className="rd-scroll">
-          <table className="rd-table" aria-label={t("patient.historyLabel")} style={{ minWidth: 820 }}>
+          <table className="rd-table rd-table--stack rd-table--wide" aria-label={t("patient.historyLabel")}>
             <thead>
               <tr>
                 <th scope="col">{t("patient.colWhen")}</th>
@@ -354,15 +351,17 @@ function HistoryCard({
                 const when = formatDateTime(row.created_at, i18n.language);
                 return (
                   <tr key={row.id}>
-                    <td className="tabular-nums">{when}</td>
-                    <td>
+                    <td className="tabular-nums" data-label={t("patient.colWhen")}>
+                      {when}
+                    </td>
+                    <td data-label={t("patient.colSite")}>
                       <PointLabel point={row.point} short />
                     </td>
-                    <td className="tabular-nums">
+                    <td className="tabular-nums" data-label={t("patient.colLength")}>
                       {row.duration_s === null ? "—" : t("patient.seconds", { value: Math.round(row.duration_s) })}
                     </td>
-                    <td>{findingWord(row, t)}</td>
-                    <td>
+                    <td data-label={t("patient.colFinding")}>{findingWord(row, t)}</td>
+                    <td data-label={t("patient.colAnalyzedAt")}>
                       <div className="rd-table__cell">
                         <span className="rd-table__ink">{row.clinic ?? "—"}</span>
                         <span className="rd-sm" translate="no">
@@ -370,7 +369,7 @@ function HistoryCard({
                         </span>
                       </div>
                     </td>
-                    <td>
+                    <td data-label={t("patient.colStatus")}>
                       <ResultChip patient={row} />
                     </td>
                     <td className="rd-table__end">
@@ -723,7 +722,14 @@ function DeleteDialog({
       description={t("patient.deleteBody", { count: exams?.length ?? 0 })}
       footer={
         <>
-          <PlainButton onClick={() => onOpenChange(false)}>{t("patient.keep")}</PlainButton>
+          <PlainButton
+            onClick={() => {
+              onOpenChange(false);
+              setTyped("");
+            }}
+          >
+            {t("patient.keep")}
+          </PlainButton>
           <PlainButton
             variant="danger"
             disabled={!matches}

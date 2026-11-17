@@ -28,6 +28,12 @@ choice, ask a doctor before the demo. Change a term here first, then in `fronten
 | sternum (doctor) / breastbone (patient) | грудина | toʻsh suyagi | high | chest point notes | everyday and anatomical word [4] |
 | mid-clavicular line | срединно-ключичная линия | oʻrta oʻmrov chizigʻi | medium | MV point note | seen as "qovurgʻaning oʻrta oʻmrov chizigʻi" in an Uzbek anatomy note [4] |
 | (cardiac) apex | верхушка сердца | yurak uchi | medium | MV point note | [4] uses *yurak uchi*; *yurak choʻqqisi* also occurs — was "choʻqqi", changed |
+| ECG (electrocardiogram) | ЭКГ (электрокардиограмма) | EKG (elektrokardiogramma) | high | exam page | loanword, standard abbreviation in Uzbek clinics |
+| single lead | одно отведение | bitta tarmoq | medium | ECG card | *tarmoq* is the Uzbek term for an ECG lead in clinical texts; ask a doctor |
+| heart rate | ЧСС (частота сердечных сокращений) | yurak urish tezligi | high | ECG card | everyday clinical phrase; unit "/daq" (per minute) |
+| atrial fibrillation (AF) | фибрилляция предсердий (ФП) | boʻlmachalar fibrillyatsiyasi (FP) | medium | ECG rhythm | *boʻlmacha* = atrium; also called *hilpillovchi aritmiya* — ask a doctor which reads better |
+| 12-lead ECG | ЭКГ в 12 отведениях | 12 tarmoqli EKG | medium | AF confirmation | follows *tarmoq* above |
+| electrode | электрод | elektrod | high | ECG problems | loanword |
 | nipple | сосок | koʻkrak soʻrgʻichi | high | patient MV description | everyday word, patient-facing |
 | almost silent (recording) | почти тишина | ovoz deyarli yoʻq | high | quality reasons | plain wording |
 | AI (artificial intelligence) | ИИ (искусственный интеллект) | AI (sunʼiy intellekt) | medium | AI card, review | uz UI keeps the short "AI" as on Uzbek tech sites; the pitch spells *sunʼiy intellekt* once |
