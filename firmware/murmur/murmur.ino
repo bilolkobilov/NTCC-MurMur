@@ -10,12 +10,8 @@
 #include "config.h"
 #include "net.h"
 
-// Status LED: the board's RGB LED if it has one. Blue = connecting, dim green = ready, red = recording.
-static void led(uint8_t r, uint8_t g, uint8_t b) {
-#ifdef RGB_BUILTIN
-  rgbLedWrite(RGB_BUILTIN, r, g, b);
-#endif
-}
+// No status LED: the board's RGB LED is on GPIO48, which is also the ECG chip's PWDN pin. Writing the LED leaves
+// GPIO48 low and the ADS1292R stops (measured on the device, 2026-11-17). Status goes to USB serial only.
 
 static uint32_t lastHeartbeat = 0;
 static uint32_t lastPoll = 0;
@@ -39,10 +35,8 @@ static bool recordAndUpload(const Command& command) {
     return false;
   }
   const bool motion = false;  // MPU6050 comes in the next firmware step
-  led(40, 0, 0);
   Serial.printf("recording %lu s for exam %ld\n", (unsigned long)seconds, command.examId);
   const size_t wavBytes = recordWav(buffer + uploadPrefixLength(motion), seconds);
-  led(0, 8, 0);
   if (wavBytes == 0) {
     Serial.println("microphone gave no data: check the I2S wiring (BCLK/WS/SD) and that L/R is on GND");
     return false;  // the exam stays "recording"; the doctor sees "overdue" and can cancel
@@ -62,7 +56,6 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   Serial.printf("MurMur firmware %s\n", FIRMWARE_VERSION);
-  led(0, 0, 40);
   if (!psramFound()) Serial.println("WARNING: no PSRAM found - recording will fail");
   if (!micBegin()) Serial.println("WARNING: I2S microphone did not start");
   lastMicNoiseDb = micNoiseDb();
@@ -71,12 +64,10 @@ void setup() {
   Serial.printf("Wi-Fi: %s, RSSI %d dBm\n", WiFi.localIP().toString().c_str(), WiFi.RSSI());
   Serial.printf("heartbeat: HTTP %d\n", sendHeartbeat());
   lastHeartbeat = millis();
-  led(0, 8, 0);
 }
 
 void loop() {
   if (!wifiEnsure(5000)) {
-    led(0, 0, 40);
     return;
   }
   const uint32_t now = millis();
