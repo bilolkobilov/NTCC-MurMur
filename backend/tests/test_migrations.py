@@ -21,6 +21,8 @@ EXPECTED_TABLES = {
     "device_commands",
     "audit_logs",
     "vital_signs",
+    "ecg_recordings",
+    "ecg_results",
 }
 
 

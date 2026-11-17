@@ -10,7 +10,20 @@ from sqlalchemy.dialects.postgresql import distinct_on
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
-from app.models import AIResult, Device, DeviceCommand, Exam, Patient, Recording, Role, Sex, User, VitalSigns
+from app.models import (
+    AIResult,
+    Device,
+    DeviceCommand,
+    EcgRecording,
+    EcgResult,
+    Exam,
+    Patient,
+    Recording,
+    Role,
+    Sex,
+    User,
+    VitalSigns,
+)
 from app.security import generate_temp_password
 from app.services import audit, storage
 from app.services.errors import Conflict, NotFound
@@ -97,9 +110,7 @@ def _registry(db: Session, doctor: User, search: str | None = None) -> list[Regi
             ai_label=ai.label if ai else None,
             doctor_agrees=exam.doctor_agrees_with_ai if exam else None,
         )
-        rows.append(
-            RegistryRow(patient, exam, device.name if device else None, device.clinic if device else None, status)
-        )
+        rows.append(RegistryRow(patient, exam, device.name if device else None, exam.clinic if exam else None, status))
     return rows
 
 
@@ -293,10 +304,13 @@ def delete_patient(db: Session, doctor: User, patient_id: int) -> None:
     patient = _own_patient(db, doctor, patient_id, for_update=True)
     exam_ids = list(db.scalars(select(Exam.id).where(Exam.patient_id == patient.id).with_for_update()))
     file_names = list(db.scalars(select(Recording.file_name).where(Recording.exam_id.in_(exam_ids))))
+    file_names += list(db.scalars(select(EcgRecording.file_name).where(EcgRecording.exam_id.in_(exam_ids))))
 
     db.execute(delete(VitalSigns).where(VitalSigns.patient_id == patient.id))
     db.execute(delete(AIResult).where(AIResult.exam_id.in_(exam_ids)))
     db.execute(delete(Recording).where(Recording.exam_id.in_(exam_ids)))
+    db.execute(delete(EcgResult).where(EcgResult.exam_id.in_(exam_ids)))
+    db.execute(delete(EcgRecording).where(EcgRecording.exam_id.in_(exam_ids)))
     db.execute(delete(DeviceCommand).where(DeviceCommand.exam_id.in_(exam_ids)))
     db.execute(delete(Exam).where(Exam.id.in_(exam_ids)))
     login_user = patient.user

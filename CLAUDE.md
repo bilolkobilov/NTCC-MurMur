@@ -42,22 +42,28 @@ After changing a model: `uv run python -m alembic revision --autogenerate -m "..
 - **Exam lifecycle is centralised.** `services/exam_flow.py` is the only place an exam's status changes (transitions
   table). Never set `exam.status` elsewhere.
 - **Device round trip.** Doctor `POST /api/exams` → a `device_commands` row → device polls `GET /api/device/command`
-  (204 = nothing; row-locked so a command is handed out once) → device uploads a WAV (`upload_limit.py` middleware rejects
-  missing/oversized `Content-Length` before the body is read) → `services/analysis.py` runs as a BackgroundTask:
-  `quality.py` rules first, then the `Analyzer` from `get_analyzer()`, storing an `AIResult` with model name + version.
+  (204 = nothing; row-locked so a command is handed out once) → device uploads a WAV + optional ECG (`upload_limit.py`
+  middleware rejects missing/oversized `Content-Length` before the body is read) → `services/analysis.py` runs as a
+  BackgroundTask: the ECG is measured first (`services/ecg.py`, pure Python; rhythm model from `services/ai/ecg_rhythm.py`
+  when `models/ecg/` exists — an ECG problem never fails the exam), then `quality.py` rules, then the `Analyzer` from
+  `get_analyzer()`, storing an `AIResult` with model name + version.
   `scripts/fake_device.py` and `firmware/murmur/` implement the same protocol.
 - **AI answer vocabulary is mirrored.** `analyzer.py` (`ANSWER_LABELS`, `gave_answer()`) is mirrored by the frontend
   `features/doctor/exam/aiOutcome.ts`; change both together. `AI_MODEL=dummy` is the default and the fallback when
-  weights in `models/cardiophon/` are missing.
-- **Access control is data-shaped, not only route-shaped.** Admin sees counts, never medical data; doctors see only their
-  patients; patients get `reviewed` exams with the AI yes / no label but no score / model / agreement (`patient_portal.py`). `tests/test_access_rules.py` and
+  weights in `models/cardiophon/` are missing. ECG problem codes and rhythm labels are mirrored the same way by
+  `features/doctor/exam/ecgOutcome.ts`.
+- **Access control is data-shaped, not only route-shaped.** Admin never sees medical data (recordings, AI, ECG, notes);
+  doctors see only their patients; patients get `reviewed` exams with the AI yes / no label (hidden when the doctor
+  disagreed) but no score / model / agreement / ECG (`patient_portal.py`). `tests/test_access_rules.py` and
   `tests/test_full_flow.py` pin this — extend them with any new endpoint. Reads of patient data go through
   `audit.record_read` (deduped per user/record per 5 min).
 - **Auth details.** A password change bumps `token_version` (invalidates old JWTs); login is rate-limited in memory
   (`login_limiter.py`); device keys are shown once and stored as SHA-256 hashes.
 - **Frontend.** Role-split lazy pages under `src/features/{admin,doctor,patient}`; all server access goes through
   `src/api/client.ts` (Bearer token in sessionStorage, 401 → session expired, 403 → forced password change).
-  Every string needs uz / ru / en keys (a test checks parity), and Uzbek text uses the `ʻ` okina.
+  Every string needs uz / ru / en keys (a test checks parity), and Uzbek text uses the `ʻ` okina. One design system:
+  `index.css` `@theme` tokens, `rd-` styles in `src/redesign/`, doctor/admin frame `components/layout/AppFrame.tsx`
+  (bottom tab bar below 900 px), tables `rd-table--stack` + `data-label` on phones.
 
 ## Housekeeping
 

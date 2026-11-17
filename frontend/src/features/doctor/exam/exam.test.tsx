@@ -38,6 +38,8 @@ function exam(overrides: Partial<ExamDetail>): ExamDetail {
     updated_at: ago(2),
     recording: null,
     ai_result: null,
+    has_ecg: false,
+    ecg_result: null,
     ...overrides,
   };
 }

@@ -234,7 +234,7 @@ export function DeviceFormPage() {
           </form>
         )}
 
-        <aside aria-label={t("devices.nextTitle")} className="flex flex-col gap-4" style={{ flex: "0 0 340px" }}>
+        <aside aria-label={t("devices.nextTitle")} className="flex flex-col gap-4" style={{ flex: "1 1 320px", minWidth: 0 }}>
           <section className="rd-dcard">
             <div className="rd-dcard__head">
               <h2 className="rd-h3">{t("devices.nextTitle")}</h2>

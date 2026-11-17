@@ -1,132 +1,139 @@
 # MurMur
 
-Portable heart-sound screening: an ESP32-S3 device records ~20 s of heart sound, the backend stores it and runs a
-local AI analyzer, and doctors review the result. Research prototype and screening aid — **not a medical device**.
+A chest-worn device records **20 seconds of heart sound and a single-lead ECG at the same time**. A laptop server
+checks the recording, runs a local AI on the sound, measures the heart rate and rhythm in the ECG, and the doctor
+reviews everything on a website (uz / ru / en, phone or laptop). NTCC university project.
 
-Built so far: backend (FastAPI + PostgreSQL), web app for admin / doctor / patient (React, uz / ru / en, phone and
-laptop), and a local AI murmur model (CardioPHON encoder + our head, `cardiophon-murmur 1.1.0`; results in
-[docs/specs/ai-results.md](docs/specs/ai-results.md)). The ESP32 firmware comes next; until then
-`scripts/fake_device.py` plays the device with CirCor recordings. Full plan in Uzbek: [docs/PLAN.md](docs/PLAN.md).
+> **Research prototype and screening aid — not a medical device.** The AI and the ECG numbers help a doctor; they
+> never replace the doctor's conclusion.
 
-Source: <https://github.com/bilolkobilov/NTCC-MurMur> (private). Not in Git on purpose: `.env`, AI weights
-(`models/`), CirCor recordings (`samples/`), device secrets (`firmware/murmur/secrets.h`) — see
-[docs/runbook.md](docs/runbook.md).
+## Qisqacha (o'zbekcha)
 
-## Docker demo (nothing to install or download)
+- **Nima:** ko'krakka taqiladigan qurilma 20 soniya yurak tovushi + EKG yozadi → noutbukdagi server tovushni AI bilan,
+  EKG'ni zarba/min va ritm bo'yicha tahlil qiladi → shifokor saytda ko'radi va xulosa yozadi.
+- **Tez ishga tushirish (faqat Docker):** `docker compose -f docker-compose.demo.yml up --build` → <http://localhost:8000>,
+  loginlar pastdagi jadvalda.
+- **Qurilma:** ulanish, chiroq (GPIO48), elektrodlar, yuklash — [firmware/README.md](firmware/README.md).
+- **Oxirgi o'zgarishlar** — pastdagi bo'limda.
 
-Needs only Docker. The `demo/` folder already holds the pretrained AI weights and one sample heart sound, and the
-`device` service is a simulated IoT device, so the whole chain works out of the box:
+## What's new (v2, 2026-11-17)
+
+- **ECG with the sound.** The firmware (0.3.0) records the ADS1292R ECG together with the microphone; the server
+  measures heart rate, beat-to-beat variation and signal quality, and a small rhythm model flags suspected atrial
+  fibrillation. The doctor's exam page shows the ECG strip under the heart-sound strip. Patients and admin see none
+  of it. A poor ECG never fails the exam; it says "cannot judge" and why.
+- **Phone-first website.** One design system (petrol blue) for every page; below 900 px the sidebar becomes a bottom
+  tab bar and tables become label/value rows. Every page of all three roles was measured at 375 / 768 / 1440 px.
+- **Device ready to flash.** Microphone pins and gain fixed from real recordings; the RGB LED is never used because it
+  shares GPIO48 with the ECG chip; full guide in [firmware/README.md](firmware/README.md).
+- **Safer backend.** A device taken away (disconnected or given to another doctor) can no longer record an old exam
+  later; a lost or compromised device's key dies; exams keep the clinic they were made in; a patient never sees an AI
+  label the doctor disagreed with; vitals show numbers only (no invented "normal" ranges).
+- **Fixed after the merge:** GitHub `main` could not start (a missing model file hidden by `.gitignore`); every new
+  database connection waited ~2 minutes on Windows (`localhost` → IPv6); repository cleaned.
+- Details and reasons: [docs/decisions/2026-11.md](docs/decisions/2026-11.md).
+
+## Quick start
+
+### Docker demo (nothing else to install)
 
 ```bash
-docker compose -f docker-compose.demo.yml up --build       # first build takes a few minutes (web app + CPU PyTorch)
+docker compose -f docker-compose.demo.yml up --build
 ```
 
 Open <http://localhost:8000> (port busy? `API_PORT=8010 docker compose -f docker-compose.demo.yml up --build`).
+The `device` service is a simulated device, so the whole chain works without hardware.
 
 | Login | Username | Password |
 | --- | --- | --- |
-| Admin | `admin` | `admin-demo-1` |
+| Admin (at `/login/admin`) | `admin` | `admin-demo-1` |
 | Doctor | `doctor` | `doctor-demo-1` |
 
-As the doctor: add a patient (tick consent) → new exam on "Demo device" → within seconds the device uploads
-`demo/sample_av.wav` and the AI result appears. The demo values are fixed in `docker-compose.demo.yml` and a `.env` file does not affect them. `docker compose -f docker-compose.demo.yml down -v` also deletes the demo data.
+These are public demo values (fixed in `docker-compose.demo.yml`); never reuse them in a real `.env`.
+`docker compose -f docker-compose.demo.yml down -v` deletes the demo data.
 
-**Production** is the separate `docker-compose.yml` + `backend/Dockerfile`: no demo data or fake device, every secret
-must be set in `.env` (compose refuses to start otherwise), AI weights are mounted from `./models`, and the
-database port is bound to 127.0.0.1 only. Run `docker compose up -d --build`.
+### On the laptop (development / offline demo)
 
-## Requirements
-
-- Docker Desktop (runs PostgreSQL 16)
-- Python 3.14 and [uv](https://docs.astral.sh/uv/)
-
-> **Windows note:** if Smart App Control is on, it blocks `.exe` launchers inside `.venv`. Always run tools as
-> `uv run python -m <tool>` (e.g. `python -m pytest`, not `pytest`). See [docs/runbook.md](docs/runbook.md).
-
-## First run
+Needs Docker Desktop (PostgreSQL), Python 3.14 + [uv](https://docs.astral.sh/uv/), Node 22.
 
 ```bash
-cp .env.example .env            # then replace every "change-me" with a random value
-docker compose up -d db         # PostgreSQL in Docker
-cd backend
-uv sync                         # install dependencies
-uv run python -m alembic upgrade head      # create the tables
-uv run python -m app.cli create-admin      # first admin from FIRST_ADMIN_USERNAME / FIRST_ADMIN_PASSWORD
-uv run python -m uvicorn app.main:app --reload
-```
-
-API: <http://localhost:8000> · interactive docs: <http://localhost:8000/docs>
-
-## Run the demo (one laptop, no internet)
-
-```bash
+cp .env.example .env                       # replace every "change-me"
 docker compose up -d db
-cd frontend && npm install && npm run build      # the web app, served by the backend
-cd ../backend && uv sync                         # includes PyTorch for the AI (group "ai")
+cd frontend && npm install && npm run build && cd ..
+cd backend && uv sync
 uv run python -m alembic upgrade head
-uv run python -m app.cli create-admin
+uv run python -m app.cli create-admin      # from FIRST_ADMIN_USERNAME / FIRST_ADMIN_PASSWORD
 uv run python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open <http://localhost:8000>. The AI model files must be in `models/` and `AI_MODEL=cardiophon` in `.env`
-(how: [docs/runbook.md](docs/runbook.md), "AI model"); without them every exam says "No AI opinion".
+Open <http://localhost:8000>. For the real AI put the model files in `models/` and set `AI_MODEL=cardiophon`
+(sound) — the ECG rhythm model is picked up from `models/ecg/` when present ([docs/runbook.md](docs/runbook.md)).
 
-Demo script (≈ 5 minutes, checked end to end on 2026-11-08):
-1. **Admin** — Doctors → *Add doctor* (generate a password, hand it over) → Devices → *Register device*, assign it
-   to the doctor, copy the key (shown once).
-2. **Device** — `MURMUR_DEVICE_KEY=<key> py scripts/fake_device.py --samples samples/circor/<…>/training_data/`
-   (the real ESP32 later). The device shows *Online* within 10 s.
-3. **Doctor** — *Add patient* (tick signed consent) → *Create login* (one-time password) → *Start exam*: device +
-   point on the chest diagram → watch the 20 s recording live → result: listen, waveform / spectrogram, AI card →
-   agree / disagree + conclusion → *Confirm review*.
-4. **Patient (phone)** — log in with the one-time password → choose own password → *Your results* → the doctor's
-   conclusion and where the doctor listened. No AI wording for patients.
-5. **Admin** — Overview (exams today, AI model) and the audit log of every read of patient data.
+> **Windows:** run tools as `uv run python -m <tool>` (Smart App Control blocks `.exe` launchers in `.venv`), and keep
+> `POSTGRES_HOST=127.0.0.1` (with `localhost` every new database connection waits ~2 minutes).
 
-## Tests
+### A device: real or simulated
 
-```bash
-cd backend
-uv run python -m pytest
-cd ../frontend
-npm test                # Vitest: pages, flows, languages (same keys, plurals, Uzbek script)
-```
+- **Real board:** [firmware/README.md](firmware/README.md) — wiring, electrodes, `secrets.h`, flashing.
+- **Simulated:** register a device as admin (copy its key), then
+  `MURMUR_DEVICE_KEY=<key> py scripts/fake_device.py --samples samples/` — it uploads a WAV plus a synthetic ECG
+  (`--heart-rate 80`, `--no-ecg`, `--ecg-off` to try the other cases).
 
-Tests use a separate database, `murmur_test`, on the same PostgreSQL server. It is created automatically, rebuilt
-from the Alembic migrations on every run, and emptied after each test. The main `murmur` database is never touched.
+## How an exam works
+
+1. **Admin** adds a doctor and registers a device (its key is shown once), assigns the device to the doctor.
+2. **Doctor** adds a patient (signed consent), optionally a patient login, and starts an exam: device + chest point.
+3. **Device** (polling every 1.5 s) records 20 s of sound + ECG and uploads both.
+4. **Server** checks sound quality ("re-record" if too short, silent, clipped or moving), runs the sound AI, measures
+   the ECG (heart rate, rhythm), stores the model names and versions.
+5. **Doctor** listens, looks at the sound strip, spectrogram and ECG strip, agrees or disagrees with the AI, writes
+   the conclusion and confirms.
+6. **Patient** sees reviewed exams with the doctor's conclusion on their phone.
+
+Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`).
 
 ## Roles
 
 | Role | Logs in with | Can |
 | --- | --- | --- |
-| admin | username + password (created by the CLI) | create/block doctors, register devices (API key shown once), assign devices, see stats and the audit log — never patient medical data |
-| doctor | username + password set by the admin | own patients only: create, record consent, create patient login, start exams, listen, review |
-| patient | username + temporary password from the doctor (must change on first login) | own profile and own **reviewed** exams with the doctor's note and the AI's yes / no label — never the score or unreviewed exams; edits own contact details |
-| device | `X-Device-Key` header | heartbeat, poll its commands, upload WAV for its own exams |
+| admin | username + password (CLI, `/login/admin`) | doctors, devices (key shown once, assign, disconnect, self-test), stats, audit log; sees a doctor's patient names (owner, 2026-11-15) but never recordings, AI results, ECG or notes |
+| doctor | username + password set by the admin | own patients only: create, consent, patient login, exams, listen, ECG, review |
+| patient | username + one-time password from the doctor (changed at first login) | own profile and own **reviewed** exams with the doctor's note and the AI's yes / no (hidden when the doctor disagreed); never scores, ECG or unreviewed exams |
+| device | `X-Device-Key` header | heartbeat, poll its commands, upload sound + ECG for its own exams |
+
+## Tests
+
+```bash
+cd backend
+uv run python -m pytest                                  # PostgreSQL test database murmur_test, rebuilt every run
+uv run python -m ruff check . ../scripts && uv run python -m ruff format --check . ../scripts
+cd ../frontend
+npx tsc -b && npm run lint && npm test && npm run build && npm run check:offline
+```
 
 ## API overview
 
 | Who | Endpoint | What |
 | --- | --- | --- |
-| all | `POST /api/auth/login` (doctor, patient), `POST /api/auth/admin/login` (admin only), `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change (returns a fresh token; older tokens die), who am I |
-| admin | `GET/POST /api/admin/doctors`, `GET /api/admin/doctors/{id}` (profile) · `/patients` · `/activity`, `PATCH /api/admin/doctors/{id}` (name, clinic), `POST /api/admin/doctors/{id}/block` · `/unblock` · `/password` | doctors, profile, password reset |
-| doctor | `GET /api/profile`, `GET /api/profile/activity` | own profile (read-only) |
-| admin | `GET/POST /api/admin/devices`, `GET/PATCH /api/admin/devices/{id}`, `POST …/rotate-key`, `…/disconnect`, `…/reconnect`, `…/self-test`, `GET …/activity` | devices, assignment, new key, disconnect with a reason, self-test, admin actions |
-| admin | `GET /api/admin/stats`, `GET /api/admin/audit` | counts, audit log |
-| doctor | `GET/POST /api/patients` (list = registry rows with last exam + status), `GET /api/patients/summary`, `GET/PATCH/DELETE /api/patients/{id}`, `POST …/consent`, `POST …/login`, `POST …/reset-password`, `GET …/exams` | patients (delete erases everything) |
-| doctor | `POST /api/exams`, `GET /api/exams/{id}`, `GET …/audio`, `PATCH …/review`, `POST …/cancel` | exams |
-| doctor | `GET /api/devices` | own devices with online status |
+| all | `POST /api/auth/login` (doctor, patient), `POST /api/auth/admin/login`, `POST /api/auth/change-password`, `GET /api/auth/me` | login (429 after 5 wrong passwords), password change, who am I |
+| admin | `/api/admin/doctors…`, `/api/admin/devices…` (`rotate-key`, `disconnect`, `reconnect`, `self-test`, `activity`), `/api/admin/stats`, `/api/admin/audit` | doctors, devices, counts, audit log |
+| doctor | `/api/patients…` (registry, summary, consent, login, vitals, exams), `/api/profile` | own patients |
+| doctor | `POST /api/exams`, `GET /api/exams/{id}` (with `has_ecg`, `ecg_result`), `GET …/audio`, `GET …/ecg` (strip), `PATCH …/review`, `POST …/cancel` | exams |
 | patient | `GET`/`PATCH /api/me`, `GET /api/me/exams` | own data |
-| device | `POST /api/device/heartbeat` (+ battery, microphone noise, network), `GET /api/device/command` (`record` or `self_test`), `POST /api/device/self-test`, `POST /api/device/upload/{exam_id}` | device link |
+| device | `POST /api/device/heartbeat`, `GET /api/device/command`, `POST /api/device/self-test`, `POST /api/device/upload/{exam_id}` (`audio` WAV + optional `ecg` + `meta`) | device link |
 
-Exam status: `waiting → recording → uploaded → analyzed → reviewed` (or `failed`: cancelled, analysis error, or
-a "re-record" quality problem — too short, almost silent, clipped, or movement).
-Review body: `{"note": "...", "agrees_with_ai": true|false}` when the AI answered (label `murmur` / `absent`);
-without `agrees_with_ai` when it gave no answer (`not_analyzed`, or quality `bad`).
+Interactive docs: <http://localhost:8000/docs>.
 
-## Project docs
+## Where things are
 
-- [AGENTS.md](AGENTS.md) — project rules (also read by Claude Code)
-- [docs/map.md](docs/map.md) — where things live
-- [docs/runbook.md](docs/runbook.md) — run, test, migrate
-- [docs/decisions/](docs/decisions/) — owner decisions and open assumptions
+| Folder | What |
+| --- | --- |
+| `backend/` | FastAPI app, Alembic migrations, pytest tests |
+| `frontend/` | React web app (admin / doctor / patient) |
+| `firmware/` | ESP32-S3 firmware and the device guide |
+| `scripts/` | `fake_device.py`, AI training and evaluation (`scripts/ai/`, `scripts/ai/ecg/`) |
+| `docs/` | [map](docs/map.md) (where every file is), [runbook](docs/runbook.md) (run, configure, migrate), [decisions](docs/decisions/), [AI results](docs/specs/ai-results.md), [ECG AI results](docs/specs/ecg-ai-results.md), [glossary](docs/glossary.md) |
+
+Project rules (also read by AI assistants): [AGENTS.md](AGENTS.md). Source: <https://github.com/bilolkobilov/NTCC-MurMur>
+(private). Not in Git on purpose: `.env`, `firmware/murmur/secrets.h`, recordings (`storage/`), datasets (`samples/`)
+and the trained model files in `models/` (the demo weights in `demo/` are committed — owner's choice, 2026-11-17).

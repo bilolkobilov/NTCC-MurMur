@@ -6,7 +6,7 @@ import { type ComponentProps, type ReactNode, useId, useState } from "react";
  * meant for the login page; the rest of the app keeps its own components until the redesign reaches it.
  */
 
-const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-auth-primary";
+const focusRing = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -56,9 +56,9 @@ const CheckIcon = () => (
 /** The mark from the mockup: white heart-wave on a petrol-blue rounded square. */
 export function AuthLogo({ name }: { name: string }) {
   return (
-    <span translate="no" className="inline-flex items-center gap-2 text-title font-semibold tracking-tight text-auth-ink">
+    <span translate="no" className="inline-flex items-center gap-2 text-title font-semibold tracking-tight text-ink-900">
       <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-        <rect width="32" height="32" rx="8" className="fill-auth-primary" />
+        <rect width="32" height="32" rx="8" className="fill-primary" />
         <path
           d="M6 16h4l3-7 5 14 3-7h5"
           fill="none"
@@ -85,16 +85,16 @@ export function AuthField({ label, error, reveal, className, disabled, type, ...
   const [shown, setShown] = useState(false);
   return (
     <div className={clsx("flex flex-col gap-2", className)}>
-      <label htmlFor={id} className="font-semibold text-auth-ink">
+      <label htmlFor={id} className="font-semibold text-ink-900">
         {label}
       </label>
       <div
         className={clsx(
           "flex min-h-12 items-center rounded-control border bg-surface pr-1 pl-3 focus-within:outline focus-within:outline-1",
           error
-            ? "border-auth-critical-dot focus-within:outline-auth-critical-dot"
-            : "border-auth-input focus-within:border-auth-primary focus-within:outline-auth-primary",
-          disabled && "border-auth-border bg-auth-subtle",
+            ? "border-danger-dot focus-within:outline-danger-dot"
+            : "border-line-strong focus-within:border-primary focus-within:outline-primary",
+          disabled && "border-line bg-subtle",
         )}
       >
         <input
@@ -104,7 +104,7 @@ export function AuthField({ label, error, reveal, className, disabled, type, ...
           disabled={disabled}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          className="min-h-10 min-w-0 flex-1 bg-transparent text-[16px] text-auth-ink outline-0 placeholder:text-auth-ink-3 disabled:cursor-not-allowed disabled:text-auth-ink-3"
+          className="min-h-10 min-w-0 flex-1 bg-transparent text-[16px] text-ink-900 outline-0 placeholder:text-ink-500 disabled:cursor-not-allowed disabled:text-ink-500"
         />
         {reveal && (
           <button
@@ -114,7 +114,7 @@ export function AuthField({ label, error, reveal, className, disabled, type, ...
             aria-pressed={shown}
             onClick={() => setShown((value) => !value)}
             className={clsx(
-              "grid size-11 shrink-0 place-items-center rounded-sm text-auth-ink-2 hover:bg-auth-subtle hover:text-auth-ink disabled:cursor-not-allowed disabled:text-auth-ink-3 disabled:hover:bg-transparent",
+              "grid size-11 shrink-0 place-items-center rounded-sm text-ink-700 hover:bg-subtle hover:text-ink-900 disabled:cursor-not-allowed disabled:text-ink-500 disabled:hover:bg-transparent",
               focusRing,
             )}
           >
@@ -123,7 +123,7 @@ export function AuthField({ label, error, reveal, className, disabled, type, ...
         )}
       </div>
       {error && (
-        <p id={`${id}-error`} role="alert" className="flex items-start gap-2 font-medium text-auth-critical">
+        <p id={`${id}-error`} role="alert" className="flex items-start gap-2 font-medium text-danger">
           <span className="mt-0.5">
             <AlertIcon />
           </span>
@@ -149,9 +149,9 @@ export function AuthButton({
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={clsx(
-        "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-auth-primary px-4 font-semibold text-white hover:bg-auth-primary-hover",
-        "disabled:cursor-not-allowed disabled:bg-auth-subtle disabled:text-auth-ink-3",
-        busy && "cursor-progress disabled:bg-auth-primary-hover disabled:text-white",
+        "inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-control bg-primary px-4 font-semibold text-white hover:bg-primary-hover",
+        "disabled:cursor-not-allowed disabled:bg-subtle disabled:text-ink-500",
+        busy && "cursor-progress disabled:bg-primary-hover disabled:text-white",
         focusRing,
         className,
       )}
@@ -169,9 +169,9 @@ export function AuthButton({
 
 type Tone = "critical" | "success" | "info";
 const tones: Record<Tone, string> = {
-  critical: "bg-auth-critical-bg text-auth-critical",
-  success: "bg-auth-ok-bg text-auth-ok",
-  info: "bg-auth-tint text-auth-primary-ink",
+  critical: "bg-danger-bg text-danger",
+  success: "bg-clear-bg text-clear",
+  info: "bg-primary-tint text-primary-ink",
 };
 
 /** Icon + words, never colour alone. A title is optional. */
@@ -209,7 +209,7 @@ export function AuthSegmented<T extends string>({
     document.getElementById(`seg-${next.value}`)?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex gap-0.5 rounded-control bg-auth-subtle p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex gap-0.5 rounded-control bg-subtle p-0.5">
       {options.map((option, index) => {
         const selected = option.value === value;
         return (
@@ -232,10 +232,10 @@ export function AuthSegmented<T extends string>({
               }
             }}
             className={clsx(
-              "min-h-9 rounded-sm border-2 px-3 text-center text-label font-medium disabled:cursor-not-allowed disabled:text-auth-ink-3",
+              "min-h-11 rounded-sm border-2 px-3 text-center text-label font-medium disabled:cursor-not-allowed disabled:text-ink-500",
               selected
-                ? "border-auth-primary bg-surface font-semibold text-auth-ink disabled:border-auth-border"
-                : "border-transparent text-auth-ink-2 hover:text-auth-ink",
+                ? "border-primary bg-surface font-semibold text-ink-900 disabled:border-line"
+                : "border-transparent text-ink-700 hover:text-ink-900",
               focusRing,
             )}
           >

@@ -25,6 +25,12 @@ class UploadMeta(BaseModel):
 
     motion_detected: bool = False
     sample_rate: int | None = None  # informative; the WAV header is what we trust
+    # The optional `ecg` part (firmware/murmur/ecg.h): int32 little-endian, channels interleaved.
+    ecg_sample_rate: int = Field(default=250, ge=125, le=1000)
+    ecg_channels: int = Field(default=2, ge=1, le=2)
+    ecg_gain: int = Field(default=6, ge=1, le=12)  # ADS1292R PGA gain
+    ecg_vref_mv: float = Field(default=2420.0, gt=0, le=5000)
+    ecg_lead_off: bool = False  # an electrode came off at some point during the recording
 
 
 class UploadAccepted(BaseModel):

@@ -81,7 +81,8 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 
 1. PyTorch (CPU) and numpy come with `cd backend && uv sync` (group `ai`, default since 2026-11-08; first
    `import torch` takes ~20 s once). A server without AI: `uv sync --no-group ai` and `AI_MODEL=dummy`.
-2. Encoder weights (CardioPHON, used with citation; never committed) into `models/cardiophon/`:
+2. Encoder weights (CardioPHON, used with citation) into `models/cardiophon/` (the Docker demo carries its own copy in
+   `demo/cardiophon/`, committed on purpose — owner, 2026-11-17):
    `curl -L -o models/cardiophon/pretrained_physionet_2022_4kHz.pth https://git.lih.lu/vdespotovic/cardiophon/-/raw/main/heart_sound_classification/checkpoints/pretrained_physionet_2022_4kHz.pth`
 3. CirCor 1.0.3 (471 MB zip, ODC-By) unpacked into `samples/circor/`:
    `https://physionet-open.s3.amazonaws.com/circor-heart-sound/circor-heart-sound-1.0.3.zip` (check `SHA256SUMS.txt`).
@@ -93,20 +94,33 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 7. Switch it on in `.env`: `AI_MODEL=cardiophon`, restart the server; the log says `AI model loaded: cardiophon-murmur …`.
    Bump `MODEL_VERSION` in `train_head.py` on every retrain (it is stored with every result).
 
+## ECG rhythm model ("AF suspected")
+
+Heart rate and ECG quality need nothing (pure Python). The rhythm model is optional: without `models/ecg/` the ECG
+card says "No rhythm model is connected". To get it (details, licences, citations: `scripts/ai/ecg/README.md`):
+
+```bash
+cd backend
+uv run python -X utf8 -I ../scripts/ai/ecg/download.py   # ~100 MB CinC 2017 + ~68 MB PTB-XL subset into samples/ecg/
+uv run python -X utf8 -I ../scripts/ai/ecg/train.py      # ~50 min CPU → models/ecg/ecg_rhythm.pt (1.7 MB) + .json
+uv run python -X utf8 -I ../scripts/ai/ecg/evaluate.py   # once per model → docs/specs/ecg-ai-results.md
+```
+
+The split (`split.py`) is already committed in `scripts/ai/ecg/split/`; never re-split and never tune on test data.
+Restart the server after new weights (the model is loaded once).
+
 ## Device firmware (ESP32-S3)
 
-Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. Not yet flashed on real hardware.
+Everything about the device — wiring, why the RGB LED (GPIO48) is never used, ECG electrodes on the AUX jack, build and
+flash, the serial log, troubleshooting and the bench measurements — is in **`firmware/README.md`**. In short:
 
-1. Tools (once): arduino-cli 1.5.1 in `%LOCALAPPDATA%\Programs\arduino-cli` (from GitHub releases, SHA-256 checked),
-   then `arduino-cli config init --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`,
-   `arduino-cli core update-index`, `arduino-cli core install esp32:esp32` (3.3.12, ~1 GB). Arduino IDE works too.
-2. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h` and fill Wi-Fi, server address
-   (`http://<laptop-ip-on-hotspot>:8000`) and the device key from Admin → Devices. `secrets.h` is gitignored.
-3. Compile: `arduino-cli compile --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc" firmware/murmur`
-4. Flash: add `--upload -p COM<n>` (the board's USB port); serial log: `arduino-cli monitor -p COM<n> -c baudrate=115200`.
-5. First real check: the device shows *Online* in Admin → Devices; then a doctor starts an exam. Tune `MIC_GAIN_SHIFT`
-   in `config.h` if the server answers "almost silent" (raise gain: smaller number) or "clipped" (bigger number).
-6. Admin → Devices shows what the heartbeat reports: Wi-Fi, network (IP / MAC partly hidden), microphone noise floor
+1. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h`; fill Wi-Fi (2.4 GHz), `SERVER_URL`
+   (`http://<laptop IP>:8000`, server started with `--host 0.0.0.0`) and the device key from Admin → Devices.
+2. `arduino-cli compile --upload -p COM<n> --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc" firmware/murmur`
+   on the board's native USB port (no driver).
+3. Without the board: `scripts/fake_device.py` does the same over HTTP, with a synthetic ECG.
+
+4. Admin → Devices shows what the heartbeat reports: Wi-Fi, network (IP / MAC partly hidden), microphone noise floor
    (measured at boot and on "Run self-test"), battery (only when `BATTERY_ADC_PIN` is set in `config.h`; the dev board has
    no fuel gauge). Set `LATEST_FIRMWARE` in `.env` to the `FIRMWARE_VERSION` of the newest build so older devices show
    "update available". A device the admin disconnected gets 403 and keeps polling; it works again after "Reconnect".
@@ -115,7 +129,7 @@ Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. N
 
 ```bash
 cd backend
-uv run python -m alembic revision --autogenerate -m "what changed" --rev-id 0002   # after changing a model; review the file
+uv run python -m alembic revision --autogenerate -m "what changed" --rev-id 000N   # next free number (0012); review the file
 uv run python -m alembic upgrade head      # apply
 uv run python -m alembic downgrade -1      # roll back the last migration
 ```
@@ -129,4 +143,9 @@ Private GitHub repo: https://github.com/bilolkobilov/NTCC-MurMur (branch `main`)
 
 ## Deploy and rollback
 
-Not documented — ask the owner. (Plan: version 1 runs on a laptop + hotspot, version 2 on a server with HTTPS.)
+The owner has not chosen a server yet; today the demo runs on a laptop + phone hotspot. What exists:
+
+- Production stack: `docker-compose.yml` (`db` + `api`, every secret from `.env`, database port on 127.0.0.1 only) and
+  `backend/Dockerfile`; `docker compose up -d --build`. AI weights are mounted from `./models`.
+- Rollback: run the previous image / Git tag, and `uv run python -m alembic downgrade <revision>` for schema changes
+  (every migration has a downgrade; 0007 refuses when patients with sex "other" exist).

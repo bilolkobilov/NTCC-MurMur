@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, model_validator
 
 from app.models import AuscultationPoint, ExamStatus, Sex
 from app.schemas.common import FullName, RefId, Username
@@ -143,6 +143,40 @@ class AIResultOut(BaseModel):
     created_at: datetime
 
 
+class EcgResultOut(BaseModel):
+    """The ECG measured with the sound. Doctors only: patients and the admin never see it (owner, 2026-11-17)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    method_version: str
+    quality: str  # good | bad
+    problem: str | None  # lead_off | saturated | flat | no_beats | noisy | error
+    channel: int | None
+    heart_rate: int | None
+    rr_cv: float | None
+    beats: int
+    rhythm_label: str | None  # af_suspected | no_af | unclear; empty when no rhythm model ran
+    rhythm_p_af: float | None
+    rhythm_model_name: str | None
+    rhythm_model_version: str | None
+    created_at: datetime
+
+
+class EcgRecordingRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    sample_rate: int
+
+
+class EcgTraceOut(BaseModel):
+    """The filtered strip (0.5-40 Hz, 50 Hz removed) in millivolts, with the heartbeats the server found."""
+
+    sample_rate: int
+    channel: int
+    samples_mv: list[float]
+    r_peaks_s: list[float]
+
+
 class ExamSummary(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -174,6 +208,14 @@ class ExamDetail(ExamSummary):
     updated_at: datetime
     recording: RecordingOut | None
     ai_result: AIResultOut | None
+    ecg_recording: EcgRecordingRef | None = Field(default=None, exclude=True)
+    ecg_result: EcgResultOut | None = None
+
+    @computed_field
+    @property
+    def has_ecg(self) -> bool:
+        """The device sent a usable ECG (its strip can be drawn). False with an `ecg_result` = the ECG was broken."""
+        return self.ecg_recording is not None
 
 
 class DoctorDeviceOut(BaseModel):

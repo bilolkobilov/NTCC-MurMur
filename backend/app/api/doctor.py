@@ -11,6 +11,7 @@ from app.schemas.admin import ActivityEntryOut, DoctorProfileOut
 from app.schemas.common import PathId
 from app.schemas.doctor import (
     DoctorDeviceOut,
+    EcgTraceOut,
     ExamCreate,
     ExamDetail,
     ExamReview,
@@ -146,7 +147,7 @@ def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor)
             duration_s=row.duration_s,
             device_name=row.device.name if row.device else None,
             device_code=row.device.code if row.device else None,
-            clinic=row.device.clinic if row.device else None,
+            clinic=row.exam.clinic,
             result_status=row.status.result_status,
             needs_review=row.status.needs_review,
             ai_label=row.ai_label,
@@ -168,6 +169,13 @@ def start_exam(body: ExamCreate, db: DbSession, doctor: CurrentDoctor) -> ExamDe
 def get_exam(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> ExamDetail:
     """The web page polls this every ~2 s while the device records and the analyzer runs."""
     return ExamDetail.model_validate(exams.read_exam(db, doctor, exam_id))
+
+
+@router.get("/exams/{exam_id}/ecg")
+def get_exam_ecg(exam_id: PathId, db: DbSession, doctor: CurrentDoctor) -> EcgTraceOut:
+    """The ECG strip recorded with the sound (404 when the device sent none)."""
+    rate, channel, samples, peaks = exams.exam_ecg_trace(db, doctor, exam_id)
+    return EcgTraceOut(sample_rate=rate, channel=channel, samples_mv=samples, r_peaks_s=peaks)
 
 
 @router.get("/exams/{exam_id}/audio", response_class=FileResponse)

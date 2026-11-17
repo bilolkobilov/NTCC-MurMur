@@ -43,7 +43,7 @@ def create_exam(db: Session, doctor: User, patient: Patient, device: Device, poi
     """Caller has already checked that the patient and the device belong to this doctor."""
     if patient.consent_given_at is None:
         raise BadRequest("patient consent is not recorded")
-    exam = Exam(patient_id=patient.id, doctor_id=doctor.id, device_id=device.id, point=point)
+    exam = Exam(patient_id=patient.id, doctor_id=doctor.id, device_id=device.id, point=point, clinic=doctor.clinic)
     db.add(exam)
     db.flush()
     db.add(DeviceCommand(device_id=device.id, exam_id=exam.id, command="record", duration_s=RECORD_SECONDS))
@@ -71,14 +71,15 @@ def mark_failed(exam: Exam, reason: str) -> None:
 CANCELLABLE = {ExamStatus.WAITING, ExamStatus.RECORDING}
 
 
-def cancel(db: Session, exam: Exam) -> Exam:
-    """Doctor stops an exam that never got its recording (e.g. the device went offline). Caller holds a row lock.
+def cancel(db: Session, exam: Exam, reason: str = "cancelled by doctor", *, commit: bool = True) -> Exam:
+    """Stop an exam that never got its recording (the doctor cancels, or the admin takes its device away).
 
-    Its device command is closed; a late upload for it gets 409, which the device treats as "done".
+    Caller holds a row lock on the exam. Its device command is closed; a late upload for it gets 409, which the
+    device treats as "done".
     """
     if exam.status not in CANCELLABLE:
         raise Conflict(f"exam is '{exam.status.value}', only waiting or recording exams can be cancelled")
-    mark_failed(exam, "cancelled by doctor")
+    mark_failed(exam, reason)
     now = datetime.now(UTC)
     for command in db.scalars(
         select(DeviceCommand).where(
@@ -87,7 +88,8 @@ def cancel(db: Session, exam: Exam) -> Exam:
     ):
         command.status = CommandStatus.DONE
         command.done_at = now
-    db.commit()
+    if commit:
+        db.commit()
     return exam
 
 

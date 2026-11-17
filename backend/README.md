@@ -43,8 +43,10 @@ app/
   deps.py          role dependencies: CurrentAdmin / Doctor / Patient, CurrentDevice (X-Device-Key)
   api/             thin routers: auth, admin, doctor, patient, device
   schemas/         request / response shapes
-  models/          one file per table (users, devices, patients, exams, recordings, ai_results, device_commands, audit_logs)
-  services/        business rules and audit writes (exam_flow, analysis, quality, analyzer, ai/cardiophon, ...)
+  models/          one file per table (users, devices, patients, exams, recordings, ai_results, device_commands,
+                   audit_logs, vital_signs, ecg_recordings, ecg_results)
+  services/        business rules and audit writes (exam_flow, analysis, quality, ecg, analyzer, ai/cardiophon,
+                   ai/ecg_rhythm, ...)
 alembic/           migrations (0001_...)
 tests/
 ```
@@ -57,8 +59,9 @@ tests/
   `NotFound` / `Conflict` / `BadRequest` (mapped to HTTP in `main.py`).
 - **Exam status changes in one place:** `services/exam_flow.py`. Flow: `waiting → recording → uploaded → analyzed →
   reviewed` (or `failed`).
-- **Access is data-shaped.** Admin sees counts only, never medical data. A doctor sees only their own patients. A
-  patient sees only their own `reviewed` exams, with the AI yes / no label but no score, model or agreement; they edit only their contact details. Reads of patient data go through
+- **Access is data-shaped.** Admin never sees medical data (recordings, AI, ECG, notes). A doctor sees only their own
+  patients. A patient sees only their own `reviewed` exams, with the AI yes / no label (hidden when the doctor
+  disagreed) but no score, model, agreement or ECG; they edit only their contact details. Reads of patient data go through
   `audit.record_read` (same user + record logged once per 5 min).
 - **Auth.** No public signup. A password change bumps `token_version` (old JWTs stop working). Login is rate-limited
   in memory. Device keys are shown once and stored as SHA-256 hashes.
@@ -78,7 +81,7 @@ tests/
 1. Doctor `POST /api/exams` creates a `device_commands` row.
 2. The device polls `GET /api/device/command` every 1-2 s (row-locked, so a command is handed out once).
 3. The device records ~20 s and `POST /api/device/upload/{exam_id}` (multipart `audio` WAV + `meta` JSON). The request
-   needs `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 64 KB get 413. A retried upload gets 409.
+   needs `Content-Length` (else 411); bodies over `MAX_UPLOAD_MB` + 1 MB 64 KB (meta + ECG) get 413. A retried upload gets 409.
 4. A BackgroundTask runs `services/analysis.py`: quality rules first (too short / silent / clipped / motion → `failed`
    with a re-record reason), then the `Analyzer` from `get_analyzer()`. The `AIResult` stores model name + version.
 

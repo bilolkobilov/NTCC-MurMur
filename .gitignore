@@ -8,10 +8,11 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+.ruff_cache/
 
 # data (never commit recordings or sample audio)
-storage/
-samples/
+/storage/
+/samples/
 
 # claude code local files
 .claude/worktrees/
@@ -21,8 +22,9 @@ samples/
 node_modules/
 frontend/dist/
 
-# AI model files (downloaded at setup, never committed — docs/runbook.md)
-models/
+# AI model files (downloaded at setup, never committed — docs/runbook.md). Root folder only: a bare `models/` also
+# hid backend/app/models/vitals.py, so it never reached GitHub.
+/models/
 
 # device secrets (Wi-Fi, device key) - copy secrets.example.h
 firmware/murmur/secrets.h

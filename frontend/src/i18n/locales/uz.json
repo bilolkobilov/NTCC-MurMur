@@ -22,7 +22,11 @@
     "logOut": "Chiqish",
     "main": "Asosiy menyu",
     "skip": "Asosiy qismga oʻtish",
-    "myProfile": "Mening profilim"
+    "myProfile": "Mening profilim",
+    "profileShort": "Profil",
+    "overviewShort": "Umumiy",
+    "auditShort": "Jurnal",
+    "tabBar": "Boʻlimlar"
   },
   "roles": {
     "admin": "Administrator",
@@ -171,7 +175,7 @@
     },
     "summaryLabel": "Xulosa",
     "assignedToday": "Bugun tayinlangan",
-    "normal": "Normal",
+    "normal": "Shovqin yoʻq (AI)",
     "needsReview": "Koʻrib chiqish kerak",
     "pending": "Kutilmoqda",
     "tabsLabel": "Bemorlarni holat boʻyicha koʻrsatish",
@@ -185,8 +189,8 @@
     "open": "Ochish",
     "openRecord": "Kartani ochish: {{name}}",
     "chip": {
-      "normal": "Normal",
-      "abnormal": "Chetlanish",
+      "normal": "Shovqin yoʻq (AI)",
+      "abnormal": "Shovqin gumoni (AI)",
       "pending": "Kutilmoqda",
       "failed": "Qayta yozing",
       "awaitingReview": "Koʻrib chiqilishi kutilmoqda",
@@ -208,11 +212,6 @@
     "tagline": "Klinik telemetriya",
     "suite": "Klinik boʻlim",
     "rights": "© 2026 MurMur",
-    "footerNav": "Pastki menyu",
-    "privacy": "Maxfiylik",
-    "terms": "Shartlar",
-    "accessibility": "Qulaylik",
-    "support": "Yordam",
     "note": "Tadqiqot prototipi va skrining yordamchisi, tibbiy buyum emas.",
     "clinicTitle": "Siz ishlaydigan klinika",
     "account": "Hisob",
@@ -773,7 +772,8 @@
     "tileClinics_one": "{{count}} klinika",
     "tileClinics_other": "{{count}} klinika",
     "fixFields_one": "Davom etish uchun quyidagi {{count}} maydonni tuzating.",
-    "fixFields_other": "Davom etish uchun quyidagi {{count}} maydonni tuzating."
+    "fixFields_other": "Davom etish uchun quyidagi {{count}} maydonni tuzating.",
+    "keyDestroyed": "Bu qurilma yoʻqolgan yoki xavfsizlik sababli uzilgan, shuning uchun uning eski kaliti oʻchirilgan. Qayta ulagandan keyin «Yangi kalit» bilan yangi kalit chiqarib, qurilmaga yozing."
   },
   "audit": {
     "title": "Kirishlar jurnali",
@@ -822,7 +822,8 @@
       "device_disconnect_maintenance": "Qurilmani uzdi (taʼmirlash)",
       "device_disconnect_lost": "Qurilmani uzdi (yoʻqolgan yoki oʻgʻirlangan)",
       "device_disconnect_security": "Qurilmani uzdi (xavfsizlik)",
-      "device_disconnect_retired": "Qurilmani uzdi (xizmatdan chiqarilgan)"
+      "device_disconnect_retired": "Qurilmani uzdi (xizmatdan chiqarilgan)",
+      "exam_ecg": "EKG chizigʻini ochdi"
     },
     "objects": {
       "exam": "Tekshiruv",
@@ -888,7 +889,6 @@
     "save": "Saqlash",
     "measured": "Oʻlchangan: {{when}} · {{by}}",
     "none": "Hali oʻlchanmagan",
-    "ref": "Meʼyor: {{range}}",
     "heartRate": "Yurak urishi",
     "bloodPressure": "Qon bosimi",
     "systolic": "Sistolik bosim",
@@ -902,9 +902,6 @@
       "perMin": "/daq"
     },
     "level": {
-      "normal": "Normal",
-      "borderline": "Chegarada",
-      "abnormal": "Chetlanish",
       "none": "Maʼlumot yoʻq"
     },
     "errors": {
@@ -931,11 +928,8 @@
       "emptyBody": "Shifokor tekshiruvni koʻrib chiqqach, xulosa shu yerda paydo boʻladi.",
       "hrTitle": "Yurak urishi",
       "hrUnit": "urish/daq",
-      "hrRef": "Tinch holatda meʼyor: 60–100 urish/daq",
       "hrNone": "Hali oʻlchanmagan",
       "hrMeasured": "Oʻlchangan sana: {{date}}",
-      "hrNormal": "Meʼyorda",
-      "hrOutside": "Meʼyordan tashqari",
       "murmurTitle": "Shovqin skrining",
       "murmurNone": "Yoʻq",
       "murmurCount": "{{total}} tadan {{count}} ta",
@@ -1025,5 +1019,42 @@
       "generated": "Yaratilgan sana: {{date}}",
       "empty": "Hali tekshirilgan natija yoʻq."
     }
+  },
+  "ecg": {
+    "title": "EKG",
+    "subtitle": "Bitta tarmoq, tovush bilan bir vaqtda yozilgan",
+    "notRecorded": "Bu tekshiruvda EKG yozilmagan (qurilma faqat tovush yubordi).",
+    "heartRate": "Yurak urish tezligi",
+    "perMin": "/daq",
+    "spread": "Urishlar orasidagi tebranish",
+    "pending": "EKG tahlil qilinmoqda…",
+    "cannotJudge": "EKGʼni baholab boʻlmaydi.",
+    "problem": {
+      "lead_off": "Elektrod yozuv paytida uzilib qolgan. Elektrodlarni qayta yopishtirib, qayta yozing.",
+      "saturated": "Signal chegaradan oshib ketgan (elektrod teriga yomon tegib turibdi).",
+      "flat": "Elektrodlarda signal yoʻq.",
+      "no_beats": "Ishonchli yurak urishlari topilmadi. Elektrodlar joyini va kontaktini tekshiring.",
+      "noisy": "Shovqin juda koʻp. Bemor qimirlamasin, noutbuk batareyada ishlasin.",
+      "error": "EKG tahlilida xatolik yuz berdi.",
+      "unknown": "Sabab nomaʼlum.",
+      "invalid": "Qurilma buzilgan yoki juda qisqa EKG yubordi (masalan, chip yozuv oʻrtasida toʻxtagan). Tovush saqlandi."
+    },
+    "noRhythmModel": "Ritm modeli ulanmagan: faqat yurak urish tezligi koʻrsatiladi.",
+    "rhythm": {
+      "af_suspected": "Boʻlmachalar fibrillyatsiyasi gumoni.",
+      "confirm": "12 tarmoqli EKG bilan tasdiqlang.",
+      "no_af": "Boʻlmachalar fibrillyatsiyasi topilmadi",
+      "unclear": "Ritmni aniqlab boʻlmadi",
+      "probability": "FP ehtimoli {{value}} %",
+      "model": "AI modeli: {{model}}"
+    },
+    "disclaimer": "Skrining yordami, tashxis emas. Yakuniy xulosa sizniki.",
+    "loadError": "EKG chizigʻini yuklab boʻlmadi. Sahifani yangilang.",
+    "scale": "1 katta katak = {{seconds}} s · gorizontal chiziqlar 0,8 mV oraligʻida",
+    "zoom": "Masshtab",
+    "whole": "Butun yozuv",
+    "closeUp": "Yaqindan",
+    "markers": "Tepadagi chiziqchalar: server topgan {{count}} ta yurak urishi",
+    "traceLabel": "EKG chizigʻi, {{seconds}} soniya, {{beats}} ta urish"
   }
 }

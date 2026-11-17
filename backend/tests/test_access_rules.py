@@ -137,6 +137,45 @@ def test_admin_cannot_read_medical_data(client, db, world):
     for medical in ("Private note", "Ali Valiyev", "murmur"):
         assert medical not in everything_admin_can_see
 
+    doctor_id, device_id = world["doctor_a"].id, world["device_a"].id
+    detail_pages = "".join(
+        client.get(path, headers=admin).text
+        for path in (
+            f"/api/admin/doctors/{doctor_id}",
+            f"/api/admin/doctors/{doctor_id}/activity",
+            f"/api/admin/devices/{device_id}",
+            f"/api/admin/devices/{device_id}/activity",
+        )
+    )
+    # the doctor's patient list may name patients (owner, 2026-11-15); these pages never carry notes or AI answers
+    for medical in ("Private note", "murmur"):
+        assert medical not in detail_pages
+
+
+def test_a_patient_reaches_no_doctor_or_admin_endpoint(client, db, world):
+    ali = login(client, "ali")
+    patient_id, doctor_id, device_id = world["ali"].id, world["doctor_a"].id, world["device_a"].id
+    for path in (
+        "/api/patients",
+        "/api/patients/summary",
+        f"/api/patients/{patient_id}",
+        f"/api/patients/{patient_id}/exams",
+        f"/api/patients/{patient_id}/vitals/latest",
+        "/api/devices",
+        "/api/profile",
+        "/api/profile/activity",
+        "/api/admin/doctors",
+        f"/api/admin/doctors/{doctor_id}",
+        f"/api/admin/doctors/{doctor_id}/patients",
+        f"/api/admin/doctors/{doctor_id}/activity",
+        f"/api/admin/devices/{device_id}",
+        "/api/admin/stats",
+        "/api/admin/audit",
+    ):
+        assert client.get(path, headers=ali).status_code == 403, path
+    vitals = client.post(f"/api/patients/{patient_id}/vitals", headers=ali, json={"heart_rate": 70})
+    assert vitals.status_code == 403
+
 
 def test_blocked_doctors_patients_can_still_see_their_results(client, db, world):
     """Blocking a doctor stops the doctor, not their patients."""

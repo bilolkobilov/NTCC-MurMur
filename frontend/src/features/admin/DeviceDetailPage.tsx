@@ -182,6 +182,11 @@ export function DeviceDetailPage() {
                     {t(errorMessage(reconnect.error).key)}
                   </DAlert>
                 )}
+                {(d.disconnect_reason === "lost" || d.disconnect_reason === "security") && (
+                  <DAlert tone="warn" icon="alertTriangle">
+                    {t("devices.keyDestroyed")}
+                  </DAlert>
+                )}
               </div>
               <dl className="m-0" style={{ borderTop: "1px solid var(--c-border)" }}>
                 <KvRow label={t("devices.statusLabel")}>{disconnected ? t("devices.disconnectedBy") : t(`devices.state.${d.state}`)}</KvRow>
@@ -279,7 +284,7 @@ export function DeviceDetailPage() {
           </DCard>
         </div>
 
-        <div className="flex flex-col gap-4" style={{ flex: "0 0 360px" }}>
+        <div className="flex flex-col gap-4" style={{ flex: "1 1 340px", minWidth: 0 }}>
           <section className="rd-dcard" aria-labelledby="bat-h">
             <div className="rd-dcard__body" style={{ gap: "var(--s-3)" }}>
               <div className="flex items-baseline justify-between">

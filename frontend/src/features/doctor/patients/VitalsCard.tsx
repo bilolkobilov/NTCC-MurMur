@@ -7,23 +7,17 @@ import { errorMessage } from "../../../api/client";
 import { doctorApi, type Patient, type VitalsInput } from "../../../api/doctor";
 import { Dialog } from "../../../components/ui/Dialog";
 import { formatDateTime } from "../../../lib/format";
-import { Button, DAlert, DCard, FormGroup, StatusChip } from "../../../redesign/components";
-import {
-  bloodPressureLevel,
-  bmi,
-  bmiLevel,
-  heartRateLevel,
-  respRateLevel,
-  spo2Level,
-  temperatureLevel,
-  type VitalLevel,
-} from "./vitalStatus";
+import { Button, DAlert, DCard, FormGroup } from "../../../redesign/components";
 
-type Tile = { key: string; name: string; value: string; unit: string; ref: string; level: VitalLevel | null };
+type Tile = { key: string; name: string; value: string; unit: string; known: boolean };
+
+/** Body-mass index from height (cm) and weight (kg). */
+export const bmi = (heightCm: number, weightKg: number) => weightKg / (heightCm / 100) ** 2;
 
 /**
- * "Vital signs" (design "Patient profile"): heart rate, blood pressure, SpO₂, breathing rate, temperature and BMI, each
- * with its reference range and a status word. The doctor enters the first five; BMI comes from height and weight.
+ * "Vital signs" (design "Patient profile"): heart rate, blood pressure, SpO₂, breathing rate, temperature and BMI, as
+ * plain numbers. No "normal / abnormal" word: the ranges were not set by a doctor (owner, 2026-11-17). The doctor enters
+ * the first five; BMI comes from height and weight.
  */
 export function VitalsCard({ patient }: { patient: Patient }) {
   const { t, i18n } = useTranslation();
@@ -42,48 +36,42 @@ export function VitalsCard({ patient }: { patient: Patient }) {
       name: t("vitals.heartRate"),
       value: v?.heart_rate != null ? number(v.heart_rate) : dash,
       unit: t("vitals.unit.bpm"),
-      ref: `60–100 ${t("vitals.unit.bpm")}`,
-      level: v?.heart_rate != null ? heartRateLevel(v.heart_rate) : null,
+      known: v?.heart_rate != null,
     },
     {
       key: "bp",
       name: t("vitals.bloodPressure"),
       value: v?.systolic != null && v.diastolic != null ? `${v.systolic}/${v.diastolic}` : dash,
       unit: t("vitals.unit.mmHg"),
-      ref: `< 130/80 ${t("vitals.unit.mmHg")}`,
-      level: v?.systolic != null && v.diastolic != null ? bloodPressureLevel(v.systolic, v.diastolic) : null,
+      known: v?.systolic != null && v.diastolic != null,
     },
     {
       key: "spo2",
       name: t("vitals.spo2"),
       value: v?.spo2 != null ? number(v.spo2) : dash,
       unit: "%",
-      ref: "95–100 %",
-      level: v?.spo2 != null ? spo2Level(v.spo2) : null,
+      known: v?.spo2 != null,
     },
     {
       key: "resp_rate",
       name: t("vitals.respRate"),
       value: v?.resp_rate != null ? number(v.resp_rate) : dash,
       unit: t("vitals.unit.perMin"),
-      ref: `12–20 ${t("vitals.unit.perMin")}`,
-      level: v?.resp_rate != null ? respRateLevel(v.resp_rate) : null,
+      known: v?.resp_rate != null,
     },
     {
       key: "temp",
       name: t("vitals.temperature"),
       value: v?.temp_c != null ? decimal(v.temp_c) : dash,
       unit: "°C",
-      ref: "36.1–37.2 °C",
-      level: v?.temp_c != null ? temperatureLevel(v.temp_c) : null,
+      known: v?.temp_c != null,
     },
     {
       key: "bmi",
       name: t("patient.bmi"),
       value: bmiValue ? decimal(bmiValue) : dash,
       unit: t("patient.bmiUnit"),
-      ref: `18.5–24.9 ${t("patient.bmiUnit")}`,
-      level: bmiValue ? bmiLevel(bmiValue) : null,
+      known: bmiValue !== null,
     },
   ];
 
@@ -115,16 +103,9 @@ export function VitalsCard({ patient }: { patient: Patient }) {
             </span>
             <span className="rd-metric__val tabular-nums">
               {tile.value}
-              {tile.level && <span className="rd-metric__unit">{tile.unit}</span>}
+              {tile.known && <span className="rd-metric__unit">{tile.unit}</span>}
             </span>
-            <span className="rd-sm">{t("vitals.ref", { range: tile.ref })}</span>
-            <span>
-              {tile.level ? (
-                <StatusChip status={tile.level} label={t(`vitals.level.${tile.level}`)} />
-              ) : (
-                <span className="rd-chip rd-chip--plain">{t("vitals.level.none")}</span>
-              )}
-            </span>
+            {!tile.known && <span className="rd-sm">{t("vitals.level.none")}</span>}
           </div>
         ))}
       </div>

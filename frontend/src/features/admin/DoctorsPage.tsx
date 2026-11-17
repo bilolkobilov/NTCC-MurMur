@@ -84,7 +84,7 @@ export function DoctorsPage() {
           onChange={(e) => change({ q: e.target.value })}
         />
         <SelectField
-          className="w-[220px] shrink-0"
+          className="w-full sm:w-[220px] sm:shrink-0"
           label={t("doctors.clinic")}
           value={clinic}
           onChange={(e) => change({ clinic: e.target.value })}
@@ -141,7 +141,7 @@ export function DoctorsPage() {
         )}
         {rows.length > 0 && (
           <div className="overflow-x-auto">
-            <table className="rd-table" aria-label={t("doctors.tableLabel")}>
+            <table className="rd-table rd-table--stack" aria-label={t("doctors.tableLabel")}>
               <thead>
                 <tr>
                   <th scope="col">{t("doctors.colDoctor")}</th>
@@ -168,12 +168,16 @@ export function DoctorsPage() {
                         </div>
                       </div>
                     </td>
-                    <td>{doctor.clinic ?? <span className="rd-sm italic">{t("doctors.noClinic")}</span>}</td>
-                    <td className="rd-table__ink tabular-nums">{n(doctor.patient_count)}</td>
-                    <td>
+                    <td data-label={t("doctors.colClinic")}>
+                      {doctor.clinic ?? <span className="rd-sm italic">{t("doctors.noClinic")}</span>}
+                    </td>
+                    <td className="rd-table__ink tabular-nums" data-label={t("doctors.colPatients")}>
+                      {n(doctor.patient_count)}
+                    </td>
+                    <td data-label={t("doctors.colLastActive")}>
                       {doctor.last_login_at ? formatRelative(doctor.last_login_at, i18n.language) : t("profile.neverSignedIn")}
                     </td>
-                    <td>
+                    <td data-label={t("doctors.colStatus")}>
                       <StatusChip status={CHIP[doctor.status]} label={t(`profile.status.${doctor.status}`)} />
                     </td>
                     <td className="rd-table__end">

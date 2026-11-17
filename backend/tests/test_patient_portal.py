@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from app.models import AIResult, AuditLog, Exam, ExamStatus, Role, VitalSigns
+from app.models import AIResult, AuditLog, Exam, ExamStatus, Role, User, VitalSigns
 from tests.helpers import login, make_device, make_patient, make_user
 
 
@@ -26,6 +26,7 @@ def add_reviewed(db, patient, device, *, label="absent", quality="good", score=0
         doctor_note="Looks fine.",
         doctor_agrees_with_ai=True,
         reviewed_at=datetime.now(UTC),
+        clinic=db.get(User, patient.doctor_id).clinic,  # frozen at creation, as exam_flow.create_exam does
     )
     db.add(exam)
     db.flush()
@@ -70,6 +71,26 @@ def test_label_is_hidden_when_the_ai_gave_no_answer(client, db, world):
     labels = [e["ai_label"] for e in client.get("/api/me/exams", headers=login(client, "ali")).json()]
 
     assert labels == [None, None]
+
+
+def test_past_exams_keep_their_clinic_when_the_device_moves_to_another_clinic(client, db, world):
+    add_reviewed(db, world["ali"], world["device"])
+    elsewhere = make_user(db, "dr.c", Role.DOCTOR)
+    elsewhere.clinic = "Other Clinic"
+    world["device"].doctor_id = elsewhere.id
+    db.commit()
+
+    headers = login(client, "ali")
+    assert client.get("/api/me/exams", headers=headers).json()[0]["clinic"] == "Highlands Clinic"
+    assert client.get("/api/me", headers=headers).json()["latest_analysis"]["clinic"] == "Highlands Clinic"
+
+
+def test_label_is_hidden_when_the_doctor_disagreed_with_the_ai(client, db, world):
+    exam = add_reviewed(db, world["ali"], world["device"], label="murmur")
+    exam.doctor_agrees_with_ai = False  # the doctor says the heart is normal: the patient must not read "murmur"
+    db.commit()
+
+    assert client.get("/api/me/exams", headers=login(client, "ali")).json()[0]["ai_label"] is None
 
 
 def test_profile_shows_clinic_latest_analysis_and_heart_rate(client, db, world):
@@ -117,6 +138,7 @@ def test_empty_value_clears_a_field_and_unsent_fields_stay(client, world):
         {"birth_year": 1980},
         {"email": "not-an-email"},
         {"phone": "abc"},
+        {"city": "x" * 101},  # the column holds 100: a 422, never a database error
     ],
 )
 def test_patient_cannot_change_clinic_data_or_send_junk(client, world, body):

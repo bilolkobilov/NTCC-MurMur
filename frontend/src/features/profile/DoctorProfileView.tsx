@@ -250,7 +250,7 @@ function PatientsCard({ patients, total, full, onViewAll }: { patients: ProfileP
       {patients && count === 0 && <p className="rd-body p-5">{t("profile.noPatients")}</p>}
       {patients && count > 0 && (
         <div className="overflow-x-auto">
-          <table className="rd-table" aria-label={t("profile.patientsTable")}>
+          <table className="rd-table rd-table--stack" aria-label={t("profile.patientsTable")}>
             <thead>
               <tr>
                 <th scope="col">{t("registry.colPatient")}</th>
@@ -269,7 +269,7 @@ function PatientsCard({ patients, total, full, onViewAll }: { patients: ProfileP
                 ? patients.rows.slice(0, shownCount).map((p) => (
                     <tr key={p.id}>
                       <PatientCells name={p.full_name} birthYear={p.birth_year} sex={p.sex} at={p.last_exam?.created_at ?? null} />
-                      <td>
+                      <td data-label={t("registry.colStatus")}>
                         <ResultChip patient={p} />
                       </td>
                       <td className="rd-table__end">
@@ -302,10 +302,12 @@ function PatientCells({ name, birthYear, sex, at }: { name: string; birthYear: n
           <span className="rd-label truncate">{name}</span>
         </div>
       </td>
-      <td className="tabular-nums">
+      <td className="tabular-nums" data-label={t("registry.colAgeSex")}>
         {ageFromBirthYear(birthYear)} · {t(`registry.sexShort.${sex}`)}
       </td>
-      <td>{at ? formatRelative(at, i18n.language) : <span className="rd-sm">{t("registry.noRecording")}</span>}</td>
+      <td data-label={t("registry.colLastRecording")}>
+        {at ? formatRelative(at, i18n.language) : <span className="rd-sm">{t("registry.noRecording")}</span>}
+      </td>
     </>
   );
 }

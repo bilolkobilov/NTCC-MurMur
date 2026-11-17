@@ -98,31 +98,60 @@ inline int pollCommand(Command& command) {
 }
 
 /**
- * Multipart upload in one buffer, so the WAV is never copied: the caller records straight into
- * buffer + uploadPrefixLength(), then calls uploadRecording(). The server needs Content-Length (it rejects a
- * body without one), which HTTPClient sends for a buffer.
+ * Multipart upload in one PSRAM buffer, so the WAV is never copied: the caller records straight into
+ * buffer + audioHeaderLength(), then buildUpload() appends the ECG part and the meta part (meta goes last because
+ * the lead-off result is known only after recording). The server needs Content-Length (it rejects a body without
+ * one), which HTTPClient sends for a buffer.
  */
 static const char* BOUNDARY = "murmur7f3a9c1e5b";
+static const size_t META_PART_MAX = 512;  // room for the meta part and the closing boundary
 
-static String uploadPrefix(bool motion) {
-  String meta = String("{\"motion_detected\":") + (motion ? "true" : "false") +
-                ",\"sample_rate\":" + WAV_SAMPLE_RATE + ",\"firmware_version\":\"" + FIRMWARE_VERSION + "\"}";
-  return String("--") + BOUNDARY + "\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n" + meta + "\r\n--" +
-         BOUNDARY + "\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n" +
+static String audioHeader() {
+  return String("--") + BOUNDARY + "\r\nContent-Disposition: form-data; name=\"audio\"; filename=\"recording.wav\"\r\n" +
          "Content-Type: audio/wav\r\n\r\n";
 }
-static String uploadSuffix() { return String("\r\n--") + BOUNDARY + "--\r\n"; }
+static String ecgHeader() {
+  return String("\r\n--") + BOUNDARY + "\r\nContent-Disposition: form-data; name=\"ecg\"; filename=\"ecg.bin\"\r\n" +
+         "Content-Type: application/octet-stream\r\n\r\n";
+}
+static String metaPartAndEnd(bool motion, bool withEcg, bool leadOff) {
+  String meta = String("{\"motion_detected\":") + (motion ? "true" : "false") + ",\"sample_rate\":" +
+                WAV_SAMPLE_RATE + ",\"firmware_version\":\"" + FIRMWARE_VERSION + "\"";
+  if (withEcg) {
+    meta += String(",\"ecg_sample_rate\":") + ECG_SAMPLE_RATE + ",\"ecg_channels\":2,\"ecg_gain\":" + ECG_GAIN +
+            ",\"ecg_vref_mv\":" + ECG_VREF_MV + ",\"ecg_lead_off\":" + (leadOff ? "true" : "false");
+  }
+  meta += "}";
+  return String("\r\n--") + BOUNDARY + "\r\nContent-Disposition: form-data; name=\"meta\"\r\n\r\n" + meta +
+         "\r\n--" + BOUNDARY + "--\r\n";
+}
 
-inline size_t uploadPrefixLength(bool motion) { return uploadPrefix(motion).length(); }
-inline size_t uploadExtraLength(bool motion) { return uploadPrefixLength(motion) + uploadSuffix().length(); }
+inline size_t audioHeaderLength() { return audioHeader().length(); }
+/** Bytes the upload needs besides the WAV itself, with room for `ecgBytes` of ECG. */
+inline size_t uploadExtraLength(size_t ecgBytes) {
+  return audioHeaderLength() + ecgHeader().length() + ecgBytes + META_PART_MAX;
+}
+
+/** Complete the body around a WAV already at buffer + audioHeaderLength(). Returns the total length. */
+inline size_t buildUpload(uint8_t* buffer, size_t wavBytes, const int32_t* ecgData, size_t ecgBytes, bool motion,
+                          bool leadOff) {
+  const String head = audioHeader();
+  memcpy(buffer, head.c_str(), head.length());
+  size_t at = head.length() + wavBytes;
+  if (ecgBytes > 0) {
+    const String part = ecgHeader();
+    memcpy(buffer + at, part.c_str(), part.length());
+    at += part.length();
+    memcpy(buffer + at, ecgData, ecgBytes);
+    at += ecgBytes;
+  }
+  const String tail = metaPartAndEnd(motion, ecgBytes > 0, leadOff);
+  memcpy(buffer + at, tail.c_str(), tail.length());
+  return at + tail.length();
+}
 
 /** POST /api/device/upload/{exam}. 202 = accepted, 409 = this exam already has its recording (treat as done). */
-inline int uploadRecording(long examId, uint8_t* buffer, size_t wavBytes, bool motion) {
-  const String prefix = uploadPrefix(motion), suffix = uploadSuffix();
-  memcpy(buffer, prefix.c_str(), prefix.length());
-  memcpy(buffer + prefix.length() + wavBytes, suffix.c_str(), suffix.length());
-  const size_t total = prefix.length() + wavBytes + suffix.length();
-
+inline int uploadRecording(long examId, uint8_t* buffer, size_t total) {
   HTTPClient http;
   beginRequest(http, String("/api/device/upload/") + examId);
   http.addHeader("Content-Type", String("multipart/form-data; boundary=") + BOUNDARY);

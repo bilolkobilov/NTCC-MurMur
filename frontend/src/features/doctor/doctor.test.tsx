@@ -63,7 +63,7 @@ describe("patient registry", () => {
     const row = (await screen.findByText("Ali Valiyev")).closest("tr")!;
     expect(within(row).getByText("№ 012")).toBeInTheDocument();
     expect(within(row).getByText(/· M$/)).toBeInTheDocument();
-    expect(within(row).getByText("Abnormal")).toBeInTheDocument();
+    expect(within(row).getByText("Murmur suspected (AI)")).toBeInTheDocument();
     // mock clinic data (mockClinic.ts): registered clinic + where the latest exam was analyzed
     expect(within(row).getByText("Highlands Clinic")).toBeInTheDocument(); // patient 12 → index 0
     expect(within(row).getByText(/Analyzed at .* · MurMur #1/)).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe("patient registry", () => {
   });
 
   test.each([
-    [{ result_status: "normal", needs_review: true }, "Normal"],
+    [{ result_status: "normal", needs_review: true }, "No murmur (AI)"],
     [{ result_status: "pending", needs_review: false, last_exam: null }, "Pending"],
     [{ result_status: "pending", needs_review: true }, "Awaiting review"],
     [{ result_status: "failed", needs_review: false }, "Re-record"],
@@ -105,16 +105,18 @@ describe("patient registry", () => {
     expect(within(tiles).getByText("Pending").nextElementSibling).toHaveTextContent("1");
   });
 
-  test("the doctor shell: sidebar with the patient count, account menu, footer links", async () => {
+  test("the doctor shell: sidebar with the review count, phone tab bar, account menu, no dead links", async () => {
     registryBackend(() => []);
     renderAt("/doctor/patients");
 
     const nav = await screen.findByRole("navigation", { name: "Main navigation" });
-    expect(await within(nav).findByText("4")).toBeInTheDocument();
+    expect(await within(nav).findByText("2")).toBeInTheDocument(); // exams waiting for review, not all 4 patients
     expect(within(nav).getByRole("link", { name: /Patients/ })).toHaveAttribute("aria-current", "page");
+    const tabs = screen.getByRole("navigation", { name: "Sections" }); // the phone's bottom tab bar
+    expect(within(tabs).getByRole("link", { name: /Patients/ })).toHaveAttribute("aria-current", "page");
     expect(await screen.findByRole("button", { name: "Account" })).toBeInTheDocument();
     expect(await screen.findByText("Highlands Clinic")).toBeInTheDocument(); // the clinic chip in the header
-    expect(within(screen.getByRole("navigation", { name: "Footer" })).getAllByRole("link")).toHaveLength(4);
+    expect(screen.queryByRole("link", { name: "Privacy" })).not.toBeInTheDocument(); // no links to pages that do not exist
   });
 
   test("tabs and sort go into the URL and are sent to the API", async () => {
@@ -404,7 +406,7 @@ describe("patient page", () => {
     expect(await screen.findByText("Murmur probability 91 %")).toBeInTheDocument();
   });
 
-  test("vital signs show each value against its reference, with a status word; BMI comes from height and weight", async () => {
+  test("vital signs are plain numbers (no invented normal ranges); BMI comes from height and weight", async () => {
     profileBackend([]);
     renderAt("/doctor/patients/12");
 
@@ -414,10 +416,8 @@ describe("patient page", () => {
     for (const name of ["Heart rate", "Blood pressure", "SpO₂", "Respiratory rate", "Temperature", "BMI"]) {
       expect(within(card).getByText(name)).toBeInTheDocument();
     }
-    expect(within(card).getByText("Ref. < 130/80 mmHg")).toBeInTheDocument();
     expect(within(card).getByText("23.0")).toBeInTheDocument(); // 70.5 / 1.75², one decimal
-    expect(within(card).getAllByText("Abnormal").length).toBe(1); // only the blood pressure
-    expect(within(card).getAllByText("Normal").length).toBe(5); // heart rate, SpO₂, breathing rate, temperature, BMI
+    expect(within(card).queryByText(/Ref\.|Abnormal|Borderline|Normal/)).not.toBeInTheDocument(); // owner, 2026-11-17
   });
 
   test("with no vitals every tile says No data and the card invites recording", async () => {

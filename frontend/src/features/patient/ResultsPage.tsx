@@ -6,7 +6,6 @@ import { type MyExam, patientApi } from "../../api/patient";
 import { ErrorState, SkeletonRows } from "../../components/ui/States";
 import { formatDate, formatNumber, initials } from "../../lib/format";
 import { Avatar, Button, StatusChip } from "../../redesign/components";
-import { heartRateLevel } from "../doctor/patients/vitalStatus";
 import { groupVisits, summarize, type Visit } from "./visits";
 
 /** Status of one position, from what the AI said and the doctor reviewed. "Reviewed" when the AI gave no answer. */
@@ -91,17 +90,8 @@ export function ResultsPage() {
           <p className="rd-sm">
             {hr === null || !profile.data?.heart_rate_at
               ? t("portal.results.hrNone")
-              : `${t("portal.results.hrRef")} · ${t("portal.results.hrMeasured", { date: formatDate(profile.data.heart_rate_at, lang) })}`}
+              : t("portal.results.hrMeasured", { date: formatDate(profile.data.heart_rate_at, lang) })}
           </p>
-          {hr !== null && (
-            <span className="pt-stat__chip">
-              {heartRateLevel(hr) === "normal" ? (
-                <StatusChip status="normal" label={t("portal.results.hrNormal")} />
-              ) : (
-                <StatusChip status="borderline" label={t("portal.results.hrOutside")} />
-              )}
-            </span>
-          )}
         </section>
 
         <section className="pt-stat" aria-labelledby="pt-murmur">

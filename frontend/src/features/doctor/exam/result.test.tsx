@@ -1,10 +1,11 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import type { AIResult, ExamDetail, Patient } from "../../../api/doctor";
+import type { AIResult, EcgResult, ExamDetail, Patient } from "../../../api/doctor";
 import { session } from "../../../app/session";
 import { backend, bodyOf, ok, renderAt } from "../../../test/utils";
 import { aiAnswered, aiOutcome } from "./aiOutcome";
+import { ecgOutcome } from "./ecgOutcome";
 import { gridScale, hexToRgb, PAPER_PX_PER_SEC, robustPeak } from "./HeartStrip";
 
 // wavesurfer needs Web Audio and canvas, which jsdom lacks: a small fake records what the page asks of it.
@@ -97,6 +98,8 @@ function exam(overrides: Partial<ExamDetail> = {}): ExamDetail {
     status: "analyzed",
     created_at: "2026-11-08T10:00:00Z",
     reviewed_at: null,
+    has_ecg: false,
+    ecg_result: null,
     failure_reason: null,
     doctor_note: null,
     doctor_agrees_with_ai: null,
@@ -328,4 +331,91 @@ test("spectrogram colours read short and long hex (the CSS build writes white as
   expect(hexToRgb("#fff")).toEqual([1, 1, 1]);
   expect(hexToRgb("#c1121f")).toEqual([193 / 255, 18 / 255, 31 / 255]);
   expect(hexToRgb("oklch(0.5 0.1 20)")).toEqual([0, 0, 0]);
+});
+
+const ecgResult = (overrides: Partial<EcgResult> = {}): EcgResult => ({
+  method_version: "ecg-rules 1.0",
+  quality: "good",
+  problem: null,
+  channel: 1,
+  heart_rate: 68,
+  rr_cv: 0.04,
+  beats: 22,
+  rhythm_label: "no_af",
+  rhythm_p_af: 0.03,
+  rhythm_model_name: "ecg-rhythm",
+  rhythm_model_version: "1.0.0",
+  created_at: "2026-11-08T10:00:31Z",
+  ...overrides,
+});
+const trace = { sample_rate: 250, channel: 1, samples_mv: Array.from({ length: 5000 }, (_, i) => Math.sin(i / 20)), r_peaks_s: [0.4, 1.3, 2.2] };
+
+describe("ECG outcome", () => {
+  test.each([
+    [ecgResult(), "measured"],
+    [ecgResult({ quality: "bad", problem: "lead_off", heart_rate: null }), "cannotJudge"],
+    [ecgResult({ quality: "bad", problem: "something new", heart_rate: null }), "cannotJudge"],
+    [null, "pending"],
+  ])("%#: → %s", (result, kind) => {
+    expect(ecgOutcome(result).kind).toBe(kind);
+  });
+
+  test("an unknown problem code is shown as unknown, never as a number", () => {
+    expect(ecgOutcome(ecgResult({ quality: "bad", problem: "xyz", heart_rate: null }))).toEqual({
+      kind: "cannotJudge",
+      problem: "unknown",
+    });
+  });
+});
+
+describe("ECG card", () => {
+  test("heart rate, rhythm and the strip with its heartbeats, under the sound", async () => {
+    backend({ ...common, "GET /api/exams/7": () => ok(exam({ has_ecg: true, ecg_result: ecgResult() })), "GET /api/exams/7/ecg": () => ok(trace) });
+    renderAt("/doctor/exams/7");
+
+    const card = await screen.findByRole("region", { name: "ECG" });
+    expect(card).toHaveTextContent("68");
+    expect(card).toHaveTextContent("No atrial fibrillation found");
+    expect(card).toHaveTextContent("Model: ecg-rhythm 1.0.0");
+    expect(await screen.findByRole("img", { name: "ECG strip, 20 seconds, 3 beats" })).toBeInTheDocument();
+  });
+
+  test("AF suspected asks for a 12-lead confirmation", async () => {
+    const result = ecgResult({ rhythm_label: "af_suspected", rhythm_p_af: 0.81 });
+    backend({ ...common, "GET /api/exams/7": () => ok(exam({ has_ecg: true, ecg_result: result })), "GET /api/exams/7/ecg": () => ok(trace) });
+    renderAt("/doctor/exams/7");
+
+    const card = await screen.findByRole("region", { name: "ECG" });
+    expect(card).toHaveTextContent("Atrial fibrillation suspected. Confirm with a 12-lead ECG.");
+    expect(card).toHaveTextContent("AF probability 81 %");
+  });
+
+  test("a poor ECG says why it cannot be judged and shows no heart rate", async () => {
+    const result = ecgResult({ quality: "bad", problem: "lead_off", heart_rate: null, rr_cv: null, rhythm_label: null });
+    backend({ ...common, "GET /api/exams/7": () => ok(exam({ has_ecg: true, ecg_result: result })), "GET /api/exams/7/ecg": () => ok(trace) });
+    renderAt("/doctor/exams/7");
+
+    const card = await screen.findByRole("region", { name: "ECG" });
+    expect(card).toHaveTextContent("The ECG cannot be judged. An electrode came off");
+    expect(card).not.toHaveTextContent("Heart rate");
+  });
+
+  test("an exam without ECG says so in one quiet line", async () => {
+    backend({ ...common, "GET /api/exams/7": () => ok(exam()) });
+    renderAt("/doctor/exams/7");
+
+    expect(await screen.findByText(/No ECG was recorded with this exam/)).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "ECG" })).not.toBeInTheDocument();
+  });
+});
+
+test("a broken ECG from the device: the card says why, and no strip is fetched", async () => {
+  const result = ecgResult({ quality: "bad", problem: "invalid", heart_rate: null, rr_cv: null, rhythm_label: null, channel: null });
+  const fetchSpy = backend({ ...common, "GET /api/exams/7": () => ok(exam({ has_ecg: false, ecg_result: result })) });
+  renderAt("/doctor/exams/7");
+
+  const card = await screen.findByRole("region", { name: "ECG" });
+  expect(card).toHaveTextContent("The device sent a broken or too short ECG");
+  expect(card).toHaveTextContent("The sound was kept.");
+  expect(fetchSpy.mock.calls.some(([url]) => String(url).endsWith("/ecg"))).toBe(false);
 });

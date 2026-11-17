@@ -4,6 +4,7 @@ from app.models.ai_result import AIResult
 from app.models.audit_log import AuditLog
 from app.models.device import Device
 from app.models.device_command import DeviceCommand
+from app.models.ecg import EcgRecording, EcgResult
 from app.models.enums import AuscultationPoint, CommandStatus, ExamStatus, Role, Sex
 from app.models.exam import Exam
 from app.models.patient import Patient
@@ -18,6 +19,8 @@ __all__ = [
     "CommandStatus",
     "Device",
     "DeviceCommand",
+    "EcgRecording",
+    "EcgResult",
     "Exam",
     "ExamStatus",
     "Patient",

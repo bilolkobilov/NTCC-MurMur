@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: str
     postgres_db: str
-    postgres_host: str = "localhost"
+    postgres_host: str = "127.0.0.1"  # not "localhost": Windows tries ::1 first, which Docker does not serve
     postgres_port: int = 5432
 
     jwt_secret: str
@@ -28,9 +28,9 @@ class Settings(BaseSettings):
     first_admin_username: str = "admin"
     first_admin_password: str | None = None
 
-    # Docker demo only (docker-compose.yml): `app.cli seed-demo` creates a doctor + a device with this key.
+    # Docker demo only (docker-compose.demo.yml): `app.cli seed-demo` creates a doctor + a device with this key.
     demo_device_key: str | None = None
-    demo_doctor_password: str = "demo-doctor-1"
+    demo_doctor_password: str = "doctor-demo-1"  # same as docker-compose.demo.yml
 
     app_timezone: str = "Asia/Tashkent"  # what "today" means in admin stats
     cors_origins: str = ""

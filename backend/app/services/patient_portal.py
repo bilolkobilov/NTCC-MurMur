@@ -59,7 +59,7 @@ def read_profile(db: Session, user: User) -> MyProfileData:
     if latest is not None:
         exam, device, _ = latest
         analysis = {
-            "clinic": device.clinic if device else None,
+            "clinic": exam.clinic,
             "device_code": device.code if device else None,
             "at": exam.reviewed_at,
         }
@@ -88,6 +88,14 @@ def update_contact(db: Session, user: User, changes: dict) -> Patient:
     return patient
 
 
+def _shown_ai_label(exam: Exam, ai: AIResult | None) -> str | None:
+    """The AI's yes / no for the patient: only when it answered and the doctor did not disagree with it (owner,
+    2026-11-17). A patient must never read "murmur" next to a doctor's note that says the heart is normal."""
+    if ai is None or not gave_answer(ai.quality, ai.label) or exam.doctor_agrees_with_ai is False:
+        return None
+    return ai.label
+
+
 def list_reviewed_exams(db: Session, user: User) -> list[MyExamRow]:
     patient = _own_patient_record(db, user)
     rows = [
@@ -98,9 +106,9 @@ def list_reviewed_exams(db: Session, user: User) -> list[MyExamRow]:
             reviewed_at=exam.reviewed_at,
             doctor_note=exam.doctor_note or "",
             doctor_name=patient.doctor.full_name,
-            clinic=device.clinic if device else None,
+            clinic=exam.clinic,
             device_code=device.code if device else None,
-            ai_label=ai.label if ai is not None and gave_answer(ai.quality, ai.label) else None,
+            ai_label=_shown_ai_label(exam, ai),
             recording_quality=ai.quality if ai is not None else None,
         )
         for exam, device, ai in db.execute(_reviewed_query(patient).order_by(Exam.reviewed_at.desc()))

@@ -139,7 +139,7 @@ export function DevicesPage() {
             onChange={(e) => change({ q: e.target.value })}
           />
           <SelectField
-            className="w-[210px] shrink-0"
+            className="w-full sm:w-[210px] sm:shrink-0"
             label={t("devices.clinic")}
             value={clinic}
             onChange={(e) => change({ clinic: e.target.value })}
@@ -149,7 +149,7 @@ export function DevicesPage() {
             ]}
           />
           <SelectField
-            className="w-[220px] shrink-0"
+            className="w-full sm:w-[220px] sm:shrink-0"
             label={t("devices.sortLabel")}
             value={sort}
             onChange={(e) => change({ sort: e.target.value as DeviceSort })}
