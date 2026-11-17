@@ -48,8 +48,11 @@ def upload(
     device: CurrentDevice,
     background: BackgroundTasks,
     meta: Annotated[str | None, Form(description='JSON, e.g. {"motion_detected": false, "sample_rate": 4000}')] = None,
+    ecg: Annotated[
+        UploadFile | None, File(description="Optional ECG: int32 little-endian, channels interleaved")
+    ] = None,
 ) -> UploadAccepted:
-    """Accepts the WAV, then analysis runs in the background (the device does not wait for it)."""
+    """Accepts the WAV (and the ECG recorded with it), then analysis runs in the background."""
     try:
         parsed_meta = UploadMeta.model_validate_json(meta) if meta else UploadMeta()
     except ValidationError as exc:
@@ -64,6 +67,12 @@ def upload(
             status.HTTP_413_CONTENT_TOO_LARGE, f"audio is larger than {get_settings().max_upload_mb} MB"
         )
 
-    exam = device_flow.accept_upload(db, device, exam_id, data, parsed_meta.motion_detected)
+    ecg_data = None
+    if ecg is not None:
+        ecg_data = ecg.file.read(device_flow.MAX_ECG_BYTES + 1)
+        if len(ecg_data) > device_flow.MAX_ECG_BYTES:
+            raise HTTPException(status.HTTP_413_CONTENT_TOO_LARGE, "ecg is too large")
+
+    exam = device_flow.accept_upload(db, device, exam_id, data, parsed_meta, ecg_data)
     background.add_task(analysis.run_analysis, exam.id)
     return UploadAccepted(exam_id=exam.id, status=exam.status.value)

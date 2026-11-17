@@ -12,7 +12,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from app.config import get_settings
 
 UPLOAD_PATH_PREFIX = "/api/device/upload/"
-MULTIPART_OVERHEAD_BYTES = 64 * 1024  # room for the meta JSON and multipart boundaries
+MULTIPART_OVERHEAD_BYTES = 64 * 1024 + 1024 * 1024  # meta JSON, boundaries and the ECG part (MAX_ECG_BYTES)
 
 
 class UploadSizeLimitMiddleware:

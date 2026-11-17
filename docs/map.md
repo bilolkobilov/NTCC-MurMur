@@ -57,9 +57,12 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
   answer vocabulary `ANSWER_LABELS` / `gave_answer()` (mirrored by frontend `aiOutcome.ts`)
 - `backend/app/api/patient.py` — `/api/me` (GET, PATCH contact details), `/api/me/exams` (reviewed only, AI label but no score)
 - `backend/app/services/patient_portal.py` — patient's own profile, contact edit, reviewed exams, recording; audits reads and edits
+- `backend/app/services/ecg.py` — single-lead ECG (pure Python): decode device bytes, filter, R peaks, heart rate, quality,
+  channel choice, the doctor's strip; loads the optional rhythm model
+- `backend/app/models/ecg.py` — `EcgRecording` (the `.ecg` file next to the WAV) and `EcgResult` (what was measured)
 - `backend/app/services/quality.py` — plain signal rules before the AI: duration, silence, clipping, motion
 - `backend/app/services/analysis.py` — background job after upload: analyze, store `AIResult`, or mark failed
-- `backend/app/models/` — one file per table (9 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
+- `backend/app/models/` — one file per table (11 tables); `enums.py` holds roles, statuses, points; `__init__` imports all
 - `backend/alembic.ini`, `backend/alembic/env.py` — Alembic; DB URL comes from app settings, not the ini
 - `backend/alembic/versions/` — migrations, numbered `0001_…`
 - `backend/tests/conftest.py` — forces `murmur_test`, rebuilds it via migrations per run, empties tables per test
@@ -128,7 +131,7 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 
 ## Scripts
 
-- `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV; firmware reference
+- `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV + synthetic ECG; firmware reference
 - `firmware/murmur/` — ESP32-S3 Arduino firmware: `murmur.ino` (loop), `audio.h` (I2S mic → 16 kHz WAV), `net.h`
   (Wi-Fi + device API), `config.h` (pins, rates, gain), `secrets.example.h` (copy to gitignored `secrets.h`)
 - `scripts/ai/README.md` — AI model: how it works, results, setup, train / evaluate

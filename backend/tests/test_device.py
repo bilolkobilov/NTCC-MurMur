@@ -6,6 +6,7 @@ from sqlalchemy import select
 
 from app.config import get_settings
 from app.models import AIResult, CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Recording, Role
+from app.schemas.device import UploadMeta
 from app.services import analysis, storage
 from tests.helpers import login, make_device, make_patient, make_user, make_wav
 
@@ -245,7 +246,7 @@ def test_simultaneous_uploads_store_exactly_one_recording(client, db, key, exam,
             device = session.get(Device, device_and_key[0].id)
             barrier.wait()
             try:
-                device_flow.accept_upload(session, device, exam.id, make_wav(), motion_detected=False)
+                device_flow.accept_upload(session, device, exam.id, make_wav(), UploadMeta())
                 outcomes.append("ok")
             except Conflict:
                 outcomes.append("conflict")
@@ -287,7 +288,7 @@ def test_oversized_upload_is_rejected_before_the_body_is_read(client, db, key, e
     monkeypatch.setattr(get_settings(), "max_upload_mb", 0)
     monkeypatch.setattr(device_flow, "accept_upload", lambda *a, **k: pytest.fail("handler must not run"))
 
-    response = upload(client, key, exam.id, make_wav(seconds=30))  # ~240 KB > 0 MB + 64 KB overhead
+    response = upload(client, key, exam.id, make_wav(seconds=160))  # ~1.3 MB > 0 MB + overhead (meta, ECG part)
 
     assert response.status_code == 413
     assert response.json()["detail"] == "request body is larger than the 0 MB upload limit"

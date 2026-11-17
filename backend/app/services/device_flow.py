@@ -7,7 +7,9 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Recording
+from app.models import CommandStatus, Device, DeviceCommand, EcgRecording, Exam, ExamStatus, Recording
+from app.schemas.device import UploadMeta
+from app.services import ecg as ecg_service
 from app.services import exam_flow, storage
 from app.services.errors import BadRequest, Conflict, NotFound
 
@@ -108,7 +110,23 @@ def read_wav_info(data: bytes) -> tuple[int, float]:
     return sample_rate, frames / sample_rate
 
 
-def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion_detected: bool) -> Exam:
+MAX_ECG_BYTES = 1024 * 1024  # 35 s x 1000 Hz x 2 channels x 4 bytes = 280 KB, so 1 MB is plenty
+
+
+def check_ecg(data: bytes, meta: UploadMeta) -> float:
+    """Return the ECG length in seconds. Raises BadRequest if the bytes cannot be this device's ECG."""
+    frame = 4 * meta.ecg_channels
+    if not data or len(data) % frame:
+        raise BadRequest("ecg length does not match its channel count")
+    seconds = len(data) / frame / meta.ecg_sample_rate
+    if not ecg_service.MIN_SECONDS <= seconds <= ecg_service.MAX_SECONDS:
+        raise BadRequest(f"ecg must be {ecg_service.MIN_SECONDS:g}-{ecg_service.MAX_SECONDS:g} s long")
+    return seconds
+
+
+def accept_upload(
+    db: Session, device: Device, exam_id: int, data: bytes, meta: UploadMeta, ecg: bytes | None = None
+) -> Exam:
     # Row lock: a retried upload arriving while the first is still saving waits here, then sees 'uploaded' → 409.
     exam = db.get(Exam, exam_id, with_for_update=True, populate_existing=True)
     if exam is None or exam.device_id != device.id:
@@ -116,8 +134,10 @@ def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion
     if exam.status != ExamStatus.RECORDING:
         raise Conflict(f"exam is '{exam.status.value}', not waiting for a recording")
     sample_rate, duration_s = read_wav_info(data)
+    ecg_seconds = check_ecg(ecg, meta) if ecg is not None else None
 
     file_name = storage.save_recording(data)
+    ecg_file = storage.save_recording(ecg, ".ecg") if ecg is not None else None
     try:
         db.add(
             Recording(
@@ -126,9 +146,23 @@ def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion
                 size_bytes=len(data),
                 sample_rate=sample_rate,
                 duration_s=duration_s,
-                motion_detected=motion_detected,
+                motion_detected=meta.motion_detected,
             )
         )
+        if ecg_file is not None:
+            db.add(
+                EcgRecording(
+                    exam_id=exam.id,
+                    file_name=ecg_file,
+                    size_bytes=len(ecg),
+                    sample_rate=meta.ecg_sample_rate,
+                    channels=meta.ecg_channels,
+                    duration_s=ecg_seconds,
+                    gain=meta.ecg_gain,
+                    vref_mv=meta.ecg_vref_mv,
+                    lead_off=meta.ecg_lead_off,
+                )
+            )
         command = db.scalar(
             select(DeviceCommand).where(DeviceCommand.exam_id == exam.id, DeviceCommand.status == CommandStatus.TAKEN)
         )
@@ -139,6 +173,8 @@ def accept_upload(db: Session, device: Device, exam_id: int, data: bytes, motion
         db.commit()
     except Exception:
         db.rollback()
-        storage.delete_recording(file_name)  # never leave a WAV on disk that no row points to
+        storage.delete_recording(file_name)  # never leave a file on disk that no row points to
+        if ecg_file is not None:
+            storage.delete_recording(ecg_file)
         raise
     return exam

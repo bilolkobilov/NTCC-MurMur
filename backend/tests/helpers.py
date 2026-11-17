@@ -2,6 +2,7 @@
 
 import io
 import math
+import random
 import struct
 import wave
 from datetime import UTC, datetime
@@ -84,3 +85,36 @@ def make_wav(seconds: float = 12.0, sample_rate: int = 4000, amplitude: int = 80
         wav.setframerate(sample_rate)
         wav.writeframes(b"".join(struct.pack("<h", s) for s in samples))
     return buffer.getvalue()
+
+
+def make_ecg(
+    seconds: float = 20.0,
+    sample_rate: int = 250,
+    heart_rate: float = 72,
+    *,
+    ecg_channel: int | None = 1,
+    r_mv: float = 1.0,
+    hum_mv: float = 0.3,
+    noise_mv: float = 0.02,
+    code: int | None = None,
+    gain: int = 6,
+    vref_mv: float = 2420.0,
+) -> bytes:
+    """Two-channel ADS1292R bytes (int32 LE, interleaved) like the firmware sends: a P-QRS-T heartbeat on
+    `ecg_channel` (None = no heart at all), plus 50 Hz mains hum, slow breathing drift and noise on both channels.
+    `code` forces every sample to one raw value (0 = flat line, 2**23 - 1 = saturated)."""
+    rng = random.Random(7)
+    beat = 60 / heart_rate
+    waves = ((-0.2, 0.15, 0.025), (-0.03, -0.1, 0.008), (0.0, 1.0, 0.01), (0.03, -0.25, 0.01), (0.25, 0.3, 0.05))
+    to_code = gain * (2**23 - 1) / vref_mv
+    out = bytearray()
+    for i in range(int(seconds * sample_rate)):
+        t = i / sample_rate
+        common = hum_mv * math.sin(2 * math.pi * 50 * t) + 0.3 * math.sin(2 * math.pi * 0.25 * t)
+        phase = (t + beat / 2) % beat - beat / 2  # time from the nearest R peak
+        heart = r_mv * sum(a * math.exp(-((phase - c) ** 2) / (2 * w * w)) for c, a, w in waves)
+        for channel in (1, 2):
+            mv = common + rng.gauss(0, noise_mv) + (heart if channel == ecg_channel else 0.0)
+            value = code if code is not None else max(-(2**23 - 1), min(2**23 - 1, round(mv * to_code)))
+            out += struct.pack("<i", value)
+    return bytes(out)
