@@ -146,7 +146,7 @@ def list_patient_exams(patient_id: PathId, db: DbSession, doctor: CurrentDoctor)
             duration_s=row.duration_s,
             device_name=row.device.name if row.device else None,
             device_code=row.device.code if row.device else None,
-            clinic=row.device.clinic if row.device else None,
+            clinic=row.exam.clinic,
             result_status=row.status.result_status,
             needs_review=row.status.needs_review,
             ai_label=row.ai_label,

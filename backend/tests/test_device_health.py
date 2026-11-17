@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 from sqlalchemy import select
 
-from app.models import AuditLog, CommandStatus, Device, DeviceCommand, Role
+from app.models import AuditLog, CommandStatus, Device, DeviceCommand, Exam, ExamStatus, Role, User
 from app.services import device_health
 from tests.helpers import login, make_device, make_patient, make_user
 
@@ -134,9 +134,9 @@ def test_disconnect_blocks_the_device_and_reconnect_restores_it(client, admin, d
     dev, key = make_device(db, "MM-001")
     headers = {"X-Device-Key": key}
 
-    done = client.post(f"/api/admin/devices/{dev.id}/disconnect", headers=admin, json={"reason": "lost"})
+    done = client.post(f"/api/admin/devices/{dev.id}/disconnect", headers=admin, json={"reason": "maintenance"})
     assert done.status_code == 200 and done.json()["state"] == "disconnected"
-    assert done.json()["disconnect_reason"] == "lost"
+    assert done.json()["disconnect_reason"] == "maintenance"
     assert client.post("/api/device/heartbeat", headers=headers, json={}).status_code == 403
     assert client.get("/api/device/command", headers=headers).status_code == 403
     assert (
@@ -232,3 +232,72 @@ def test_admin_actions_are_in_the_device_activity_and_the_audit_log(client, admi
 def test_device_detail_is_404_for_an_unknown_device(client, admin):
     assert client.get("/api/admin/devices/9999", headers=admin).status_code == 404
     assert client.get("/api/admin/devices/9999/activity", headers=admin).status_code == 404
+
+
+@pytest.mark.parametrize("reason", ["lost", "security"])
+def test_a_lost_or_compromised_key_never_works_again(client, admin, db, reason):
+    dev, old_key = make_device(db, "MM-001")
+    client.post(f"/api/admin/devices/{dev.id}/disconnect", headers=admin, json={"reason": reason})
+    client.post(f"/api/admin/devices/{dev.id}/reconnect", headers=admin)
+
+    assert client.post("/api/device/heartbeat", headers={"X-Device-Key": old_key}, json={}).status_code == 401
+    new_key = client.post(f"/api/admin/devices/{dev.id}/rotate-key", headers=admin).json()["api_key"]
+    assert client.post("/api/device/heartbeat", headers={"X-Device-Key": new_key}, json={}).status_code == 200
+
+
+def start_exam(client, db, dev):
+    doctor = db.get(User, dev.doctor_id)
+    patient = make_patient(db, doctor)
+    mine = login(client, doctor.username)
+    started = client.post(
+        "/api/exams", headers=mine, json={"patient_id": patient.id, "device_id": dev.id, "point": "MV"}
+    )
+    assert started.status_code == 201, started.text
+    return started.json()["id"]
+
+
+def test_disconnect_fails_the_waiting_exams_so_they_are_never_recorded_later(client, admin, db):
+    dev, key = make_device(db, "MM-001", make_user(db, "dr.aziz", Role.DOCTOR))
+    exam_id = start_exam(client, db, dev)
+
+    client.post(f"/api/admin/devices/{dev.id}/disconnect", headers=admin, json={"reason": "maintenance"})
+    client.post(f"/api/admin/devices/{dev.id}/reconnect", headers=admin)
+
+    assert client.get("/api/device/command", headers={"X-Device-Key": key}).status_code == 204  # nothing stale
+    exam = db.get(Exam, exam_id, populate_existing=True)
+    assert exam.status == ExamStatus.FAILED and "disconnected" in exam.failure_reason
+
+
+def test_giving_the_device_to_another_doctor_fails_the_old_doctors_waiting_exams(client, admin, db):
+    dev, key = make_device(db, "MM-001", make_user(db, "dr.aziz", Role.DOCTOR))
+    other = make_user(db, "dr.bek", Role.DOCTOR)
+    exam_id = start_exam(client, db, dev)
+
+    moved = client.patch(f"/api/admin/devices/{dev.id}", headers=admin, json={"doctor_id": other.id})
+
+    assert moved.status_code == 200, moved.text
+    assert client.get("/api/device/command", headers={"X-Device-Key": key}).status_code == 204
+    assert db.get(Exam, exam_id, populate_existing=True).status == ExamStatus.FAILED
+
+
+def test_device_cannot_change_doctor_while_recording(client, admin, db):
+    dev, key = make_device(db, "MM-001", make_user(db, "dr.aziz", Role.DOCTOR))
+    other = make_user(db, "dr.bek", Role.DOCTOR)
+    start_exam(client, db, dev)
+    client.get("/api/device/command", headers={"X-Device-Key": key})  # now recording
+
+    assert client.patch(f"/api/admin/devices/{dev.id}", headers=admin, json={"doctor_id": other.id}).status_code == 409
+
+
+def test_a_self_test_that_was_taken_but_never_reported_does_not_block_new_ones(client, admin, db):
+    dev, key = make_device(db, "MM-001")
+    headers = {"X-Device-Key": key}
+    client.post("/api/device/heartbeat", headers=headers, json={})
+    client.post(f"/api/admin/devices/{dev.id}/self-test", headers=admin)
+    client.get("/api/device/command", headers=headers)  # taken, then the device reboots and never reports
+    stuck = db.scalar(select(DeviceCommand))
+    stuck.taken_at = datetime.now(UTC) - timedelta(minutes=5)
+    db.commit()
+
+    assert client.post(f"/api/admin/devices/{dev.id}/self-test", headers=admin).status_code == 202
+    assert client.get("/api/device/command", headers=headers).json()["command"] == "self_test"

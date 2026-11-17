@@ -97,9 +97,7 @@ def _registry(db: Session, doctor: User, search: str | None = None) -> list[Regi
             ai_label=ai.label if ai else None,
             doctor_agrees=exam.doctor_agrees_with_ai if exam else None,
         )
-        rows.append(
-            RegistryRow(patient, exam, device.name if device else None, device.clinic if device else None, status)
-        )
+        rows.append(RegistryRow(patient, exam, device.name if device else None, exam.clinic if exam else None, status))
     return rows
 
 

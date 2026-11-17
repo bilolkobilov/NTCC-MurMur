@@ -28,7 +28,9 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
+    # The old schema has no "other": refuse rather than silently rewrite real patients' data.
+    if op.get_bind().scalar(sa.text("SELECT count(*) FROM patients WHERE sex = 'other'")):
+        raise RuntimeError("patients with sex 'other' exist; change them before downgrading below 0007")
     op.drop_constraint("sex", "patients", type_="check")
-    op.execute("UPDATE patients SET sex = 'female' WHERE sex = 'other'")  # the old schema has no such value
     op.create_check_constraint("sex", "patients", "sex IN ('male', 'female')")
     op.drop_column("patients", "clinic")

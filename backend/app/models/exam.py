@@ -20,6 +20,7 @@ class Exam(CreatedAtMixin, Base):
     point: Mapped[AuscultationPoint] = mapped_column(str_enum(AuscultationPoint, "point"))
     status: Mapped[ExamStatus] = mapped_column(str_enum(ExamStatus, "exam_status"), default=ExamStatus.WAITING)
     failure_reason: Mapped[str | None] = mapped_column(String(500))
+    clinic: Mapped[str | None] = mapped_column(String(200))  # the doctor's clinic when the exam was made
     doctor_note: Mapped[str | None] = mapped_column(Text)
     doctor_agrees_with_ai: Mapped[bool | None]
     reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

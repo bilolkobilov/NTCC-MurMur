@@ -8,7 +8,10 @@ from app.models.enums import CommandStatus, str_enum
 
 
 class DeviceCommand(CreatedAtMixin, Base):
-    """An instruction waiting for a device: "record 20 s for exam X" or "self_test". The device picks it up by polling."""
+    """An instruction waiting for a device: "record 20 s for exam X" or "self_test".
+
+    The device picks it up by polling.
+    """
 
     __tablename__ = "device_commands"
 

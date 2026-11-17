@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     postgres_user: str
     postgres_password: str
     postgres_db: str
-    postgres_host: str = "localhost"
+    postgres_host: str = "127.0.0.1"  # not "localhost": Windows tries ::1 first, which Docker does not serve
     postgres_port: int = 5432
 
     jwt_secret: str

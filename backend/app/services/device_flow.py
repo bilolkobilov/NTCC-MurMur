@@ -11,11 +11,16 @@ from app.models import CommandStatus, Device, DeviceCommand, Exam, ExamStatus, R
 from app.services import exam_flow, storage
 from app.services.errors import BadRequest, Conflict, NotFound
 
+HEARTBEAT_FIELDS = ("firmware_version", "wifi_rssi", "battery_pct", "mic_noise_db", "wifi_ssid", "ip", "mac", "gateway")
+
 
 def heartbeat(db: Session, device: Device, **reported: object) -> None:
-    """Store what the device reported (only the values it sent: a device that lacks a sensor omits it)."""
+    """Store what the device reported (only the values it sent: a device that lacks a sensor omits it).
+
+    Only these device columns are ever written, whatever else the request schema may carry one day."""
     device.last_seen_at = datetime.now(UTC)
-    for field, value in reported.items():
+    for field in HEARTBEAT_FIELDS:
+        value = reported.get(field)
         if value is not None:
             setattr(device, field, value)
     db.commit()

@@ -12,6 +12,7 @@ def _blank_is_none(value: str | None) -> str | None:
 
 # Optional text the patient types; an empty box clears the value.
 _Text = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200)]
+_City = Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]  # patients.city is String(100)
 _Phone = Annotated[str, StringConstraints(strip_whitespace=True, max_length=32, pattern=r"^([0-9+()\- ]{5,32})?$")]
 _EMAIL = r"^([^@\s]+@[^@\s]+\.[^@\s]+)?$"
 _Email = Annotated[str, StringConstraints(strip_whitespace=True, max_length=200, pattern=_EMAIL)]
@@ -54,7 +55,7 @@ class MyContactUpdate(BaseModel):
 
     phone: Annotated[_Phone | None, AfterValidator(_blank_is_none)] = None
     email: Annotated[_Email | None, AfterValidator(_blank_is_none)] = None
-    city: Annotated[_Text | None, AfterValidator(_blank_is_none)] = None
+    city: Annotated[_City | None, AfterValidator(_blank_is_none)] = None
     emergency_contact_name: Annotated[_Text | None, AfterValidator(_blank_is_none)] = None
     emergency_contact_phone: Annotated[_Phone | None, AfterValidator(_blank_is_none)] = None
 
