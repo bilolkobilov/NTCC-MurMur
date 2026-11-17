@@ -163,7 +163,8 @@ def train_one(
 
 
 def sha(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    """SHA-256 of the file with LF line endings, so a Windows (CRLF) and a Git (LF) copy give the same digest."""
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
 
 
 def main() -> None:
