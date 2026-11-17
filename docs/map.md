@@ -132,8 +132,10 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 ## Scripts
 
 - `scripts/fake_device.py` — simulated device (stdlib only): heartbeat, poll, upload a WAV + synthetic ECG; firmware reference
-- `firmware/murmur/` — ESP32-S3 Arduino firmware: `murmur.ino` (loop), `audio.h` (I2S mic → 16 kHz WAV), `net.h`
-  (Wi-Fi + device API), `config.h` (pins, rates, gain), `secrets.example.h` (copy to gitignored `secrets.h`)
+- `firmware/README.md` — the device guide: wiring, GPIO48 / RGB LED, ECG electrodes, flashing, troubleshooting
+- `firmware/murmur/` — ESP32-S3 Arduino firmware: `murmur.ino` (loop), `audio.h` (I2S mic → 16 kHz WAV), `ecg.h`
+  (ADS1292R ECG, recorded with the sound), `net.h` (Wi-Fi + device API), `config.h` (pins, rates, gain),
+  `secrets.example.h` (copy to gitignored `secrets.h`)
 - `scripts/ai/README.md` — AI model: how it works, results, setup, train / evaluate
 - `scripts/ai/` — CirCor labels + split (`circor.py`), shared training/metrics (`learn.py`), `experiment.py` (5-fold CV →
   `docs/specs/ai-experiments.md`), `train_head.py` (final head + threshold), `evaluate.py` (→ `docs/specs/ai-results.md`)

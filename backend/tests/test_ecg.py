@@ -230,3 +230,39 @@ def test_deleting_the_patient_erases_the_ecg_file(client, db, world):
     assert deleted.status_code == 204, deleted.text
     assert not ecg_file.exists()
     assert db.scalar(select(EcgResult)) is None and db.scalar(select(EcgRecording)) is None
+
+
+def test_the_firmware_body_layout_is_accepted(client, world):
+    """firmware/murmur/net.h builds the body by hand: audio first, then the ECG, then meta (it carries the lead-off
+    result, known only after recording), with a fixed boundary. Same bytes here."""
+    boundary = "murmur7f3a9c1e5b"
+    meta = (
+        '{"motion_detected":false,"sample_rate":16000,"firmware_version":"0.3.0","ecg_sample_rate":250,'
+        '"ecg_channels":2,"ecg_gain":6,"ecg_vref_mv":2420,"ecg_lead_off":false}'
+    )
+    crlf = b"\r\n"
+    body = b"".join(
+        [
+            f"--{boundary}".encode() + crlf,
+            b'Content-Disposition: form-data; name="audio"; filename="recording.wav"' + crlf,
+            b"Content-Type: audio/wav" + crlf + crlf,
+            make_wav(),
+            crlf + f"--{boundary}".encode() + crlf,
+            b'Content-Disposition: form-data; name="ecg"; filename="ecg.bin"' + crlf,
+            b"Content-Type: application/octet-stream" + crlf + crlf,
+            make_ecg(),
+            crlf + f"--{boundary}".encode() + crlf,
+            b'Content-Disposition: form-data; name="meta"' + crlf + crlf,
+            meta.encode(),
+            crlf + f"--{boundary}--".encode() + crlf,
+        ]
+    )
+    response = client.post(
+        f"/api/device/upload/{world['exam_id']}",
+        headers={**world["key"], "Content-Type": f"multipart/form-data; boundary={boundary}"},
+        content=body,
+    )
+
+    assert response.status_code == 202, response.text
+    exam = client.get(f"/api/exams/{world['exam_id']}", headers=world["doctor"]).json()
+    assert exam["ecg_result"]["heart_rate"] == pytest.approx(72, abs=2)

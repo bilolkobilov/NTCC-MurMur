@@ -95,24 +95,16 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 
 ## Device firmware (ESP32-S3)
 
-Code: `firmware/murmur/` (Arduino). Same protocol as `scripts/fake_device.py`. Runs on the real board since 2026-11-17
-(two exams from the website, upload HTTP 202). Board facts measured that day:
+Everything about the device — wiring, why the RGB LED (GPIO48) is never used, ECG electrodes on the AUX jack, build and
+flash, the serial log, troubleshooting and the bench measurements — is in **`firmware/README.md`**. In short:
 
-- Use the board's native USB port (COM4 here, VID 303A): no driver. The other port needs the CH340 driver.
-- Mic pins from the wiring diagram: BCLK 4, LRCL/WS 6, DOUT/SD 5. Only the left mic (SEL to GND) is fitted.
-- Never drive the on-board RGB LED: GPIO48 is also the ADS1292R PWDN pin, and an LED write stops the ECG chip.
-- The ESP32 joins 2.4 GHz Wi-Fi only; the laptop must be on the same network (a phone hotspot works).
+1. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h`; fill Wi-Fi (2.4 GHz), `SERVER_URL`
+   (`http://<laptop IP>:8000`, server started with `--host 0.0.0.0`) and the device key from Admin → Devices.
+2. `arduino-cli compile --upload -p COM<n> --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc" firmware/murmur`
+   on the board's native USB port (no driver).
+3. Without the board: `scripts/fake_device.py` does the same over HTTP, with a synthetic ECG.
 
-1. Tools (once): arduino-cli 1.5.1 in `%LOCALAPPDATA%\Programs\arduino-cli` (from GitHub releases, SHA-256 checked),
-   then `arduino-cli config init --additional-urls https://espressif.github.io/arduino-esp32/package_esp32_index.json`,
-   `arduino-cli core update-index`, `arduino-cli core install esp32:esp32` (3.3.12, ~1 GB). Arduino IDE works too.
-2. `copy firmware\murmur\secrets.example.h firmware\murmur\secrets.h` and fill Wi-Fi, server address
-   (`http://<laptop-ip-on-hotspot>:8000`) and the device key from Admin → Devices. `secrets.h` is gitignored.
-3. Compile: `arduino-cli compile --fqbn "esp32:esp32:esp32s3:PSRAM=opi,FlashSize=16M,PartitionScheme=app3M_fat9M_16MB,CDCOnBoot=cdc" firmware/murmur`
-4. Flash: add `--upload -p COM<n>` (the board's USB port); serial log: `arduino-cli monitor -p COM<n> -c baudrate=115200`.
-5. First real check: the device shows *Online* in Admin → Devices; then a doctor starts an exam. Tune `MIC_GAIN_SHIFT`
-   in `config.h` if the server answers "almost silent" (raise gain: smaller number) or "clipped" (bigger number).
-6. Admin → Devices shows what the heartbeat reports: Wi-Fi, network (IP / MAC partly hidden), microphone noise floor
+4. Admin → Devices shows what the heartbeat reports: Wi-Fi, network (IP / MAC partly hidden), microphone noise floor
    (measured at boot and on "Run self-test"), battery (only when `BATTERY_ADC_PIN` is set in `config.h`; the dev board has
    no fuel gauge). Set `LATEST_FIRMWARE` in `.env` to the `FIRMWARE_VERSION` of the newest build so older devices show
    "update available". A device the admin disconnected gets 403 and keeps polling; it works again after "Reconnect".

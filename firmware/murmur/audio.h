@@ -71,16 +71,18 @@ inline int micNoiseDb() {
 
 /**
  * Record `seconds` into `out` (wavSize(seconds) bytes): WAV header + samples. Every DECIMATE input samples are
- * averaged into one output sample (a simple low-pass before dropping to WAV_SAMPLE_RATE).
+ * averaged into one output sample (a simple low-pass before dropping to WAV_SAMPLE_RATE). `onStart` runs once, the
+ * moment the kept audio begins.
  * Returns the number of bytes written, or 0 when the microphone stopped delivering data.
  */
-inline size_t recordWav(uint8_t* out, uint32_t seconds) {
+inline size_t recordWav(uint8_t* out, uint32_t seconds, void (*onStart)() = nullptr) {
   const uint32_t wanted = WAV_SAMPLE_RATE * seconds;
   int32_t chunk[512];
 
   // Let the mic settle, then throw that audio away.
   const uint32_t settleEnd = millis() + MIC_SETTLE_MS;
   while ((int32_t)(millis() - settleEnd) < 0) mic.readBytes((char*)chunk, sizeof(chunk));
+  if (onStart) onStart();  // e.g. the ECG starts here, so sound and ECG begin together
 
   int16_t* pcm = (int16_t*)(out + 44);
   uint32_t written = 0;

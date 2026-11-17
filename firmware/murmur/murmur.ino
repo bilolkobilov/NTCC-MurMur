@@ -1,13 +1,14 @@
-// MurMur device firmware (ESP32-S3 + ICS-43434), stage 1: microphone + Wi-Fi + the device API.
+// MurMur device firmware (ESP32-S3 + ICS-43434 microphone + ADS1292R ECG): Wi-Fi + the device API.
 // Does exactly what scripts/fake_device.py does: heartbeat every 10 s -> poll for a command every 1.5 s ->
-// on "record": record N seconds -> upload the WAV (+ meta) -> back to polling. On "self_test": measure the
-// microphone noise floor and report it.
-// Not yet: MPU6050 motion flag (sent as false), ECG. Build/flash: docs/runbook.md "Device firmware".
+// on "record": record N seconds of sound AND ECG at the same time -> upload WAV + ECG (+ meta) -> back to polling.
+// On "self_test": measure the microphone noise floor and report it. Without the ECG chip it records sound only.
+// Not yet: MPU6050 motion flag (sent as false). Guide: firmware/README.md.
 //
 // Board: ESP32S3 Dev Module, PSRAM "OPI PSRAM", Flash 16 MB (the 20 s recording lives in PSRAM).
 
 #include "audio.h"
 #include "config.h"
+#include "ecg.h"
 #include "net.h"
 
 // No status LED: the board's RGB LED is on GPIO48, which is also the ECG chip's PWDN pin. Writing the LED leaves
@@ -15,11 +16,13 @@
 
 static uint32_t lastHeartbeat = 0;
 static uint32_t lastPoll = 0;
-static uint8_t* buffer = nullptr;  // multipart body: prefix + WAV + suffix, allocated once in PSRAM
+static uint8_t* buffer = nullptr;  // multipart body: audio header + WAV + ECG part + meta, allocated in PSRAM
 static size_t bufferSize = 0;
 
+static size_t ecgBytesMax(uint32_t seconds) { return ecg::present ? ecg::bytesFor(ECG_SAMPLE_RATE * (seconds + 1)) : 0; }
+
 static bool ensureBuffer(uint32_t seconds) {
-  const size_t needed = uploadExtraLength(false) + wavSize(seconds);
+  const size_t needed = uploadExtraLength(ecgBytesMax(seconds)) + wavSize(seconds);
   if (buffer && bufferSize >= needed) return true;
   free(buffer);
   buffer = (uint8_t*)ps_malloc(needed);
@@ -36,14 +39,23 @@ static bool recordAndUpload(const Command& command) {
   }
   const bool motion = false;  // MPU6050 comes in the next firmware step
   Serial.printf("recording %lu s for exam %ld\n", (unsigned long)seconds, command.examId);
-  const size_t wavBytes = recordWav(buffer + uploadPrefixLength(motion), seconds);
+  const size_t wavBytes = recordWav(buffer + audioHeaderLength(), seconds, ecg::start);
+  const uint32_t ecgFrames = ecg::stop();
   if (wavBytes == 0) {
     Serial.println("microphone gave no data: check the I2S wiring (BCLK/WS/SD) and that L/R is on GND");
     return false;  // the exam stays "recording"; the doctor sees "overdue" and can cancel
   }
+  // Never more ECG than sound (the reader may have stored one frame after the mic stopped).
+  const uint32_t ecgKept = min<uint32_t>(ecgFrames, (uint32_t)ECG_SAMPLE_RATE * seconds);
+  const bool leadOff = ecg::leadOff(ecgFrames);
+  if (ecg::present) {
+    Serial.printf("ECG: %lu frames (%.1f s)%s\n", (unsigned long)ecgKept, ecgKept / (float)ECG_SAMPLE_RATE,
+                  leadOff ? ", an electrode was OFF" : "");
+  }
+  const size_t total = buildUpload(buffer, wavBytes, ecg::samples, ecg::bytesFor(ecgKept), motion, leadOff);
   for (int attempt = 1; attempt <= UPLOAD_ATTEMPTS; attempt++) {
     if (!wifiEnsure()) continue;
-    const int status = uploadRecording(command.examId, buffer, wavBytes, motion);
+    const int status = uploadRecording(command.examId, buffer, total);
     Serial.printf("upload attempt %d: HTTP %d\n", attempt, status);
     if (status == 202 || status == 409) return true;  // 409: already uploaded (a retry after a lost answer)
     if (status >= 400 && status < 500) return false;  // our request is wrong; retrying will not help
@@ -58,6 +70,7 @@ void setup() {
   Serial.printf("MurMur firmware %s\n", FIRMWARE_VERSION);
   if (!psramFound()) Serial.println("WARNING: no PSRAM found - recording will fail");
   if (!micBegin()) Serial.println("WARNING: I2S microphone did not start");
+  if (!ecg::begin()) Serial.println("ECG: chip not found - recording sound only (check SPI wiring, README.md)");
   lastMicNoiseDb = micNoiseDb();
   Serial.printf("microphone noise floor: %d dB\n", lastMicNoiseDb);
   while (!wifiEnsure()) Serial.println("Wi-Fi: not connected yet, retrying");
