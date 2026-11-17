@@ -38,4 +38,4 @@ Cyrillic: fonts must cover Latin Extended + Cyrillic. Medical wording in uz/ru m
 - Screening aid and research prototype, NOT a medical device: every AI result says so.
 - Patients never see raw AI output; they see results only after the doctor's review.
 - No brand yet: MurMur wordmark + heart-wave mark, colours proposed by Claude (owner, 2026-11-08).
-- Real AI model will be connected before the demo (owner, 2026-11-08); the UI must also handle "no model".
+- The real AI model is connected (cardiophon-murmur), plus ECG measurement since v2 (owner, 2026-11-08); the UI must also handle "no model".

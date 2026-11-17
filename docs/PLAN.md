@@ -1,3 +1,7 @@
+> **Historical document (2026-11-08 plan).** Kept for the record; the current truth is `AGENTS.md`,
+> `docs/map.md`, `docs/runbook.md`, `firmware/README.md` and `docs/decisions/`. Where this file disagrees
+> (pins, PWDN pin, field names, Recharts, "ECG later"), those win.
+
 # MurMur — MVP plan and system architecture
 
 Nov 8, 2026 · @Bilol Kobilov

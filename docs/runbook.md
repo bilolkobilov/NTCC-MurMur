@@ -81,7 +81,8 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 
 1. PyTorch (CPU) and numpy come with `cd backend && uv sync` (group `ai`, default since 2026-11-08; first
    `import torch` takes ~20 s once). A server without AI: `uv sync --no-group ai` and `AI_MODEL=dummy`.
-2. Encoder weights (CardioPHON, used with citation; never committed) into `models/cardiophon/`:
+2. Encoder weights (CardioPHON, used with citation) into `models/cardiophon/` (the Docker demo carries its own copy in
+   `demo/cardiophon/`, committed on purpose — owner, 2026-11-17):
    `curl -L -o models/cardiophon/pretrained_physionet_2022_4kHz.pth https://git.lih.lu/vdespotovic/cardiophon/-/raw/main/heart_sound_classification/checkpoints/pretrained_physionet_2022_4kHz.pth`
 3. CirCor 1.0.3 (471 MB zip, ODC-By) unpacked into `samples/circor/`:
    `https://physionet-open.s3.amazonaws.com/circor-heart-sound/circor-heart-sound-1.0.3.zip` (check `SHA256SUMS.txt`).
@@ -113,7 +114,7 @@ flash, the serial log, troubleshooting and the bench measurements — is in **`f
 
 ```bash
 cd backend
-uv run python -m alembic revision --autogenerate -m "what changed" --rev-id 0002   # after changing a model; review the file
+uv run python -m alembic revision --autogenerate -m "what changed" --rev-id 000N   # next free number (0012); review the file
 uv run python -m alembic upgrade head      # apply
 uv run python -m alembic downgrade -1      # roll back the last migration
 ```
@@ -127,4 +128,9 @@ Private GitHub repo: https://github.com/bilolkobilov/NTCC-MurMur (branch `main`)
 
 ## Deploy and rollback
 
-Not documented — ask the owner. (Plan: version 1 runs on a laptop + hotspot, version 2 on a server with HTTPS.)
+The owner has not chosen a server yet; today the demo runs on a laptop + phone hotspot. What exists:
+
+- Production stack: `docker-compose.yml` (`db` + `api`, every secret from `.env`, database port on 127.0.0.1 only) and
+  `backend/Dockerfile`; `docker compose up -d --build`. AI weights are mounted from `./models`.
+- Rollback: run the previous image / Git tag, and `uv run python -m alembic downgrade <revision>` for schema changes
+  (every migration has a downgrade; 0007 refuses when patients with sex "other" exist).

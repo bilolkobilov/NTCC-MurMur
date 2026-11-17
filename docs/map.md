@@ -12,8 +12,10 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `CLAUDE.md` — imports `AGENTS.md`; adds commands and cross-file architecture notes for Claude
 - `.gitignore` — ignores `.env`, Python caches, `storage/`, `samples/`, `models/` (AI weights, downloaded at setup)
 - `.claude/settings.json` — permissions + hook that blocks reading secret files
-- `.claude/secret-files.txt` — list of real secret files (`.env`)
+- `.claude/secret-files.txt` — list of real secret files (`.env`, `firmware/murmur/secrets.h`)
 - `.claude/hooks/block-secrets.mjs` — the hook itself
+- `.claude/rules/` — area rules for AI assistants: `firmware.md` (GPIO48, pins, upload layout), `ecg.md` (doctor-only, never
+  fails an exam, mirrored codes)
 - `docker-compose.yml` + `backend/Dockerfile` — PRODUCTION: `db` + `api` (backend, web app, AI weights mounted from
   `models/`); secrets required from `.env`, no demo data
 - `docker-compose.demo.yml` + `backend/Dockerfile.demo` — DEMO (own project name `murmur-demo`): adds the `device`
