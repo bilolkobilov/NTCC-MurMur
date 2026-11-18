@@ -44,6 +44,12 @@ npm run build      # type-check + production build into frontend/dist
 npm run check:offline   # after build: fails if anything would load from the internet
 ```
 
+**Browser MCP for the agent.** `.mcp.json` registers Playwright MCP (real Chrome, visible window). Start
+`docker compose up -d db`, the backend (`:8000`) and `npm run dev` (`:5173`), then the agent can open
+`http://localhost:5173`, log in, click through pages, resize to 375 / 768 / 1440 px, read console errors and take
+screenshots after a frontend change, and use the forms to edit data. Approve the project MCP server on first start.
+Its profile and screenshots go to `.playwright-profile/` and `.playwright-output/` (gitignored). Needs Node and Chrome.
+
 TypeScript is pinned to ~5.9 and linting uses ESLint on purpose: TypeScript 7 / oxlint use native binaries that
 Smart App Control blocks or that ESLint cannot use (see docs/decisions/2026-11.md).
 
