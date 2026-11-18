@@ -149,6 +149,12 @@ def assign_device(device_id: PathId, body: DeviceAssign, db: DbSession, admin: C
     return _device_out(db, devices.assign_device(db, admin, device_id, body.doctor_id))
 
 
+@router.delete("/devices/{device_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_device(device_id: PathId, db: DbSession, admin: CurrentAdmin) -> None:
+    """Remove the device record. 409 if it already has exams (disconnect it instead)."""
+    devices.delete_device(db, admin, device_id)
+
+
 @router.post("/devices/{device_id}/rotate-key")
 def rotate_device_key(device_id: PathId, db: DbSession, admin: CurrentAdmin) -> DeviceCreated:
     """Issue a new key (shown once). The old key stops working at once; put the new one into the firmware."""
