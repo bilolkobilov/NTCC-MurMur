@@ -28,3 +28,8 @@ frontend/dist/
 
 # device secrets (Wi-Fi, device key) - copy secrets.example.h
 firmware/murmur/secrets.h
+
+# Browser MCP (Playwright) profile and screenshots
+.playwright-profile/
+.playwright-output/
+.playwright-mcp/
