@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useId, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { adminApi, DISCONNECT_REASONS, type Device, type DeviceWithKey, type DisconnectReason } from "../../api/admin";
 import { errorMessage } from "../../api/client";
@@ -59,6 +59,7 @@ export function DeviceDetailPage() {
   const [rotating, setRotating] = useState(false);
   const [key, setKey] = useState<DeviceWithKey | null>(null);
   const [queued, setQueued] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const cancelConfirm = () => {
     setConfirming(false);
@@ -341,6 +342,10 @@ export function DeviceDetailPage() {
                 {t("devices.rotate")}
               </Button>
               <span className="rd-sm">{t("devices.rotateHint")}</span>
+              <Button variant="dangerline" icon="x" onClick={() => setDeleting(true)}>
+                {t("devices.delete")}
+              </Button>
+              <span className="rd-sm">{t("devices.deleteHint")}</span>
             </div>
           </DCard>
 
@@ -380,6 +385,7 @@ export function DeviceDetailPage() {
           setKey(rotated);
         }}
       />
+      <DeleteDialog device={d} open={deleting} onClose={() => setDeleting(false)} />
       <SecretDialog
         open={!!key}
         title={t("devices.keyRotatedTitle")}
@@ -423,6 +429,48 @@ function RotateDialog({
       {rotate.isError && (
         <DAlert tone="crit" icon="alertOctagon">
           {t(errorMessage(rotate.error).key)}
+        </DAlert>
+      )}
+    </Dialog>
+  );
+}
+
+function DeleteDialog({ device, open, onClose }: { device: Device; open: boolean; onClose: () => void }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: () => adminApi.deleteDevice(device.id),
+    onSuccess: () => {
+      queryClient.removeQueries({ queryKey: ["admin", "device", device.id] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "devices"] });
+      void queryClient.invalidateQueries({ queryKey: ["admin", "stats"] });
+      void navigate("/admin/devices");
+    },
+  });
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) {
+          remove.reset();
+          onClose();
+        }
+      }}
+      title={t("devices.deleteTitle", { name: device.code })}
+      description={t("devices.deleteBody")}
+      footer={
+        <>
+          <Button onClick={onClose}>{t("common.cancel")}</Button>
+          <Button variant="danger" busy={remove.isPending} busyText={t("common.saving")} onClick={() => remove.mutate()}>
+            {t("devices.deleteConfirm")}
+          </Button>
+        </>
+      }
+    >
+      {remove.isError && (
+        <DAlert tone="crit" icon="alertOctagon">
+          {t(errorMessage(remove.error).key)}
         </DAlert>
       )}
     </Dialog>

@@ -375,6 +375,27 @@ test("device detail: disconnecting needs a reason; reconnecting is one click", a
   await waitFor(() => expect(calls).toEqual(['disconnect {"reason":"lost"}', "reconnect"]));
 });
 
+test("device detail: deleting asks first, then removes the device and returns to the list", async () => {
+  const calls: string[] = [];
+  backend({
+    ...detailRoutes({ device: device() }, calls),
+    "DELETE /api/admin/devices/1": () => {
+      calls.push("delete");
+      return { status: 204 };
+    },
+    "GET /api/admin/devices": () => ok([]),
+  });
+  renderAt("/admin/devices/1");
+  const user = userEvent.setup();
+
+  await user.click(await screen.findByRole("button", { name: "Delete device" }));
+  const dialog = await screen.findByRole("dialog", { name: "Delete MM-0001?" });
+  expect(calls).toEqual([]);
+  await user.click(within(dialog).getByRole("button", { name: "Delete device" }));
+  await waitFor(() => expect(calls).toEqual(["delete"]));
+  expect(await screen.findByRole("heading", { name: "Devices" })).toBeInTheDocument();
+});
+
 test("device detail: a device that is recording cannot be disconnected", async () => {
   backend(detailRoutes({ device: device({ busy: true }) }));
   renderAt("/admin/devices/1");

@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
@@ -167,6 +167,18 @@ def reconnect(db: Session, admin: User, device_id: int) -> Device:
     db.commit()
     audit.record(db, admin, "device.reconnect", "device", device.id)
     return device
+
+
+def delete_device(db: Session, admin: User, device_id: int) -> None:
+    """Remove a device record and its queued commands. A device that has exams is kept: exams are medical history and
+    keep pointing at the device they were recorded on (disconnect it instead)."""
+    device = _lock_device(db, device_id)
+    if db.scalar(select(Exam.id).where(Exam.device_id == device.id).limit(1)) is not None:
+        raise Conflict("device has exams; disconnect it instead")
+    db.execute(delete(DeviceCommand).where(DeviceCommand.device_id == device.id))
+    db.delete(device)
+    db.commit()
+    audit.record(db, admin, "device.delete", "device", device_id)
 
 
 def request_self_test(db: Session, admin: User, device_id: int) -> Device:

@@ -298,6 +298,45 @@ def test_rotate_device_key(client, admin, db):
     assert client.post("/api/admin/devices/9999/rotate-key", headers=admin).status_code == 404
 
 
+def test_admin_deletes_a_device_without_exams(client, admin, db):
+    device = client.post("/api/admin/devices", headers=admin, json={"name": "A", "serial": "MM-001"}).json()
+
+    assert client.delete(f"/api/admin/devices/{device['id']}", headers=admin).status_code == 204
+
+    assert client.get(f"/api/admin/devices/{device['id']}", headers=admin).status_code == 404
+    assert client.get("/api/admin/devices", headers=admin).json() == []
+    assert db.scalar(select(AuditLog).where(AuditLog.action == "device.delete")) is not None
+    assert client.delete(f"/api/admin/devices/{device['id']}", headers=admin).status_code == 404
+
+
+def test_device_with_exams_cannot_be_deleted(client, admin, db):
+    doctor = create_doctor(client, admin)
+    device = client.post(
+        "/api/admin/devices", headers=admin, json={"name": "A", "serial": "MM-001", "doctor_id": doctor["id"]}
+    ).json()
+    patient = Patient(
+        doctor_id=doctor["id"],
+        full_name="P",
+        birth_date=datetime(1990, 1, 1).date(),
+        sex=Sex.MALE,
+        consent_given_at=datetime.now(UTC),
+    )
+    db.add(patient)
+    db.flush()
+    db.add(Exam(patient_id=patient.id, device_id=device["id"], doctor_id=doctor["id"], point="MV"))
+    db.commit()
+
+    assert client.delete(f"/api/admin/devices/{device['id']}", headers=admin).status_code == 409
+    assert client.get(f"/api/admin/devices/{device['id']}", headers=admin).status_code == 200
+
+
+def test_only_admin_deletes_devices(client, admin, db):
+    device = client.post("/api/admin/devices", headers=admin, json={"name": "A", "serial": "MM-001"}).json()
+    make_user(db, "dr.x", Role.DOCTOR)
+    assert client.delete(f"/api/admin/devices/{device['id']}", headers=login(client, "dr.x")).status_code == 403
+    assert client.delete(f"/api/admin/devices/{device['id']}").status_code == 401
+
+
 # --- where a doctor works (clinic) ---
 
 

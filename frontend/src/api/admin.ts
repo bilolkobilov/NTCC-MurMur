@@ -140,6 +140,7 @@ export const adminApi = {
     api<Device>(`/admin/devices/${id}/disconnect`, { method: "POST", body: { reason } }),
   reconnectDevice: (id: number) => api<Device>(`/admin/devices/${id}/reconnect`, { method: "POST" }),
   selfTest: (id: number) => api<Device>(`/admin/devices/${id}/self-test`, { method: "POST" }),
+  deleteDevice: (id: number) => api<void>(`/admin/devices/${id}`, { method: "DELETE" }),
   deviceActivity: (id: number) => api<AuditEntry[]>(`/admin/devices/${id}/activity?limit=30`),
   /** One page, newest first. Asks for one extra row to know whether an older page exists. */
   audit: (page: number, action: string | null) => {
