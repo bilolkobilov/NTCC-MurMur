@@ -103,7 +103,9 @@ Without this the server runs with `AI_MODEL=dummy` ("No AI opinion"). Spec: `doc
 ## ECG rhythm model ("AF suspected")
 
 Heart rate and ECG quality need nothing (pure Python). The rhythm model is optional: without `models/ecg/` the ECG
-card says "No rhythm model is connected". To get it (details, licences, citations: `scripts/ai/ecg/README.md`):
+card says "No rhythm model is connected". Quickest: the trained `ecg-rhythm 1.0.0` is committed in `demo/ecg/` —
+copy both files to `models/ecg/` (or set `AI_MODEL_DIR=demo`) and restart the server. To train it yourself (details,
+licences, citations: `scripts/ai/ecg/README.md`):
 
 ```bash
 cd backend

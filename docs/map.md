@@ -21,7 +21,8 @@ here: decisions → `docs/decisions/`, how to run / configure / deploy → `docs
 - `docker-compose.demo.yml` + `backend/Dockerfile.demo` — DEMO (own project name `murmur-demo`): adds the `device`
   (fake device) service and bakes in `demo/`; works with no `.env`
 - `.dockerignore` — keeps `.env`, `models/`, `samples/`, `storage/` out of the images
-- `demo/` — what the demo image ships: `cardiophon/` (AI weights) and `sample_av.wav` (one CirCor recording)
+- `demo/` — what the demo image ships: `cardiophon/` (sound AI weights), `ecg/` (ECG rhythm model `ecg-rhythm 1.0.0`,
+  1.7 MB) and `sample_av.wav` (one CirCor recording); the server finds both models under `AI_MODEL_DIR=/app/demo`
 - `.env.example` — every config key, no real values
 
 ## Backend

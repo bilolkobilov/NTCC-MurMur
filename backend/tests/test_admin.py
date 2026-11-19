@@ -317,7 +317,7 @@ def test_device_with_exams_cannot_be_deleted(client, admin, db):
     patient = Patient(
         doctor_id=doctor["id"],
         full_name="P",
-        birth_date=datetime(1990, 1, 1).date(),
+        birth_year=1990,
         sex=Sex.MALE,
         consent_given_at=datetime.now(UTC),
     )

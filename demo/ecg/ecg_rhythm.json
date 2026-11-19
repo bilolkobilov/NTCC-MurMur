@@ -1,0 +1,70 @@
+{
+  "model_name": "ecg-rhythm",
+  "model_version": "1.0.0",
+  "trained_at": "2026-11-17T10:17:33+00:00",
+  "classes": [
+    "normal",
+    "af",
+    "other",
+    "noisy"
+  ],
+  "threshold": 0.08639194071292877,
+  "arch": {
+    "widths": [
+      32,
+      48,
+      64,
+      96,
+      128
+    ],
+    "blocks": 1,
+    "kernel": 7,
+    "name": "resnet-5x1"
+  },
+  "params": 427460,
+  "input": {
+    "sample_rate": 250,
+    "window_s": 20,
+    "unit": "mV"
+  },
+  "training": {
+    "data": "PhysioNet/CinC Challenge 2017 training set, labels REFERENCE-v3.csv",
+    "seed": 2017,
+    "epochs": 40,
+    "batch": 64,
+    "lr": 0.002,
+    "threads": 8,
+    "train_records": 6820,
+    "val_records": 854,
+    "split_sha256": {
+      "train.txt": "9e42160bdd5d5b2763201a6221a98b5bbfeb1ae8550eda92cb6d93560dd3b582",
+      "val.txt": "93dc0d683469bfc7f95e4277b795b6d5d66ef5c91f464991b5c3c2d0deb25e72",
+      "test.txt": "18aec35b8484716889f237d454c11ea968e3a7a83568c921e7f5fcf7b37514cb"
+    },
+    "labels_sha256": "ae517e474b0bc89a7517ad876b5b4dadc6c94f680d0665c04746db9432df855b"
+  },
+  "candidates": {
+    "resnet-4x2": {
+      "params": 821924,
+      "best_epoch": 32,
+      "val_cinc_f1": 0.7884,
+      "val_macro_f1": 0.7123,
+      "train_seconds": 1684
+    },
+    "resnet-5x1": {
+      "params": 427460,
+      "best_epoch": 35,
+      "val_cinc_f1": 0.8007,
+      "val_macro_f1": 0.7218,
+      "train_seconds": 1184
+    }
+  },
+  "chosen": "resnet-5x1",
+  "validation": {
+    "af_sensitivity": 0.9079,
+    "af_specificity": 0.9055,
+    "target_sensitivity": 0.9,
+    "max_threshold": 0.5,
+    "unclear_rate": 0.0831
+  }
+}
